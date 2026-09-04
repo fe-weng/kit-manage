@@ -1,21 +1,14 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { Confetti, Star } from '@phosphor-icons/react'
-import { useEffect } from 'react'
+import { Confetti, Star, Ticket } from '@phosphor-icons/react'
 
 interface RedeemSuccessProps {
   visible: boolean
   rewardTitle: string
   onDone: () => void
+  onViewCoupons?: () => void
 }
 
-export default function RedeemSuccess({ visible, rewardTitle, onDone }: RedeemSuccessProps) {
-  useEffect(() => {
-    if (visible) {
-      const timer = setTimeout(onDone, 2500)
-      return () => clearTimeout(timer)
-    }
-  }, [visible, onDone])
-
+export default function RedeemSuccess({ visible, rewardTitle, onDone, onViewCoupons }: RedeemSuccessProps) {
   return (
     <AnimatePresence>
       {visible && (
@@ -32,7 +25,7 @@ export default function RedeemSuccess({ visible, rewardTitle, onDone }: RedeemSu
             exit={{ scale: 0.8, opacity: 0 }}
             transition={{ type: 'spring', damping: 15 }}
             className="bg-white rounded-[24px] shadow-float flex flex-col items-center"
-            style={{ padding: '36px 40px', gap: '12px' }}
+            style={{ padding: '36px 40px', gap: '16px' }}
             onClick={(e) => e.stopPropagation()}
           >
             <motion.div
@@ -52,7 +45,25 @@ export default function RedeemSuccess({ visible, rewardTitle, onDone }: RedeemSu
               成功兑换 <span className="font-bold text-accent">{rewardTitle}</span>
             </p>
 
-            <p className="text-[12px] text-text-sub/60">点击任意处关闭</p>
+            <div className="flex flex-col w-full" style={{ gap: '8px', marginTop: '4px' }}>
+              {onViewCoupons && (
+                <button
+                  onClick={onViewCoupons}
+                  className="w-full bg-accent text-white font-bold rounded-[12px] flex items-center justify-center active:scale-95 transition-transform"
+                  style={{ padding: '12px', fontSize: '15px', gap: '6px', border: 'none', cursor: 'pointer' }}
+                >
+                  <Ticket size={18} weight="duotone" />
+                  查看我的券
+                </button>
+              )}
+              <button
+                onClick={onDone}
+                className="w-full text-text-sub font-medium rounded-[12px] active:opacity-70 transition-opacity"
+                style={{ padding: '10px', fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                继续逛逛
+              </button>
+            </div>
           </motion.div>
         </motion.div>
       )}

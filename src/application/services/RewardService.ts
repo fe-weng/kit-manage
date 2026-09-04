@@ -11,7 +11,8 @@ export class RewardService {
   ) {}
 
   async getAllRewards(): Promise<Reward[]> {
-    return this.rewardRepo.findActive()
+    const rewards = await this.rewardRepo.findActive()
+    return rewards.sort((a, b) => a.points - b.points)
   }
 
   async createReward(params: {

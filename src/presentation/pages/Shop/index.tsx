@@ -221,6 +221,10 @@ export default function ShopPage() {
         visible={successVisible}
         rewardTitle={successTitle}
         onDone={() => setSuccessVisible(false)}
+        onViewCoupons={() => {
+          setSuccessVisible(false)
+          navigate(ROUTES.MY_COUPONS)
+        }}
       />
     </div>
   )
