@@ -30,7 +30,7 @@ export interface PetRecord {
   hunger: number
   mood: number
   lastFedAt: number
-  moodUpdatedAt?: number
+  moodUpdatedAt: number
   createdAt: number
 }
 
@@ -53,6 +53,8 @@ export interface RewardLogRecord {
   rewardTitle: string
   pointsCost: number
   redeemedAt: number
+  status: string
+  usedAt?: number
 }
 
 export interface PointBalanceRecord {
@@ -82,6 +84,9 @@ export class KidManageDB extends Dexie {
     })
     this.version(2).stores({
       tasks: 'id, childId, type, isActive, [childId+isActive], [childId+type]',
+    })
+    this.version(3).stores({
+      rewardLogs: 'id, rewardId, childId, redeemedAt, status, [childId+status], [rewardId+childId+status]',
     })
   }
 }

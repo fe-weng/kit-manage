@@ -30,7 +30,7 @@ export class DexiePetRepository implements IPetRepository {
       hunger: record.hunger,
       mood: record.mood,
       lastFedAt: record.lastFedAt,
-      moodUpdatedAt: record.moodUpdatedAt ?? record.lastFedAt,
+      moodUpdatedAt: record.moodUpdatedAt,
       createdAt: record.createdAt,
     })
   }

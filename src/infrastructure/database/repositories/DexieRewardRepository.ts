@@ -34,6 +34,27 @@ export class DexieRewardRepository implements IRewardRepository {
     return records.map((r) => this.toLogDomain(r))
   }
 
+  async findPendingLogsByChildId(childId: string): Promise<RewardLog[]> {
+    const records = await this.db.rewardLogs
+      .where('[childId+status]')
+      .equals([childId, 'pending'])
+      .toArray()
+    return records.map((r) => this.toLogDomain(r))
+  }
+
+  async findLogById(logId: string): Promise<RewardLog | null> {
+    const record = await this.db.rewardLogs.get(logId)
+    return record ? this.toLogDomain(record) : null
+  }
+
+  async findPendingLogByRewardId(rewardId: string, childId: string): Promise<RewardLog | null> {
+    const record = await this.db.rewardLogs
+      .where('[rewardId+childId+status]')
+      .equals([rewardId, childId, 'pending'])
+      .first()
+    return record ? this.toLogDomain(record) : null
+  }
+
   async saveLog(log: RewardLog): Promise<void> {
     await this.db.rewardLogs.put(this.toLogPersistence(log))
   }
@@ -74,6 +95,8 @@ export class DexieRewardRepository implements IRewardRepository {
       rewardTitle: record.rewardTitle,
       pointsCost: record.pointsCost,
       redeemedAt: record.redeemedAt,
+      status: record.status as RewardLog['status'],
+      usedAt: record.usedAt,
     })
   }
 
@@ -85,6 +108,8 @@ export class DexieRewardRepository implements IRewardRepository {
       rewardTitle: log.rewardTitle,
       pointsCost: log.pointsCost,
       redeemedAt: log.redeemedAt,
+      status: log.status,
+      usedAt: log.usedAt,
     }
   }
 }

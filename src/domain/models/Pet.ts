@@ -53,7 +53,7 @@ export class Pet {
     this.hunger = props.hunger
     this.mood = props.mood
     this.lastFedAt = props.lastFedAt
-    this.moodUpdatedAt = props.moodUpdatedAt ?? props.lastFedAt
+    this.moodUpdatedAt = props.moodUpdatedAt
     this.createdAt = props.createdAt
   }
 
@@ -74,7 +74,7 @@ export class Pet {
   /** 结算累积的心情衰减，将 mood 更新为当前真实值 */
   applyMoodDecay(): void {
     const now = Date.now()
-    const ref = this.moodUpdatedAt || this.lastFedAt
+    const ref = this.moodUpdatedAt
     const hoursSinceUpdate = (now - ref) / (1000 * 60 * 60)
     const decay = Math.floor(hoursSinceUpdate * MOOD_DECAY_PER_HOUR)
     if (decay > 0) {

@@ -9,5 +9,8 @@ export interface IRewardRepository {
   delete(id: string): Promise<void>
 
   findLogsByChildId(childId: string): Promise<RewardLog[]>
+  findPendingLogsByChildId(childId: string): Promise<RewardLog[]>
+  findLogById(logId: string): Promise<RewardLog | null>
+  findPendingLogByRewardId(rewardId: string, childId: string): Promise<RewardLog | null>
   saveLog(log: RewardLog): Promise<void>
 }

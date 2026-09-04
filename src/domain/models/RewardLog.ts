@@ -1,3 +1,5 @@
+export type RewardLogStatus = 'pending' | 'used'
+
 interface RewardLogProps {
   id: string
   rewardId: string
@@ -5,6 +7,8 @@ interface RewardLogProps {
   rewardTitle: string
   pointsCost: number
   redeemedAt: number
+  status: RewardLogStatus
+  usedAt?: number
 }
 
 export class RewardLog {
@@ -14,6 +18,8 @@ export class RewardLog {
   readonly rewardTitle: string
   readonly pointsCost: number
   readonly redeemedAt: number
+  status: RewardLogStatus
+  usedAt?: number
 
   constructor(props: RewardLogProps) {
     this.id = props.id
@@ -22,6 +28,8 @@ export class RewardLog {
     this.rewardTitle = props.rewardTitle
     this.pointsCost = props.pointsCost
     this.redeemedAt = props.redeemedAt
+    this.status = props.status
+    this.usedAt = props.usedAt
   }
 
   static create(params: {
@@ -34,7 +42,17 @@ export class RewardLog {
     return new RewardLog({
       ...params,
       redeemedAt: Date.now(),
+      status: 'pending',
     })
+  }
+
+  markUsed(): void {
+    this.status = 'used'
+    this.usedAt = Date.now()
+  }
+
+  get isPending(): boolean {
+    return this.status === 'pending'
   }
 
   toJSON(): RewardLogProps {
@@ -45,6 +63,8 @@ export class RewardLog {
       rewardTitle: this.rewardTitle,
       pointsCost: this.pointsCost,
       redeemedAt: this.redeemedAt,
+      status: this.status,
+      usedAt: this.usedAt,
     }
   }
 }

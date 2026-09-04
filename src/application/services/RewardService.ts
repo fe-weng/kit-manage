@@ -48,12 +48,15 @@ export class RewardService {
     }
   }
 
-  async redeem(rewardId: string): Promise<{ success: boolean; log: RewardLog | null }> {
+  async redeem(rewardId: string): Promise<{ success: boolean; log: RewardLog | null; reason?: string }> {
     const reward = await this.rewardRepo.findById(rewardId)
     if (!reward) return { success: false, log: null }
 
+    const existingPending = await this.rewardRepo.findPendingLogByRewardId(rewardId, DEFAULT_CHILD_ID)
+    if (existingPending) return { success: false, log: null, reason: 'has_pending' }
+
     const canSpend = await this.pointService.spendOnReward(reward.points)
-    if (!canSpend) return { success: false, log: null }
+    if (!canSpend) return { success: false, log: null, reason: 'insufficient_points' }
 
     const log = RewardLog.create({
       id: crypto.randomUUID(),
@@ -65,6 +68,22 @@ export class RewardService {
 
     await this.rewardRepo.saveLog(log)
     return { success: true, log }
+  }
+
+  async getPendingCoupons(): Promise<RewardLog[]> {
+    return this.rewardRepo.findPendingLogsByChildId(DEFAULT_CHILD_ID)
+  }
+
+  async getAllLogs(): Promise<RewardLog[]> {
+    return this.rewardRepo.findLogsByChildId(DEFAULT_CHILD_ID)
+  }
+
+  async markUsed(logId: string): Promise<boolean> {
+    const log = await this.rewardRepo.findLogById(logId)
+    if (!log || !log.isPending) return false
+    log.markUsed()
+    await this.rewardRepo.saveLog(log)
+    return true
   }
 
   async initPresetRewards(): Promise<void> {
