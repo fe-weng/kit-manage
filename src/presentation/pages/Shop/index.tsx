@@ -40,6 +40,17 @@ export default function ShopPage() {
 
   const currentBalance = balance?.currentBalance ?? 0
 
+  const customCategories = useMemo(() => {
+    const preset = new Set<string>(CATEGORY_ORDER)
+    const custom: string[] = []
+    for (const r of rewards) {
+      if (r.category && !preset.has(r.category) && !custom.includes(r.category)) {
+        custom.push(r.category)
+      }
+    }
+    return custom
+  }, [rewards])
+
   const groupedRewards = useMemo(() => {
     const groups: Record<string, Reward[]> = {}
     for (const r of rewards) {
@@ -201,6 +212,7 @@ export default function ShopPage() {
         visible={editVisible}
         reward={editTarget}
         isNew={isNew}
+        customCategories={customCategories}
         onClose={() => setEditVisible(false)}
         onSave={handleSave}
         onDelete={handleDelete}

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { X, FloppyDisk, Trash, WarningCircle } from '@phosphor-icons/react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { X, FloppyDisk, Trash, WarningCircle, Plus } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Reward } from '@/domain/models/Reward'
 import { REWARD_CATEGORIES } from '@/shared/constants'
@@ -8,12 +8,13 @@ interface RewardEditModalProps {
   visible: boolean
   reward: Reward | null
   isNew: boolean
+  customCategories?: string[]
   onClose: () => void
   onSave: (data: { title: string; points: number; category: string; icon: string }) => void | Promise<void>
   onDelete: () => void
 }
 
-const CATEGORIES = REWARD_CATEGORIES
+const PRESET_CATEGORIES = REWARD_CATEGORIES
 const ICONS = ['📺', '🎮', '🍦', '🍬', '🎁', '⏰', '🎈', '🎨', '📚', '🏖️']
 
 const inputBaseClass =
@@ -24,6 +25,7 @@ export default function RewardEditModal({
   visible,
   reward,
   isNew,
+  customCategories = [],
   onClose,
   onSave,
   onDelete,
@@ -34,6 +36,17 @@ export default function RewardEditModal({
   const [icon, setIcon] = useState('🎁')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [showCustomInput, setShowCustomInput] = useState(false)
+  const [customInput, setCustomInput] = useState('')
+  const customInputRef = useRef<HTMLInputElement>(null)
+
+  const allCategories = useMemo(() => {
+    const list: string[] = [...PRESET_CATEGORIES]
+    for (const c of customCategories) {
+      if (!list.includes(c)) list.push(c)
+    }
+    return list
+  }, [customCategories])
 
   const handleEsc = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
@@ -53,6 +66,8 @@ export default function RewardEditModal({
         setIcon('🎁')
       }
       setShowDeleteConfirm(false)
+      setShowCustomInput(false)
+      setCustomInput('')
       document.addEventListener('keydown', handleEsc)
       return () => document.removeEventListener('keydown', handleEsc)
     }
@@ -151,13 +166,17 @@ export default function RewardEditModal({
                 <div>
                   <label className="text-[14px] font-semibold text-text-main block" style={{ marginBottom: '8px' }}>分类</label>
                   <div className="flex flex-wrap" style={{ gap: '8px' }}>
-                    {CATEGORIES.map((cat) => (
+                    {allCategories.map((cat) => (
                       <button
                         key={cat}
                         type="button"
-                        onClick={() => setCategory(cat)}
+                        onClick={() => {
+                          setCategory(cat)
+                          setShowCustomInput(false)
+                          setCustomInput('')
+                        }}
                         className={`rounded-[10px] text-[13px] font-medium transition-all active:scale-95 ${
-                          category === cat
+                          category === cat && !showCustomInput
                             ? 'bg-accent text-white shadow-clay-button'
                             : 'bg-input-bg text-text-sub border border-input-border'
                         }`}
@@ -166,7 +185,48 @@ export default function RewardEditModal({
                         {cat}
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCustomInput(true)
+                        setCustomInput('')
+                        requestAnimationFrame(() => customInputRef.current?.focus())
+                      }}
+                      className={`rounded-[10px] text-[13px] font-medium transition-all active:scale-95 flex items-center ${
+                        showCustomInput
+                          ? 'bg-accent text-white shadow-clay-button'
+                          : 'bg-input-bg text-text-sub border border-input-border'
+                      }`}
+                      style={{ padding: '6px 14px', gap: '4px' }}
+                    >
+                      <Plus size={14} weight="bold" />
+                      自定义
+                    </button>
                   </div>
+                  {showCustomInput && (
+                    <input
+                      ref={customInputRef}
+                      type="text"
+                      value={customInput}
+                      onChange={(e) => {
+                        setCustomInput(e.target.value)
+                        if (e.target.value.trim()) {
+                          setCategory(e.target.value.trim())
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && customInput.trim()) {
+                          e.preventDefault()
+                          setCategory(customInput.trim())
+                          setShowCustomInput(false)
+                        }
+                      }}
+                      placeholder="输入分类名称"
+                      className={inputBaseClass}
+                      style={{ ...inputStyle, marginTop: '8px' }}
+                      maxLength={10}
+                    />
+                  )}
                 </div>
               </div>
 
