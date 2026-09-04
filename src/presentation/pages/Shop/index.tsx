@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { Star, Plus } from '@phosphor-icons/react'
+import { useNavigate } from 'react-router-dom'
+import { Star, Plus, Ticket } from '@phosphor-icons/react'
 import { useRewardStore } from '@/presentation/hooks/useRewardStore'
 import { usePointStore } from '@/presentation/hooks/usePointStore'
 import type { Reward } from '@/domain/models/Reward'
@@ -8,12 +9,13 @@ import RewardEditModal from './RewardEditModal'
 import RedeemConfirm from './RedeemConfirm'
 import RedeemSuccess from './RedeemSuccess'
 
-import { REWARD_CATEGORIES } from '@/shared/constants'
+import { REWARD_CATEGORIES, ROUTES } from '@/shared/constants'
 
 const CATEGORY_ORDER = REWARD_CATEGORIES
 
 export default function ShopPage() {
-  const { rewards, loading, initPresets, createReward, updateReward, deleteReward, redeem } = useRewardStore()
+  const navigate = useNavigate()
+  const { rewards, pendingCoupons, loading, initPresets, createReward, updateReward, deleteReward, redeem, fetchPendingCoupons } = useRewardStore()
   const { balance, fetchBalance } = usePointStore()
 
   const [editVisible, setEditVisible] = useState(false)
@@ -31,9 +33,10 @@ export default function ShopPage() {
     const init = async () => {
       await initPresets()
       await fetchBalance()
+      await fetchPendingCoupons()
     }
     init()
-  }, [initPresets, fetchBalance])
+  }, [initPresets, fetchBalance, fetchPendingCoupons])
 
   const currentBalance = balance?.currentBalance ?? 0
 
@@ -123,6 +126,28 @@ export default function ShopPage() {
           <span className="text-[12px] text-text-sub">分</span>
         </div>
       </div>
+
+      {/* My Coupons Entry */}
+      <button
+        onClick={() => navigate(ROUTES.MY_COUPONS)}
+        className="w-full bg-card rounded-[14px] shadow-clay flex items-center justify-between active:scale-[0.98] transition-transform"
+        style={{ padding: '14px 18px', marginBottom: '16px', border: 'none', cursor: 'pointer' }}
+      >
+        <div className="flex items-center" style={{ gap: '10px' }}>
+          <Ticket size={20} weight="duotone" className="text-accent" />
+          <span className="text-[15px] font-bold text-text-main">我的券</span>
+        </div>
+        <div className="flex items-center" style={{ gap: '6px' }}>
+          {pendingCoupons.length > 0 && (
+            <span className="bg-accent text-white text-[12px] font-bold rounded-full flex items-center justify-center"
+              style={{ width: '22px', height: '22px' }}
+            >
+              {pendingCoupons.length}
+            </span>
+          )}
+          <span className="text-[14px] text-text-sub">→</span>
+        </div>
+      </button>
 
       {/* Loading */}
       {loading && rewards.length === 0 && (

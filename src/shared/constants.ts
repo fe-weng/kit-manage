@@ -11,5 +11,7 @@ export const ROUTES = {
   TASKS_MANAGE: '/tasks/manage',
   PET: '/pet',
   SHOP: '/shop',
+  MY_COUPONS: '/shop/coupons',
+  REDEEM_HISTORY: '/shop/history',
   SETTINGS: '/settings',
 } as const
