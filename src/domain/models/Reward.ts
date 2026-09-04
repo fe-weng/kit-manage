@@ -4,7 +4,7 @@ interface RewardProps {
   description?: string
   points: number
   icon?: string
-  category: string
+  categoryId: string
   isPreset: boolean
   isActive: boolean
   createdAt: number
@@ -16,7 +16,7 @@ export class Reward {
   description?: string
   points: number
   icon?: string
-  category: string
+  categoryId: string
   readonly isPreset: boolean
   isActive: boolean
   readonly createdAt: number
@@ -27,7 +27,7 @@ export class Reward {
     this.description = props.description
     this.points = props.points
     this.icon = props.icon
-    this.category = props.category
+    this.categoryId = props.categoryId
     this.isPreset = props.isPreset
     this.isActive = props.isActive
     this.createdAt = props.createdAt
@@ -37,7 +37,7 @@ export class Reward {
     id: string
     title: string
     points: number
-    category: string
+    categoryId: string
     icon?: string
     description?: string
     isPreset?: boolean
@@ -53,13 +53,13 @@ export class Reward {
   update(params: {
     title?: string
     points?: number
-    category?: string
+    categoryId?: string
     icon?: string
     description?: string
   }): void {
     if (params.title !== undefined) this.title = params.title
     if (params.points !== undefined) this.points = params.points
-    if (params.category !== undefined) this.category = params.category
+    if (params.categoryId !== undefined) this.categoryId = params.categoryId
     if (params.icon !== undefined) this.icon = params.icon
     if (params.description !== undefined) this.description = params.description
   }
@@ -75,7 +75,7 @@ export class Reward {
       description: this.description,
       points: this.points,
       icon: this.icon,
-      category: this.category,
+      categoryId: this.categoryId,
       isPreset: this.isPreset,
       isActive: this.isActive,
       createdAt: this.createdAt,

@@ -2,16 +2,19 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { X, FloppyDisk, Trash, WarningCircle, Plus } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Reward } from '@/domain/models/Reward'
+import type { Category } from '@/domain/models/Category'
 
 interface RewardEditModalProps {
   visible: boolean
   reward: Reward | null
   isNew: boolean
-  categories: string[]
+  categories: Category[]
+  onAddCategory: (name: string) => Promise<Category>
   onClose: () => void
-  onSave: (data: { title: string; points: number; category: string; icon: string }) => void | Promise<void>
+  onSave: (data: { title: string; points: number; categoryId: string; icon: string }) => void | Promise<void>
   onDelete: () => void
 }
+
 const ICONS = ['📺', '🎮', '🍦', '🍬', '🎁', '⏰', '🎈', '🎨', '📚', '🏖️']
 
 const inputBaseClass =
@@ -23,13 +26,14 @@ export default function RewardEditModal({
   reward,
   isNew,
   categories,
+  onAddCategory,
   onClose,
   onSave,
   onDelete,
 }: RewardEditModalProps) {
   const [title, setTitle] = useState('')
   const [points, setPoints] = useState('')
-  const [category, setCategory] = useState('娱乐')
+  const [categoryId, setCategoryId] = useState('')
   const [icon, setIcon] = useState('🎁')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -46,12 +50,12 @@ export default function RewardEditModal({
       if (reward && !isNew) {
         setTitle(reward.title)
         setPoints(String(reward.points))
-        setCategory(reward.category)
+        setCategoryId(reward.categoryId)
         setIcon(reward.icon || '🎁')
       } else {
         setTitle('')
         setPoints('')
-        setCategory('娱乐')
+        setCategoryId(categories[0]?.id ?? '')
         setIcon('🎁')
       }
       setShowDeleteConfirm(false)
@@ -60,18 +64,27 @@ export default function RewardEditModal({
       document.addEventListener('keydown', handleEsc)
       return () => document.removeEventListener('keydown', handleEsc)
     }
-  }, [visible, reward, isNew, handleEsc])
+  }, [visible, reward, isNew, handleEsc, categories])
 
   const handleSave = async () => {
-    if (!title.trim() || !points.trim() || saving) return
+    if (!title.trim() || !points.trim() || !categoryId || saving) return
     const parsed = parseInt(points, 10)
     if (isNaN(parsed) || parsed <= 0) return
     setSaving(true)
     try {
-      await onSave({ title: title.trim(), points: parsed, category, icon })
+      await onSave({ title: title.trim(), points: parsed, categoryId, icon })
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleCustomConfirm = async () => {
+    const name = customInput.trim()
+    if (!name) return
+    const category = await onAddCategory(name)
+    setCategoryId(category.id)
+    setShowCustomInput(false)
+    setCustomInput('')
   }
 
   const handleDelete = () => {
@@ -157,21 +170,21 @@ export default function RewardEditModal({
                   <div className="flex flex-wrap" style={{ gap: '8px' }}>
                     {categories.map((cat) => (
                       <button
-                        key={cat}
+                        key={cat.id}
                         type="button"
                         onClick={() => {
-                          setCategory(cat)
+                          setCategoryId(cat.id)
                           setShowCustomInput(false)
                           setCustomInput('')
                         }}
                         className={`rounded-[10px] text-[13px] font-medium transition-all active:scale-95 ${
-                          category === cat && !showCustomInput
+                          categoryId === cat.id && !showCustomInput
                             ? 'bg-accent text-white shadow-clay-button'
                             : 'bg-input-bg text-text-sub border border-input-border'
                         }`}
                         style={{ padding: '6px 14px' }}
                       >
-                        {cat}
+                        {cat.name}
                       </button>
                     ))}
                     <button
@@ -197,20 +210,17 @@ export default function RewardEditModal({
                       ref={customInputRef}
                       type="text"
                       value={customInput}
-                      onChange={(e) => {
-                        setCustomInput(e.target.value)
-                        if (e.target.value.trim()) {
-                          setCategory(e.target.value.trim())
-                        }
-                      }}
+                      onChange={(e) => setCustomInput(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && customInput.trim()) {
+                        if (e.key === 'Enter') {
                           e.preventDefault()
-                          setCategory(customInput.trim())
-                          setShowCustomInput(false)
+                          handleCustomConfirm()
                         }
                       }}
-                      placeholder="输入分类名称"
+                      onBlur={() => {
+                        if (customInput.trim()) handleCustomConfirm()
+                      }}
+                      placeholder="输入分类名称，回车确认"
                       className={inputBaseClass}
                       style={{ ...inputStyle, marginTop: '8px' }}
                       maxLength={10}
@@ -222,7 +232,7 @@ export default function RewardEditModal({
               {/* Save Button */}
               <button
                 onClick={handleSave}
-                disabled={!title.trim() || !points.trim() || saving}
+                disabled={!title.trim() || !points.trim() || !categoryId || saving}
                 className="w-full bg-accent text-white font-bold text-[16px] rounded-[14px] shadow-clay-button active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center"
                 style={{ height: '48px', marginTop: '24px', gap: '8px' }}
               >

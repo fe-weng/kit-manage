@@ -1,6 +1,7 @@
 import type { IRewardRepository } from '@/domain/repositories/IRewardRepository'
 import { Reward } from '@/domain/models/Reward'
 import { RewardLog } from '@/domain/models/RewardLog'
+import type { Category } from '@/domain/models/Category'
 import type { KidManageDB, RewardRecord, RewardLogRecord } from '../DexieDatabase'
 
 export class DexieRewardRepository implements IRewardRepository {
@@ -59,23 +60,46 @@ export class DexieRewardRepository implements IRewardRepository {
     await this.db.rewardLogs.put(this.toLogPersistence(log))
   }
 
-  async findAllCategories(): Promise<string[]> {
+  async findAllCategories(): Promise<Category[]> {
     const records = await this.db.categories.orderBy('createdAt').toArray()
-    return records.map((r) => r.name)
+    return records.map((r) => ({
+      id: r.id,
+      name: r.name,
+      isPreset: r.isPreset === 1,
+      createdAt: r.createdAt,
+    }))
   }
 
-  async saveCategory(name: string, isPreset = false): Promise<void> {
-    const existing = await this.db.categories.get(name)
-    if (!existing) {
-      await this.db.categories.put({ name, isPreset: isPreset ? 1 : 0, createdAt: Date.now() })
+  async findCategoryByName(name: string): Promise<Category | null> {
+    const record = await this.db.categories.where('name').equals(name).first()
+    if (!record) return null
+    return {
+      id: record.id,
+      name: record.name,
+      isPreset: record.isPreset === 1,
+      createdAt: record.createdAt,
     }
+  }
+
+  async saveCategory(category: Category): Promise<void> {
+    await this.db.categories.put({
+      id: category.id,
+      name: category.name,
+      isPreset: category.isPreset ? 1 : 0,
+      createdAt: category.createdAt,
+    })
   }
 
   async initPresetCategories(presets: string[]): Promise<void> {
     for (const name of presets) {
-      const existing = await this.db.categories.get(name)
+      const existing = await this.db.categories.where('name').equals(name).first()
       if (!existing) {
-        await this.db.categories.put({ name, isPreset: 1, createdAt: Date.now() })
+        await this.db.categories.put({
+          id: crypto.randomUUID(),
+          name,
+          isPreset: 1,
+          createdAt: Date.now(),
+        })
       }
     }
   }
@@ -87,7 +111,7 @@ export class DexieRewardRepository implements IRewardRepository {
       description: record.description,
       points: record.points,
       icon: record.icon,
-      category: record.category,
+      categoryId: record.categoryId,
       isPreset: record.isPreset === 1,
       isActive: record.isActive === 1,
       createdAt: record.createdAt,
@@ -101,7 +125,7 @@ export class DexieRewardRepository implements IRewardRepository {
       description: reward.description,
       points: reward.points,
       icon: reward.icon,
-      category: reward.category,
+      categoryId: reward.categoryId,
       isPreset: reward.isPreset ? 1 : 0,
       isActive: reward.isActive ? 1 : 0,
       createdAt: reward.createdAt,

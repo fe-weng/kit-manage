@@ -40,7 +40,7 @@ export interface RewardRecord {
   description?: string
   points: number
   icon?: string
-  category: string
+  categoryId: string
   isPreset: number
   isActive: number
   createdAt: number
@@ -65,6 +65,7 @@ export interface PointBalanceRecord {
 }
 
 export interface CategoryRecord {
+  id: string
   name: string
   isPreset: number
   createdAt: number
@@ -96,7 +97,10 @@ export class KidManageDB extends Dexie {
       rewardLogs: 'id, rewardId, childId, redeemedAt, status, [childId+status], [rewardId+childId+status]',
     })
     this.version(4).stores({
-      categories: 'name, isPreset, createdAt',
+      categories: 'id, &name, isPreset, createdAt',
+    })
+    this.version(5).stores({
+      rewards: 'id, categoryId, isPreset, isActive',
     })
   }
 }

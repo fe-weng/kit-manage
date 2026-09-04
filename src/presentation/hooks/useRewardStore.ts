@@ -2,20 +2,22 @@ import { create } from 'zustand'
 import { rewardService } from '@/shared/container'
 import type { Reward } from '@/domain/models/Reward'
 import type { RewardLog } from '@/domain/models/RewardLog'
+import type { Category } from '@/domain/models/Category'
 import { usePointStore } from './usePointStore'
 
 interface RewardStore {
   rewards: Reward[]
-  categories: string[]
+  categories: Category[]
   pendingCoupons: RewardLog[]
   loading: boolean
   fetchRewards: () => Promise<void>
   fetchCategories: () => Promise<void>
   fetchPendingCoupons: () => Promise<void>
   initPresets: () => Promise<void>
-  createReward: (params: { title: string; points: number; category: string; icon?: string }) => Promise<void>
-  updateReward: (id: string, params: { title?: string; points?: number; category?: string }) => Promise<void>
+  createReward: (params: { title: string; points: number; categoryId: string; icon?: string }) => Promise<void>
+  updateReward: (id: string, params: { title?: string; points?: number; categoryId?: string }) => Promise<void>
   deleteReward: (id: string) => Promise<void>
+  addCustomCategory: (name: string) => Promise<Category>
   redeem: (rewardId: string) => Promise<{ success: boolean; reason?: string }>
   markUsed: (logId: string) => Promise<boolean>
 }
@@ -45,23 +47,28 @@ export const useRewardStore = create<RewardStore>((set, get) => ({
   initPresets: async () => {
     await rewardService.initPresetRewards()
     await get().fetchRewards()
+    await get().fetchCategories()
   },
 
   createReward: async (params) => {
     await rewardService.createReward(params)
     await get().fetchRewards()
-    await get().fetchCategories()
   },
 
   updateReward: async (id, params) => {
     await rewardService.updateReward(id, params)
     await get().fetchRewards()
-    await get().fetchCategories()
   },
 
   deleteReward: async (id) => {
     await rewardService.deleteReward(id)
     await get().fetchRewards()
+  },
+
+  addCustomCategory: async (name) => {
+    const category = await rewardService.addCustomCategory(name)
+    await get().fetchCategories()
+    return category
   },
 
   redeem: async (rewardId) => {

@@ -9,13 +9,11 @@ import RewardEditModal from './RewardEditModal'
 import RedeemConfirm from './RedeemConfirm'
 import RedeemSuccess from './RedeemSuccess'
 
-import { REWARD_CATEGORIES, ROUTES } from '@/shared/constants'
-
-const CATEGORY_ORDER = REWARD_CATEGORIES
+import { ROUTES } from '@/shared/constants'
 
 export default function ShopPage() {
   const navigate = useNavigate()
-  const { rewards, categories, pendingCoupons, loading, initPresets, createReward, updateReward, deleteReward, redeem, fetchPendingCoupons, fetchCategories } = useRewardStore()
+  const { rewards, categories, pendingCoupons, loading, initPresets, createReward, updateReward, deleteReward, addCustomCategory, redeem, fetchPendingCoupons, fetchCategories } = useRewardStore()
   const { balance, fetchBalance } = usePointStore()
 
   const [editVisible, setEditVisible] = useState(false)
@@ -44,21 +42,17 @@ export default function ShopPage() {
   const groupedRewards = useMemo(() => {
     const groups: Record<string, Reward[]> = {}
     for (const r of rewards) {
-      const cat = r.category || '其他'
-      if (!groups[cat]) groups[cat] = []
-      groups[cat].push(r)
+      const catId = r.categoryId
+      if (!groups[catId]) groups[catId] = []
+      groups[catId].push(r)
     }
-    const sorted: { category: string; items: Reward[] }[] = []
-    for (const cat of CATEGORY_ORDER) {
-      const items = groups[cat]
-      if (items) sorted.push({ category: cat, items })
-    }
-    for (const cat of Object.keys(groups)) {
-      const items = groups[cat]
-      if (!(CATEGORY_ORDER as readonly string[]).includes(cat) && items) sorted.push({ category: cat, items })
+    const sorted: { categoryId: string; categoryName: string; items: Reward[] }[] = []
+    for (const cat of categories) {
+      const items = groups[cat.id]
+      if (items) sorted.push({ categoryId: cat.id, categoryName: cat.name, items })
     }
     return sorted
-  }, [rewards])
+  }, [rewards, categories])
 
   const handleAdd = () => {
     setEditTarget(null)
@@ -72,11 +66,11 @@ export default function ShopPage() {
     setEditVisible(true)
   }, [])
 
-  const handleSave = async (data: { title: string; points: number; category: string; icon: string }) => {
+  const handleSave = async (data: { title: string; points: number; categoryId: string; icon: string }) => {
     if (isNew) {
-      await createReward({ title: data.title, points: data.points, category: data.category, icon: data.icon })
+      await createReward({ title: data.title, points: data.points, categoryId: data.categoryId, icon: data.icon })
     } else if (editTarget) {
-      await updateReward(editTarget.id, { title: data.title, points: data.points, category: data.category })
+      await updateReward(editTarget.id, { title: data.title, points: data.points, categoryId: data.categoryId })
     }
     setEditVisible(false)
   }
@@ -167,10 +161,10 @@ export default function ShopPage() {
 
       {/* Reward Groups */}
       <div className="flex flex-col" style={{ gap: '24px' }}>
-        {groupedRewards.map(({ category, items }) => (
-          <div key={category}>
+        {groupedRewards.map(({ categoryId, categoryName, items }) => (
+          <div key={categoryId}>
             <h2 className="text-[16px] font-bold text-text-main" style={{ marginBottom: '10px' }}>
-              {category}
+              {categoryName}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: '10px' }}>
               {items.map((reward) => (
@@ -203,6 +197,7 @@ export default function ShopPage() {
         reward={editTarget}
         isNew={isNew}
         categories={categories}
+        onAddCategory={addCustomCategory}
         onClose={() => setEditVisible(false)}
         onSave={handleSave}
         onDelete={handleDelete}
