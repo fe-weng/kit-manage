@@ -1,0 +1,26 @@
+---
+description: 代码分析时优先读取项目知识库，减少重复扫描
+globs:
+alwaysApply: true
+---
+
+# 项目知识库优先规则
+
+本工程维护了结构化的项目知识库，位于 `.cursor/context/`。
+
+## 使用规则
+
+### 代码定位时
+1. **必须先读取** CONTEXT.md 获取模块和领域映射
+2. **必须再读取** CODE_INDEX.md 获取文件定位
+3. **只有 Context 无法定位时**，才允许工程搜索
+4. 禁止无约束的全工程广搜
+
+### 编写代码时
+1. 先读 CONVENTION.md 了解规范
+2. 先读 ARCHITECTURE.md 了解架构
+3. 遵循已有约定
+
+### 索引过期时
+- 提醒用户使用 `project-context-generator` Skill 更新索引
+- 当前分析用搜索兜底
