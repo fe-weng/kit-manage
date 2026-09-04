@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { CheckCircle, Circle } from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
 import type { Task } from '@/domain/models/Task'
@@ -90,7 +91,7 @@ export default function TodayTaskList({ tasks, onComplete, onUncomplete, onManag
   )
 }
 
-function TaskRow({
+const TaskRow = memo(function TaskRow({
   task,
   completed,
   onToggle,
@@ -145,4 +146,4 @@ function TaskRow({
       </span>
     </motion.button>
   )
-}
+})
