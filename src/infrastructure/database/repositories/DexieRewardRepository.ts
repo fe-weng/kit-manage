@@ -59,6 +59,27 @@ export class DexieRewardRepository implements IRewardRepository {
     await this.db.rewardLogs.put(this.toLogPersistence(log))
   }
 
+  async findAllCategories(): Promise<string[]> {
+    const records = await this.db.categories.orderBy('createdAt').toArray()
+    return records.map((r) => r.name)
+  }
+
+  async saveCategory(name: string, isPreset = false): Promise<void> {
+    const existing = await this.db.categories.get(name)
+    if (!existing) {
+      await this.db.categories.put({ name, isPreset: isPreset ? 1 : 0, createdAt: Date.now() })
+    }
+  }
+
+  async initPresetCategories(presets: string[]): Promise<void> {
+    for (const name of presets) {
+      const existing = await this.db.categories.get(name)
+      if (!existing) {
+        await this.db.categories.put({ name, isPreset: 1, createdAt: Date.now() })
+      }
+    }
+  }
+
   private toDomain(record: RewardRecord): Reward {
     return new Reward({
       id: record.id,

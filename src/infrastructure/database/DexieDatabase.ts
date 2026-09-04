@@ -64,6 +64,12 @@ export interface PointBalanceRecord {
   totalSpentOnReward: number
 }
 
+export interface CategoryRecord {
+  name: string
+  isPreset: number
+  createdAt: number
+}
+
 export class KidManageDB extends Dexie {
   tasks!: Table<TaskRecord>
   taskLogs!: Table<TaskLogRecord>
@@ -71,6 +77,7 @@ export class KidManageDB extends Dexie {
   rewards!: Table<RewardRecord>
   rewardLogs!: Table<RewardLogRecord>
   pointBalances!: Table<PointBalanceRecord>
+  categories!: Table<CategoryRecord>
 
   constructor() {
     super('kid-manage')
@@ -87,6 +94,9 @@ export class KidManageDB extends Dexie {
     })
     this.version(3).stores({
       rewardLogs: 'id, rewardId, childId, redeemedAt, status, [childId+status], [rewardId+childId+status]',
+    })
+    this.version(4).stores({
+      categories: 'name, isPreset, createdAt',
     })
   }
 }

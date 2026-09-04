@@ -13,4 +13,8 @@ export interface IRewardRepository {
   findLogById(logId: string): Promise<RewardLog | null>
   findPendingLogByRewardId(rewardId: string, childId: string): Promise<RewardLog | null>
   saveLog(log: RewardLog): Promise<void>
+
+  findAllCategories(): Promise<string[]>
+  saveCategory(name: string, isPreset?: boolean): Promise<void>
+  initPresetCategories(presets: string[]): Promise<void>
 }

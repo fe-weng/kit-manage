@@ -1,20 +1,17 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { X, FloppyDisk, Trash, WarningCircle, Plus } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Reward } from '@/domain/models/Reward'
-import { REWARD_CATEGORIES } from '@/shared/constants'
 
 interface RewardEditModalProps {
   visible: boolean
   reward: Reward | null
   isNew: boolean
-  customCategories?: string[]
+  categories: string[]
   onClose: () => void
   onSave: (data: { title: string; points: number; category: string; icon: string }) => void | Promise<void>
   onDelete: () => void
 }
-
-const PRESET_CATEGORIES = REWARD_CATEGORIES
 const ICONS = ['📺', '🎮', '🍦', '🍬', '🎁', '⏰', '🎈', '🎨', '📚', '🏖️']
 
 const inputBaseClass =
@@ -25,7 +22,7 @@ export default function RewardEditModal({
   visible,
   reward,
   isNew,
-  customCategories = [],
+  categories,
   onClose,
   onSave,
   onDelete,
@@ -39,14 +36,6 @@ export default function RewardEditModal({
   const [showCustomInput, setShowCustomInput] = useState(false)
   const [customInput, setCustomInput] = useState('')
   const customInputRef = useRef<HTMLInputElement>(null)
-
-  const allCategories = useMemo(() => {
-    const list: string[] = [...PRESET_CATEGORIES]
-    for (const c of customCategories) {
-      if (!list.includes(c)) list.push(c)
-    }
-    return list
-  }, [customCategories])
 
   const handleEsc = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
@@ -166,7 +155,7 @@ export default function RewardEditModal({
                 <div>
                   <label className="text-[14px] font-semibold text-text-main block" style={{ marginBottom: '8px' }}>分类</label>
                   <div className="flex flex-wrap" style={{ gap: '8px' }}>
-                    {allCategories.map((cat) => (
+                    {categories.map((cat) => (
                       <button
                         key={cat}
                         type="button"

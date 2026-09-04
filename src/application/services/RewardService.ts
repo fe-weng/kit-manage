@@ -2,7 +2,7 @@ import type { IRewardRepository } from '@/domain/repositories/IRewardRepository'
 import { Reward } from '@/domain/models/Reward'
 import { RewardLog } from '@/domain/models/RewardLog'
 import type { PointService } from './PointService'
-import { DEFAULT_CHILD_ID } from '@/shared/constants'
+import { DEFAULT_CHILD_ID, REWARD_CATEGORIES } from '@/shared/constants'
 
 export class RewardService {
   constructor(
@@ -13,6 +13,10 @@ export class RewardService {
   async getAllRewards(): Promise<Reward[]> {
     const rewards = await this.rewardRepo.findActive()
     return rewards.sort((a, b) => a.points - b.points)
+  }
+
+  async getAllCategories(): Promise<string[]> {
+    return this.rewardRepo.findAllCategories()
   }
 
   async createReward(params: {
@@ -27,7 +31,12 @@ export class RewardService {
       ...params,
     })
     await this.rewardRepo.save(reward)
+    await this.ensureCategorySaved(params.category)
     return reward
+  }
+
+  private async ensureCategorySaved(category: string): Promise<void> {
+    await this.rewardRepo.saveCategory(category)
   }
 
   async updateReward(
@@ -38,6 +47,9 @@ export class RewardService {
     if (!reward) return null
     reward.update(params)
     await this.rewardRepo.save(reward)
+    if (params.category) {
+      await this.ensureCategorySaved(params.category)
+    }
     return reward
   }
 
@@ -88,6 +100,8 @@ export class RewardService {
   }
 
   async initPresetRewards(): Promise<void> {
+    await this.rewardRepo.initPresetCategories([...REWARD_CATEGORIES])
+
     const existing = await this.rewardRepo.findAll()
     if (existing.length > 0) return
 

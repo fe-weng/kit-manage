@@ -15,7 +15,7 @@ const CATEGORY_ORDER = REWARD_CATEGORIES
 
 export default function ShopPage() {
   const navigate = useNavigate()
-  const { rewards, pendingCoupons, loading, initPresets, createReward, updateReward, deleteReward, redeem, fetchPendingCoupons } = useRewardStore()
+  const { rewards, categories, pendingCoupons, loading, initPresets, createReward, updateReward, deleteReward, redeem, fetchPendingCoupons, fetchCategories } = useRewardStore()
   const { balance, fetchBalance } = usePointStore()
 
   const [editVisible, setEditVisible] = useState(false)
@@ -34,22 +34,12 @@ export default function ShopPage() {
       await initPresets()
       await fetchBalance()
       await fetchPendingCoupons()
+      await fetchCategories()
     }
     init()
-  }, [initPresets, fetchBalance, fetchPendingCoupons])
+  }, [initPresets, fetchBalance, fetchPendingCoupons, fetchCategories])
 
   const currentBalance = balance?.currentBalance ?? 0
-
-  const customCategories = useMemo(() => {
-    const preset = new Set<string>(CATEGORY_ORDER)
-    const custom: string[] = []
-    for (const r of rewards) {
-      if (r.category && !preset.has(r.category) && !custom.includes(r.category)) {
-        custom.push(r.category)
-      }
-    }
-    return custom
-  }, [rewards])
 
   const groupedRewards = useMemo(() => {
     const groups: Record<string, Reward[]> = {}
@@ -212,7 +202,7 @@ export default function ShopPage() {
         visible={editVisible}
         reward={editTarget}
         isNew={isNew}
-        customCategories={customCategories}
+        categories={categories}
         onClose={() => setEditVisible(false)}
         onSave={handleSave}
         onDelete={handleDelete}

@@ -6,9 +6,11 @@ import { usePointStore } from './usePointStore'
 
 interface RewardStore {
   rewards: Reward[]
+  categories: string[]
   pendingCoupons: RewardLog[]
   loading: boolean
   fetchRewards: () => Promise<void>
+  fetchCategories: () => Promise<void>
   fetchPendingCoupons: () => Promise<void>
   initPresets: () => Promise<void>
   createReward: (params: { title: string; points: number; category: string; icon?: string }) => Promise<void>
@@ -20,6 +22,7 @@ interface RewardStore {
 
 export const useRewardStore = create<RewardStore>((set, get) => ({
   rewards: [],
+  categories: [],
   pendingCoupons: [],
   loading: false,
 
@@ -27,6 +30,11 @@ export const useRewardStore = create<RewardStore>((set, get) => ({
     set({ loading: true })
     const rewards = await rewardService.getAllRewards()
     set({ rewards, loading: false })
+  },
+
+  fetchCategories: async () => {
+    const categories = await rewardService.getAllCategories()
+    set({ categories })
   },
 
   fetchPendingCoupons: async () => {
@@ -42,11 +50,13 @@ export const useRewardStore = create<RewardStore>((set, get) => ({
   createReward: async (params) => {
     await rewardService.createReward(params)
     await get().fetchRewards()
+    await get().fetchCategories()
   },
 
   updateReward: async (id, params) => {
     await rewardService.updateReward(id, params)
     await get().fetchRewards()
+    await get().fetchCategories()
   },
 
   deleteReward: async (id) => {
