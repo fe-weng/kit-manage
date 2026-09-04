@@ -40,16 +40,24 @@ export default function ShopPage() {
   const currentBalance = balance?.currentBalance ?? 0
 
   const groupedRewards = useMemo(() => {
+    const catIdSet = new Set(categories.map((c) => c.id))
     const groups: Record<string, Reward[]> = {}
+    const uncategorized: Reward[] = []
     for (const r of rewards) {
-      const catId = r.categoryId
-      if (!groups[catId]) groups[catId] = []
-      groups[catId].push(r)
+      if (r.categoryId && catIdSet.has(r.categoryId)) {
+        if (!groups[r.categoryId]) groups[r.categoryId] = []
+        groups[r.categoryId].push(r)
+      } else {
+        uncategorized.push(r)
+      }
     }
     const sorted: { categoryId: string; categoryName: string; items: Reward[] }[] = []
     for (const cat of categories) {
       const items = groups[cat.id]
       if (items) sorted.push({ categoryId: cat.id, categoryName: cat.name, items })
+    }
+    if (uncategorized.length > 0) {
+      sorted.push({ categoryId: '__uncategorized__', categoryName: '未分类', items: uncategorized })
     }
     return sorted
   }, [rewards, categories])
