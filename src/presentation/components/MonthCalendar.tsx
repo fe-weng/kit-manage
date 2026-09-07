@@ -1,4 +1,4 @@
-import { DayPicker, DayButton, type DayButtonProps, getDefaultClassNames, UI, useDayPicker } from 'react-day-picker'
+import { DayPicker, type DayProps, getDefaultClassNames } from 'react-day-picker'
 import { zhCN } from 'date-fns/locale'
 import { formatDateStr } from '@/domain/rules/DateUtils'
 import type { ReactNode } from 'react'
@@ -12,33 +12,42 @@ interface MonthCalendarProps {
   onDayClick?: (date: string) => void
 }
 
-function CustomDayButton({ renderCell, onDayClick, ...props }: DayButtonProps & {
+function CustomDay({
+  renderCell,
+  onDayClick,
+  ...props
+}: DayProps & {
   renderCell?: (date: string) => ReactNode
   onDayClick?: (date: string) => void
 }) {
-  const { classNames } = useDayPicker()
   const dateStr = formatDateStr(props.day.date)
   const isToday = dateStr === formatDateStr(new Date())
   const isOutside = props.modifiers.outside
 
   return (
-    <DayButton
+    <td
       {...props}
-      className={`${classNames[UI.DayButton]} rdp-custom-day`}
-      onClick={(e) => {
-        props.onClick?.(e)
+      className={`rdp-day ${isOutside ? 'rdp-outside' : ''}`}
+      role="gridcell"
+      onClick={() => {
         if (!isOutside) onDayClick?.(dateStr)
       }}
     >
-      <span className={`rdp-day-number ${isToday ? 'rdp-today-number' : ''}`}>
-        {props.day.date.getDate()}
-      </span>
-      {!isOutside && renderCell && (
-        <span className="rdp-day-indicator">
-          {renderCell(dateStr)}
+      <button
+        type="button"
+        className="rdp-custom-day"
+        tabIndex={isOutside ? -1 : 0}
+      >
+        <span className={`rdp-day-number ${isToday ? 'rdp-today-number' : ''}`}>
+          {props.day.date.getDate()}
         </span>
-      )}
-    </DayButton>
+        {!isOutside && renderCell && (
+          <span className="rdp-day-indicator">
+            {renderCell(dateStr)}
+          </span>
+        )}
+      </button>
+    </td>
   )
 }
 
@@ -68,9 +77,9 @@ export default function MonthCalendar({
           chevron: `${defaultClassNames.chevron} rdp-kid-chevron`,
         }}
         components={{
-          DayButton: (dayBtnProps) => (
-            <CustomDayButton
-              {...dayBtnProps}
+          Day: (dayProps) => (
+            <CustomDay
+              {...dayProps}
               renderCell={renderCell}
               onDayClick={onDayClick}
             />
