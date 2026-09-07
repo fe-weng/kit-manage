@@ -2,8 +2,9 @@ import type { ITaskRepository } from '@/domain/repositories/ITaskRepository'
 import { Task } from '@/domain/models/Task'
 import { TaskLog } from '@/domain/models/TaskLog'
 import { TaskType } from '@/domain/valueObjects/TaskType'
+import { DailyTaskSnapshot } from '@/domain/models/DailyTaskSnapshot'
 import { isTaskCompleted, isOneTimeTaskVisible, getTodayCompletedCount, getTodayEarnedPoints } from '@/domain/rules/TaskResetRule'
-import { getTodayStart, getWeekStart } from '@/domain/rules/DateUtils'
+import { getTodayStart, getWeekStart, getTodayDateStr, getMonthRange } from '@/domain/rules/DateUtils'
 import type { ISnapshotRepository } from '@/domain/repositories/ISnapshotRepository'
 import type { PointService } from './PointService'
 import { DEFAULT_CHILD_ID } from '@/shared/constants'
@@ -15,8 +16,63 @@ export class TaskService {
     private snapshotRepo?: ISnapshotRepository
   ) {}
 
-  getSnapshotRepo() {
-    return this.snapshotRepo
+  async ensureTodaySnapshot(): Promise<DailyTaskSnapshot> {
+    if (!this.snapshotRepo) throw new Error('snapshotRepo not injected')
+    const today = getTodayDateStr()
+    const existing = await this.snapshotRepo.findByDate(DEFAULT_CHILD_ID, today)
+    if (existing) return existing
+
+    const tasks = await this.taskRepo.findActive(DEFAULT_CHILD_ID)
+    const logs = await this.taskRepo.findLogsByChildId(DEFAULT_CHILD_ID)
+
+    const taskIds: string[] = []
+    const negativeTaskIds: string[] = []
+
+    for (const task of tasks) {
+      if (task.type === TaskType.NEGATIVE) {
+        negativeTaskIds.push(task.id)
+      } else if (task.type === TaskType.ONE_TIME) {
+        if (isOneTimeTaskVisible(task.id, logs)) taskIds.push(task.id)
+      } else {
+        taskIds.push(task.id)
+      }
+    }
+
+    const snapshot = DailyTaskSnapshot.create({
+      childId: DEFAULT_CHILD_ID,
+      date: today,
+      taskIds,
+      negativeTaskIds,
+    })
+    await this.snapshotRepo.save(snapshot)
+    return snapshot
+  }
+
+  async updateTodaySnapshot(action: 'add' | 'remove', task: Task): Promise<void> {
+    if (!this.snapshotRepo) return
+    const today = getTodayDateStr()
+    const snapshot = await this.snapshotRepo.findByDate(DEFAULT_CHILD_ID, today)
+    if (!snapshot) return
+
+    if (task.type === TaskType.NEGATIVE) {
+      action === 'add' ? snapshot.addNegativeTask(task.id) : snapshot.removeNegativeTask(task.id)
+    } else {
+      action === 'add' ? snapshot.addTask(task.id) : snapshot.removeTask(task.id)
+    }
+    await this.snapshotRepo.save(snapshot)
+  }
+
+  async getMonthSnapshots(year: number, month: number): Promise<DailyTaskSnapshot[]> {
+    if (!this.snapshotRepo) return []
+    const { start, end } = getMonthRange(year, month)
+    return this.snapshotRepo.findByDateRange(DEFAULT_CHILD_ID, start, end)
+  }
+
+  async getMonthLogs(year: number, month: number): Promise<TaskLog[]> {
+    const { start, end } = getMonthRange(year, month)
+    const startTs = new Date(start).getTime()
+    const endTs = new Date(end + 'T23:59:59.999').getTime()
+    return this.taskRepo.findLogsByDateRange(DEFAULT_CHILD_ID, startTs, endTs)
   }
 
   async getAllTasks(): Promise<Task[]> {
@@ -35,6 +91,7 @@ export class TaskService {
       ...params,
     })
     await this.taskRepo.save(task)
+    await this.updateTodaySnapshot('add', task)
     return task
   }
 
@@ -54,6 +111,7 @@ export class TaskService {
     if (!task) return
     task.deactivate()
     await this.taskRepo.save(task)
+    await this.updateTodaySnapshot('remove', task)
   }
 
   async completeTask(taskId: string): Promise<TaskLog | null> {
