@@ -11,6 +11,7 @@ const PetPage = lazy(() => import('./presentation/pages/Pet'))
 const ShopPage = lazy(() => import('./presentation/pages/Shop'))
 const MyCouponsPage = lazy(() => import('./presentation/pages/MyCoupons'))
 const RedeemHistoryPage = lazy(() => import('./presentation/pages/RedeemHistory'))
+const TaskHistoryPage = lazy(() => import('./presentation/pages/TaskHistory'))
 const SettingsPage = lazy(() => import('./presentation/pages/Settings'))
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
             <Route path={ROUTES.HOME} element={<HomePage />} />
             <Route path={ROUTES.TASKS} element={<TaskCheckinPage />} />
             <Route path={ROUTES.TASKS_MANAGE} element={<TaskManagePage />} />
+            <Route path={ROUTES.TASK_HISTORY} element={<TaskHistoryPage />} />
             <Route path={ROUTES.PET} element={<PetPage />} />
             <Route path={ROUTES.SHOP} element={<ShopPage />} />
             <Route path={ROUTES.MY_COUPONS} element={<MyCouponsPage />} />

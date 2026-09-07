@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { GearSix, Check } from '@phosphor-icons/react'
+import { GearSix, Check, ClockCounterClockwise } from '@phosphor-icons/react'
 import { useTaskStore } from '@/presentation/hooks/useTaskStore'
 import { usePointStore } from '@/presentation/hooks/usePointStore'
 import { useRewardStore } from '@/presentation/hooks/useRewardStore'
@@ -102,13 +102,22 @@ export default function TaskCheckinPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-[22px] font-bold text-text-main">今日任务</h1>
-        <button
-          onClick={() => navigate('/tasks/manage')}
-          className="flex items-center gap-1 text-caption text-text-sub active:scale-95 transition-transform"
-        >
-          <GearSix size={18} weight="bold" />
-          <span>管理</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(ROUTES.TASK_HISTORY)}
+            className="flex items-center gap-1 text-caption text-text-sub active:scale-95 transition-transform"
+          >
+            <ClockCounterClockwise size={18} weight="bold" />
+            <span>历史</span>
+          </button>
+          <button
+            onClick={() => navigate(ROUTES.TASKS_MANAGE)}
+            className="flex items-center gap-1 text-caption text-text-sub active:scale-95 transition-transform"
+          >
+            <GearSix size={18} weight="bold" />
+            <span>管理</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Card */}

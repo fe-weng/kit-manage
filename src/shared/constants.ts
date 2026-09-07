@@ -13,5 +13,6 @@ export const ROUTES = {
   SHOP: '/shop',
   MY_COUPONS: '/shop/coupons',
   REDEEM_HISTORY: '/shop/history',
+  TASK_HISTORY: '/tasks/history',
   SETTINGS: '/settings',
 } as const
