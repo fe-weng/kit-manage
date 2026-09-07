@@ -82,9 +82,11 @@ export default function RedeemHistoryPage() {
               </span>
             </div>
             <div className="flex flex-col items-end" style={{ gap: '2px' }}>
-              <span className="text-[13px] font-bold text-warning">-{log.pointsCost}分</span>
+              <span className="text-[13px] font-bold text-warning">
+                {log.status === 'returned' ? '+' : '-'}{log.pointsCost}分
+              </span>
               <span className="text-[11px] text-text-sub">
-                {log.status === 'pending' ? '⏳ 待使用' : '✅ 已使用'}
+                {log.status === 'pending' ? '⏳ 待使用' : log.status === 'returned' ? '↩️ 已退还' : '✅ 已使用'}
               </span>
             </div>
           </div>
