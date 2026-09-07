@@ -6,6 +6,8 @@ import { useTaskHistoryStore } from '@/presentation/hooks/useTaskHistoryStore'
 import { getDayRange } from '@/domain/rules/DateUtils'
 import DateView from './DateView'
 import TaskView from './TaskView'
+import MonthPickerModal from './MonthPickerModal'
+import MonthStats from './MonthStats'
 
 type ViewMode = 'date' | 'task'
 
@@ -23,6 +25,8 @@ export default function TaskHistoryPage() {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
+
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false)
 
   const { fetchMonth, ensureTodaySnapshot, snapshots, logs, dateStatusMap, loading } =
     useTaskHistoryStore()
@@ -114,6 +118,14 @@ export default function TaskHistoryPage() {
         />
       )}
 
+      {/* Month quick jump */}
+      <button
+        onClick={() => setMonthPickerOpen(true)}
+        className="w-full text-center text-label text-text-sub mb-2 active:text-primary transition-colors"
+      >
+        点击选择月份 ›
+      </button>
+
       {/* Calendar */}
       <div className="bg-white rounded-clay shadow-clay p-3 mb-4">
         {loading ? (
@@ -147,8 +159,24 @@ export default function TaskHistoryPage() {
         )}
       </div>
 
+      {/* Month Stats */}
+      {viewMode === 'date' && !loading && <MonthStats />}
+
       {/* DateView: Day detail */}
       {viewMode === 'date' && <DateView selectedDate={selectedDate} />}
+
+      {/* Month Picker */}
+      <MonthPickerModal
+        visible={monthPickerOpen}
+        year={year}
+        month={month}
+        onSelect={(y, m) => {
+          setYear(y)
+          setMonth(m)
+          setSelectedDate(null)
+        }}
+        onClose={() => setMonthPickerOpen(false)}
+      />
     </div>
   )
 }
