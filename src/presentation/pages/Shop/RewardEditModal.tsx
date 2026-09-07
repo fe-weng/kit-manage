@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X, FloppyDisk, Trash, WarningCircle, Plus } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Reward } from '@/domain/models/Reward'
@@ -41,10 +41,7 @@ export default function RewardEditModal({
   const [customInput, setCustomInput] = useState('')
   const customInputRef = useRef<HTMLInputElement>(null)
 
-  const handleEsc = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') onClose()
-  }, [onClose])
-
+  // 表单初始化：仅在弹窗打开时执行
   useEffect(() => {
     if (visible) {
       if (reward && !isNew) {
@@ -61,31 +58,49 @@ export default function RewardEditModal({
       setShowDeleteConfirm(false)
       setShowCustomInput(false)
       setCustomInput('')
-      document.addEventListener('keydown', handleEsc)
-      return () => document.removeEventListener('keydown', handleEsc)
     }
-  // categories 不加入依赖：仅在弹窗打开时初始化表单，避免分类列表变化时重置表单
-  }, [visible, reward, isNew, handleEsc])
+  // categories 不加入依赖：仅在弹窗打开时初始化，避免分类列表变化时重置表单
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, reward, isNew])
+
+  // ESC 监听：与表单初始化分离，避免 onClose 引用变化触发表单重置
+  useEffect(() => {
+    if (!visible) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [visible, onClose])
 
   const handleSave = async () => {
-    if (!title.trim() || !points.trim() || !categoryId || saving) return
+    if (!title.trim() || !points.trim() || saving) return
     const parsed = parseInt(points, 10)
     if (isNaN(parsed) || parsed <= 0) return
+
+    let finalCategoryId = categoryId
+    if (showCustomInput && customInput.trim()) {
+      const newId = await handleCustomConfirm()
+      if (newId) finalCategoryId = newId
+    }
+    if (!finalCategoryId) return
+
     setSaving(true)
     try {
-      await onSave({ title: title.trim(), points: parsed, categoryId, icon })
+      await onSave({ title: title.trim(), points: parsed, categoryId: finalCategoryId, icon })
     } finally {
       setSaving(false)
     }
   }
 
-  const handleCustomConfirm = async () => {
+  const handleCustomConfirm = async (): Promise<string | null> => {
     const name = customInput.trim()
-    if (!name) return
+    if (!name) return null
     const category = await onAddCategory(name)
     setCategoryId(category.id)
     setShowCustomInput(false)
     setCustomInput('')
+    return category.id
   }
 
   const handleDelete = () => {
@@ -232,8 +247,9 @@ export default function RewardEditModal({
 
               {/* Save Button */}
               <button
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={handleSave}
-                disabled={!title.trim() || !points.trim() || !categoryId || saving}
+                disabled={!title.trim() || !points.trim() || (!categoryId && !showCustomInput) || saving}
                 className="w-full bg-accent text-white font-bold text-[16px] rounded-[14px] shadow-clay-button active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center"
                 style={{ height: '48px', marginTop: '24px', gap: '8px' }}
               >
