@@ -4,9 +4,11 @@ import { Star } from '@phosphor-icons/react'
 import { usePetStore } from '@/presentation/hooks/usePetStore'
 import { useTaskStore } from '@/presentation/hooks/useTaskStore'
 import { usePointStore } from '@/presentation/hooks/usePointStore'
+import { useRewardStore } from '@/presentation/hooks/useRewardStore'
 import { TaskType } from '@/domain/valueObjects/TaskType'
 import { ROUTES } from '@/shared/constants'
 import PetMiniCard from './PetMiniCard'
+import CouponMiniCard from './CouponMiniCard'
 import TodayTaskList from './TodayTaskList'
 
 function getGreeting(): string {
@@ -20,13 +22,15 @@ export default function HomePage() {
   const { status, fetchPet } = usePetStore()
   const { tasks, fetchTasks, completeTask, uncompleteTask } = useTaskStore()
   const { balance, fetchBalance } = usePointStore()
+  const { pendingCoupons, fetchPendingCoupons } = useRewardStore()
   const navigate = useNavigate()
 
   useEffect(() => {
     fetchPet()
     fetchTasks()
     fetchBalance()
-  }, [fetchPet, fetchTasks, fetchBalance])
+    fetchPendingCoupons()
+  }, [fetchPet, fetchTasks, fetchBalance, fetchPendingCoupons])
 
   const currentBalance = balance?.currentBalance ?? 0
   const petName = status?.pet.name ?? '小花花'
@@ -79,6 +83,14 @@ export default function HomePage() {
           moodEmoji={status.pet.getMoodEmoji()}
           expProgress={status.expProgress}
           onTap={() => navigate(ROUTES.PET)}
+        />
+      )}
+
+      {/* Coupon Mini Card */}
+      {pendingCoupons.length > 0 && (
+        <CouponMiniCard
+          coupons={pendingCoupons}
+          onTap={() => navigate(ROUTES.MY_COUPONS)}
         />
       )}
 
