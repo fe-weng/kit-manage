@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Star, Plus, Ticket } from '@phosphor-icons/react'
+import { Star, Plus, Ticket, WarningCircle } from '@phosphor-icons/react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useRewardStore } from '@/presentation/hooks/useRewardStore'
 import { usePointStore } from '@/presentation/hooks/usePointStore'
 import type { Reward } from '@/domain/models/Reward'
@@ -26,6 +27,7 @@ export default function ShopPage() {
 
   const [successVisible, setSuccessVisible] = useState(false)
   const [successTitle, setSuccessTitle] = useState('')
+  const [toastMessage, setToastMessage] = useState('')
 
   useEffect(() => {
     const init = async () => {
@@ -38,6 +40,11 @@ export default function ShopPage() {
   }, [initPresets, fetchBalance, fetchPendingCoupons, fetchCategories])
 
   const currentBalance = balance?.currentBalance ?? 0
+
+  const pendingRewardIds = useMemo(
+    () => new Set(pendingCoupons.map((c) => c.rewardId)),
+    [pendingCoupons],
+  )
 
   const groupedRewards = useMemo(() => {
     const catIdSet = new Set(categories.map((c) => c.id))
@@ -95,20 +102,29 @@ export default function ShopPage() {
     setConfirmVisible(true)
   }, [])
 
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(''), 2500)
+  }, [])
+
   const handleRedeemConfirm = useCallback(async () => {
     if (!redeemTarget || redeeming) return
     setRedeeming(true)
     try {
-      const ok = await redeem(redeemTarget.id)
+      const result = await redeem(redeemTarget.id)
       setConfirmVisible(false)
-      if (ok) {
+      if (result.success) {
         setSuccessTitle(redeemTarget.title)
         setSuccessVisible(true)
+      } else if (result.reason === 'has_pending') {
+        showToast('该奖励还有一张未使用的券')
+      } else {
+        showToast('积分不足')
       }
     } finally {
       setRedeeming(false)
     }
-  }, [redeemTarget, redeeming, redeem])
+  }, [redeemTarget, redeeming, redeem, showToast])
 
   return (
     <div
@@ -180,6 +196,7 @@ export default function ShopPage() {
                   key={reward.id}
                   reward={reward}
                   canAfford={currentBalance >= reward.points}
+                  hasPending={pendingRewardIds.has(reward.id)}
                   onRedeem={handleRedeemClick}
                   onEdit={handleEdit}
                 />
@@ -231,6 +248,22 @@ export default function ShopPage() {
           navigate(ROUTES.MY_COUPONS)
         }}
       />
+
+      {/* Toast */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed left-1/2 -translate-x-1/2 z-[130] bg-text-main text-white text-[14px] font-medium rounded-[12px] shadow-float flex items-center"
+            style={{ bottom: 'calc(80px + var(--safe-bottom, 0px) + 24px)', padding: '10px 18px', gap: '8px' }}
+          >
+            <WarningCircle size={18} weight="fill" />
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

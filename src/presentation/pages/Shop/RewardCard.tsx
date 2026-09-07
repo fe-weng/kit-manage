@@ -6,11 +6,12 @@ import type { Reward } from '@/domain/models/Reward'
 interface RewardCardProps {
   reward: Reward
   canAfford: boolean
+  hasPending: boolean
   onRedeem: (reward: Reward) => void
   onEdit: (reward: Reward) => void
 }
 
-export default memo(function RewardCard({ reward, canAfford, onRedeem, onEdit }: RewardCardProps) {
+export default memo(function RewardCard({ reward, canAfford, hasPending, onRedeem, onEdit }: RewardCardProps) {
   return (
     <div
       className="bg-card rounded-[14px] shadow-clay flex items-center justify-between"
@@ -39,16 +40,18 @@ export default memo(function RewardCard({ reward, canAfford, onRedeem, onEdit }:
         </button>
         <motion.button
           onClick={() => onRedeem(reward)}
-          disabled={!canAfford}
+          disabled={!canAfford || hasPending}
           whileTap={{ scale: 0.92 }}
           className={`rounded-[10px] text-[13px] font-bold transition-all ${
-            canAfford
-              ? 'bg-accent text-white shadow-clay-button active:shadow-clay-pressed'
-              : 'bg-[#E0E0E0] text-placeholder cursor-not-allowed'
+            hasPending
+              ? 'bg-accent/20 text-accent cursor-not-allowed'
+              : canAfford
+                ? 'bg-accent text-white shadow-clay-button active:shadow-clay-pressed'
+                : 'bg-[#E0E0E0] text-placeholder cursor-not-allowed'
           }`}
           style={{ padding: '8px 14px' }}
         >
-          兑换
+          {hasPending ? '已有券' : '兑换'}
         </motion.button>
       </div>
     </div>
