@@ -1,11 +1,9 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   DownloadSimple,
   UploadSimple,
   Trash,
   Info,
-  WarningCircle,
-  CheckCircle,
 } from '@phosphor-icons/react'
 import { usePetStore } from '@/presentation/hooks/usePetStore'
 import { backupService } from '@/shared/container'
@@ -13,6 +11,7 @@ import ConfirmDialog from './ConfirmDialog'
 import SettingsSection from './SettingsSection'
 import SettingsRow from './SettingsRow'
 import PetNameEditor from './PetNameEditor'
+import { toast } from '@/shared/toast'
 
 export default function SettingsPage() {
   const { status, rename, fetchPet } = usePetStore()
@@ -26,26 +25,13 @@ export default function SettingsPage() {
   const [confirmImport, setConfirmImport] = useState(false)
   const [importFile, setImportFile] = useState<File | null>(null)
 
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
-
-  useEffect(() => {
-    return () => { clearTimeout(toastTimerRef.current) }
-  }, [])
-
-  const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type })
-    clearTimeout(toastTimerRef.current)
-    toastTimerRef.current = setTimeout(() => setToast(null), 2500)
-  }, [])
-
   const handleExport = async () => {
     try {
       await backupService.exportData()
-      showToast('数据已导出')
+      toast.success('数据已导出')
     } catch (err) {
       console.error('[Settings] 导出失败:', err)
-      showToast('导出失败', 'error')
+      toast.error('导出失败')
     }
   }
 
@@ -62,13 +48,13 @@ export default function SettingsPage() {
     if (!importFile) return
     try {
       await backupService.importData(importFile)
-      showToast('数据已导入，刷新页面生效')
+      toast.success('数据已导入，刷新页面生效')
       setConfirmImport(false)
       setImportFile(null)
       setTimeout(() => window.location.reload(), 1500)
     } catch (err) {
       console.error('[Settings] 导入失败:', err)
-      showToast('导入失败，文件格式不正确', 'error')
+      toast.error('导入失败，文件格式不正确')
       setConfirmImport(false)
     }
   }
@@ -76,12 +62,12 @@ export default function SettingsPage() {
   const handleReset = async () => {
     try {
       await backupService.resetAllData()
-      showToast('数据已清除，即将刷新')
+      toast.success('数据已清除，即将刷新')
       setConfirmReset(false)
       setTimeout(() => window.location.reload(), 1500)
     } catch (err) {
       console.error('[Settings] 重置失败:', err)
-      showToast('重置失败', 'error')
+      toast.error('重置失败')
     }
   }
 
@@ -103,7 +89,6 @@ export default function SettingsPage() {
       <PetNameEditor
         currentName={status?.pet.name}
         onRename={rename}
-        onToast={showToast}
       />
 
       {/* Section: Data Management */}
@@ -174,27 +159,6 @@ export default function SettingsPage() {
         onConfirm={handleImportConfirm}
         onCancel={() => { setConfirmImport(false); setImportFile(null) }}
       />
-
-      {/* Toast */}
-      {toast && (
-        <div
-          className="fixed left-1/2 -translate-x-1/2 flex items-center z-[200]"
-          style={{
-            bottom: 'calc(80px + var(--safe-bottom, 0px) + 16px)',
-            backgroundColor: toast.type === 'success' ? 'var(--color-text-main)' : 'var(--color-danger)',
-            color: '#FFFFFF',
-            borderRadius: '12px',
-            padding: '10px 20px',
-            gap: '8px',
-            fontSize: '14px',
-            fontWeight: 500,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          }}
-        >
-          {toast.type === 'success' ? <CheckCircle size={18} weight="fill" /> : <WarningCircle size={18} weight="fill" />}
-          <span>{toast.msg}</span>
-        </div>
-      )}
     </div>
   )
 }

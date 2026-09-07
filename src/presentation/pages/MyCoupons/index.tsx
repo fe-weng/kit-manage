@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useCallback, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ClockCountdown, WarningCircle } from '@phosphor-icons/react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowLeft, ClockCountdown } from '@phosphor-icons/react'
+import { motion } from 'framer-motion'
 import { useRewardStore } from '@/presentation/hooks/useRewardStore'
 import { rewardService } from '@/shared/container'
 import type { RewardLog } from '@/domain/models/RewardLog'
 import { ROUTES } from '@/shared/constants'
+import { toast } from '@/shared/toast'
 import { create } from 'zustand'
 import ConfirmDialog from '@/presentation/pages/Settings/ConfirmDialog'
 
@@ -36,14 +37,6 @@ export default function MyCouponsPage() {
   const { pendingCoupons, fetchPendingCoupons, markUsed, returnCoupon } = useRewardStore()
   const { allLogs, loading, fetchAll } = useLocalStore()
 
-  const [toastMessage, setToastMessage] = useState('')
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>()
-  const showToast = useCallback((msg: string) => {
-    clearTimeout(toastTimerRef.current)
-    setToastMessage(msg)
-    toastTimerRef.current = setTimeout(() => setToastMessage(''), 2500)
-  }, [])
-
   useEffect(() => {
     fetchPendingCoupons()
     fetchAll()
@@ -62,7 +55,7 @@ export default function MyCouponsPage() {
       await fetchAll()
     } catch (err) {
       console.error('[MyCoupons] 使用券失败:', err)
-      showToast('操作失败，请重试')
+      toast.error('操作失败，请重试')
     }
   }, [markUsed, fetchAll])
 
@@ -82,7 +75,7 @@ export default function MyCouponsPage() {
       setReturnTarget(null)
     } catch (err) {
       console.error('[MyCoupons] 退还券失败:', err)
-      showToast('退还失败，请重试')
+      toast.error('退还失败，请重试')
     } finally {
       returningRef.current = false
     }
@@ -162,22 +155,6 @@ export default function MyCouponsPage() {
         onConfirm={handleReturnConfirm}
         onCancel={handleReturnCancel}
       />
-
-      {/* Toast */}
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed left-1/2 -translate-x-1/2 z-[130] bg-text-main text-white text-[14px] font-medium rounded-[12px] shadow-float flex items-center"
-            style={{ bottom: 'calc(80px + var(--safe-bottom, 0px) + 24px)', padding: '10px 18px', gap: '8px' }}
-          >
-            <WarningCircle size={18} weight="fill" />
-            {toastMessage}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

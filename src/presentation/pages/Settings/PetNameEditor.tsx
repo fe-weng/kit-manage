@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { PencilSimple } from '@phosphor-icons/react'
+import { toast } from '@/shared/toast'
 import SettingsSection from './SettingsSection'
 import SettingsRow from './SettingsRow'
 
 interface PetNameEditorProps {
   currentName: string | undefined
   onRename: (name: string) => Promise<void>
-  onToast: (msg: string, type?: 'success' | 'error') => void
 }
 
-export default function PetNameEditor({ currentName, onRename, onToast }: PetNameEditorProps) {
+export default function PetNameEditor({ currentName, onRename }: PetNameEditorProps) {
   const [editing, setEditing] = useState(false)
   const [newName, setNewName] = useState('')
 
@@ -25,10 +25,10 @@ export default function PetNameEditor({ currentName, onRename, onToast }: PetNam
     try {
       await onRename(newName.trim())
       setEditing(false)
-      onToast('宠物名字已更新')
+      toast.success('宠物名字已更新')
     } catch (err) {
       console.error('[PetNameEditor] 改名失败:', err)
-      onToast('改名失败，请重试', 'error')
+      toast.error('改名失败，请重试')
     }
   }
 

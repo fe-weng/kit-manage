@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from './presentation/layouts/AppLayout'
+import GlobalToast from './presentation/components/GlobalToast'
 import { ROUTES } from './shared/constants'
 
 const HomePage = lazy(() => import('./presentation/pages/Home'))
@@ -15,6 +16,7 @@ const SettingsPage = lazy(() => import('./presentation/pages/Settings'))
 function App() {
   return (
     <BrowserRouter>
+      <GlobalToast />
       <Suspense>
         <Routes>
           <Route element={<AppLayout />}>
