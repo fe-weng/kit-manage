@@ -7,6 +7,7 @@ export interface BackupData {
   rewards: unknown[]
   rewardLogs: unknown[]
   pointBalances: unknown[]
+  categories: unknown[]
 }
 
 export interface IBackupAdapter {

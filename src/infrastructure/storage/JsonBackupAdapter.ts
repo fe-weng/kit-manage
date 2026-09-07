@@ -1,11 +1,11 @@
-import type { KidManageDB, TaskRecord, TaskLogRecord, PetRecord, RewardRecord, RewardLogRecord, PointBalanceRecord } from '../database/DexieDatabase'
+import type { KidManageDB, TaskRecord, TaskLogRecord, PetRecord, RewardRecord, RewardLogRecord, PointBalanceRecord, CategoryRecord } from '../database/DexieDatabase'
 import type { IBackupAdapter, BackupData } from '@/domain/repositories/IBackupAdapter'
 
 export class JsonBackupAdapter implements IBackupAdapter {
   constructor(private db: KidManageDB) {}
 
   async exportAll(): Promise<BackupData> {
-    const [tasks, taskLogs, pets, rewards, rewardLogs, pointBalances] =
+    const [tasks, taskLogs, pets, rewards, rewardLogs, pointBalances, categories] =
       await Promise.all([
         this.db.tasks.toArray(),
         this.db.taskLogs.toArray(),
@@ -13,6 +13,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
         this.db.rewards.toArray(),
         this.db.rewardLogs.toArray(),
         this.db.pointBalances.toArray(),
+        this.db.categories.toArray(),
       ])
 
     return {
@@ -24,6 +25,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
       rewards,
       rewardLogs,
       pointBalances,
+      categories,
     }
   }
 
@@ -39,6 +41,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
         this.db.rewards,
         this.db.rewardLogs,
         this.db.pointBalances,
+        this.db.categories,
       ],
       async () => {
         await Promise.all([
@@ -48,6 +51,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
           this.db.rewards.clear(),
           this.db.rewardLogs.clear(),
           this.db.pointBalances.clear(),
+          this.db.categories.clear(),
         ])
 
         await Promise.all([
@@ -57,6 +61,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
           this.db.rewards.bulkAdd(data.rewards as RewardRecord[]),
           this.db.rewardLogs.bulkAdd(data.rewardLogs as RewardLogRecord[]),
           this.db.pointBalances.bulkAdd(data.pointBalances as PointBalanceRecord[]),
+          this.db.categories.bulkAdd(data.categories as CategoryRecord[]),
         ])
       }
     )
@@ -90,6 +95,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
       this.db.rewards.clear(),
       this.db.rewardLogs.clear(),
       this.db.pointBalances.clear(),
+      this.db.categories.clear(),
     ])
   }
 
@@ -100,7 +106,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
     if (data.version !== 1) {
       throw new Error(`不支持的备份版本: ${data.version}`)
     }
-    const required = ['tasks', 'taskLogs', 'pets', 'rewards', 'rewardLogs', 'pointBalances']
+    const required = ['tasks', 'taskLogs', 'pets', 'rewards', 'rewardLogs', 'pointBalances', 'categories']
     for (const key of required) {
       if (!Array.isArray((data as unknown as Record<string, unknown>)[key])) {
         throw new Error(`备份数据缺少字段: ${key}`)
