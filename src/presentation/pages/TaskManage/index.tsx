@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, CaretRight } from '@phosphor-icons/react'
+import { ArrowLeft, Plus, CaretRight, WarningCircle } from '@phosphor-icons/react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useTaskStore } from '@/presentation/hooks/useTaskStore'
 import { TaskType, getTaskTypeLabel } from '@/domain/valueObjects/TaskType'
 import { formatPoints } from '@/domain/rules/PointRule'
@@ -14,6 +15,14 @@ export default function TaskManagePage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [isNewMode, setIsNewMode] = useState(false)
+
+  const [toastMessage, setToastMessage] = useState('')
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const showToast = useCallback((msg: string) => {
+    clearTimeout(toastTimerRef.current)
+    setToastMessage(msg)
+    toastTimerRef.current = setTimeout(() => setToastMessage(''), 2500)
+  }, [])
 
   useEffect(() => {
     fetchTasks()
@@ -39,18 +48,27 @@ export default function TaskManagePage() {
   }
 
   const handleSave = async (data: { title: string; points: number; type: TaskType }) => {
-    if (isNewMode) {
-      await createTask(data)
-    } else if (editingTask) {
-      await updateTask(editingTask.id, data)
+    try {
+      if (isNewMode) {
+        await createTask(data)
+      } else if (editingTask) {
+        await updateTask(editingTask.id, data)
+      }
+      setShowModal(false)
+    } catch (err) {
+      console.error('[TaskManage] 保存失败:', err)
+      showToast('保存失败，请重试')
     }
-    setShowModal(false)
   }
 
   const handleDelete = async () => {
-    if (editingTask) {
+    if (!editingTask) return
+    try {
       await deleteTask(editingTask.id)
       setShowModal(false)
+    } catch (err) {
+      console.error('[TaskManage] 删除失败:', err)
+      showToast('删除失败，请重试')
     }
   }
 
@@ -122,6 +140,22 @@ export default function TaskManagePage() {
         onSave={handleSave}
         onDelete={handleDelete}
       />
+
+      {/* Toast */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed left-1/2 -translate-x-1/2 z-[130] bg-text-main text-white text-[14px] font-medium rounded-[12px] shadow-float flex items-center"
+            style={{ bottom: 'calc(80px + var(--safe-bottom, 0px) + 24px)', padding: '10px 18px', gap: '8px' }}
+          >
+            <WarningCircle size={18} weight="fill" />
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

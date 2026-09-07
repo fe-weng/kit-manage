@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useCallback, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ClockCountdown } from '@phosphor-icons/react'
-import { motion } from 'framer-motion'
+import { ArrowLeft, ClockCountdown, WarningCircle } from '@phosphor-icons/react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useRewardStore } from '@/presentation/hooks/useRewardStore'
 import { rewardService } from '@/shared/container'
 import type { RewardLog } from '@/domain/models/RewardLog'
@@ -36,6 +36,14 @@ export default function MyCouponsPage() {
   const { pendingCoupons, fetchPendingCoupons, markUsed, returnCoupon } = useRewardStore()
   const { allLogs, loading, fetchAll } = useLocalStore()
 
+  const [toastMessage, setToastMessage] = useState('')
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const showToast = useCallback((msg: string) => {
+    clearTimeout(toastTimerRef.current)
+    setToastMessage(msg)
+    toastTimerRef.current = setTimeout(() => setToastMessage(''), 2500)
+  }, [])
+
   useEffect(() => {
     fetchPendingCoupons()
     fetchAll()
@@ -49,8 +57,13 @@ export default function MyCouponsPage() {
   }, [allLogs])
 
   const handleMarkUsed = useCallback(async (logId: string) => {
-    await markUsed(logId)
-    await fetchAll()
+    try {
+      await markUsed(logId)
+      await fetchAll()
+    } catch (err) {
+      console.error('[MyCoupons] 使用券失败:', err)
+      showToast('操作失败，请重试')
+    }
   }, [markUsed, fetchAll])
 
   const [returnTarget, setReturnTarget] = useState<RewardLog | null>(null)
@@ -63,10 +76,16 @@ export default function MyCouponsPage() {
   const handleReturnConfirm = useCallback(async () => {
     if (!returnTarget || returningRef.current) return
     returningRef.current = true
-    await returnCoupon(returnTarget.id)
-    await fetchAll()
-    setReturnTarget(null)
-    returningRef.current = false
+    try {
+      await returnCoupon(returnTarget.id)
+      await fetchAll()
+      setReturnTarget(null)
+    } catch (err) {
+      console.error('[MyCoupons] 退还券失败:', err)
+      showToast('退还失败，请重试')
+    } finally {
+      returningRef.current = false
+    }
   }, [returnTarget, returnCoupon, fetchAll])
 
   const handleReturnCancel = useCallback(() => {
@@ -143,6 +162,22 @@ export default function MyCouponsPage() {
         onConfirm={handleReturnConfirm}
         onCancel={handleReturnCancel}
       />
+
+      {/* Toast */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed left-1/2 -translate-x-1/2 z-[130] bg-text-main text-white text-[14px] font-medium rounded-[12px] shadow-float flex items-center"
+            style={{ bottom: 'calc(80px + var(--safe-bottom, 0px) + 24px)', padding: '10px 18px', gap: '8px' }}
+          >
+            <WarningCircle size={18} weight="fill" />
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

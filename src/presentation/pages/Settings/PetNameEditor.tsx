@@ -21,10 +21,14 @@ export default function PetNameEditor({ currentName, onRename, onToast }: PetNam
   }
 
   const handleSave = async () => {
-    if (newName.trim()) {
+    if (!newName.trim()) return
+    try {
       await onRename(newName.trim())
       setEditing(false)
       onToast('宠物名字已更新')
+    } catch (err) {
+      console.error('[PetNameEditor] 改名失败:', err)
+      onToast('改名失败，请重试', 'error')
     }
   }
 
