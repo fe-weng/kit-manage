@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { taskService } from '@/shared/container'
+import { getDayRange } from '@/domain/rules/DateUtils'
 import type { DailyTaskSnapshot } from '@/domain/models/DailyTaskSnapshot'
 import type { TaskLog } from '@/domain/models/TaskLog'
 import type { Task } from '@/domain/models/Task'
@@ -42,8 +43,7 @@ function computeDateStatusMap(
       continue
     }
 
-    const dayStart = new Date(snap.date).getTime()
-    const dayEnd = dayStart + 86400000
+    const { start: dayStart, end: dayEnd } = getDayRange(snap.date)
 
     const dayLogs = logs.filter(
       (l) => l.completedAt >= dayStart && l.completedAt < dayEnd,

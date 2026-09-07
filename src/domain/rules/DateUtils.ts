@@ -26,6 +26,18 @@ export function getMonthRange(year: number, month: number): { start: string; end
   return { start, end }
 }
 
+/** 将 YYYY-MM-DD 解析为本地午夜时间戳（避免 UTC 时区问题） */
+export function parseDateStrToLocal(dateStr: string): number {
+  const parts = dateStr.split('-').map(Number)
+  return new Date(parts[0]!, parts[1]! - 1, parts[2]!).getTime()
+}
+
+/** 获取 YYYY-MM-DD 的本地日始和日末时间戳 */
+export function getDayRange(dateStr: string): { start: number; end: number } {
+  const start = parseDateStrToLocal(dateStr)
+  return { start, end: start + 86400000 }
+}
+
 /** 获取本周一 00:00:00 的时间戳 */
 export function getWeekStart(): number {
   const now = new Date()

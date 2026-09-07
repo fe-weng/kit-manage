@@ -1,15 +1,7 @@
-import { useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
 import { Check, X } from '@phosphor-icons/react'
 import { useTaskHistoryStore } from '@/presentation/hooks/useTaskHistoryStore'
-import type { ReactNode } from 'react'
-
-const LEVEL_COLORS: Record<string, string> = {
-  full: 'bg-accent',
-  high: 'bg-warning',
-  low: 'bg-danger',
-  none: 'bg-border',
-  empty: 'bg-transparent',
-}
+import { getDayRange } from '@/domain/rules/DateUtils'
 
 interface DateViewProps {
   selectedDate: string | null
@@ -23,8 +15,7 @@ export default function DateView({ selectedDate }: DateViewProps) {
     const snap = snapshots.find((s) => s.date === selectedDate)
     if (!snap) return null
 
-    const dayStart = new Date(selectedDate).getTime()
-    const dayEnd = dayStart + 86400000
+    const { start: dayStart, end: dayEnd } = getDayRange(selectedDate)
     const dayLogs = logs.filter((l) => l.completedAt >= dayStart && l.completedAt < dayEnd)
     const completedIds = new Set(dayLogs.map((l) => l.taskId))
 
@@ -136,21 +127,3 @@ export default function DateView({ selectedDate }: DateViewProps) {
   )
 }
 
-export function DateViewRenderCell({
-  dateStatusMap,
-}: {
-  dateStatusMap: Record<string, { level: string }>
-}) {
-  return useCallback(
-    (date: string): ReactNode => {
-      const status = dateStatusMap[date]
-      if (!status || status.level === 'empty') return null
-      return (
-        <span
-          className={`inline-block w-[6px] h-[6px] rounded-full ${LEVEL_COLORS[status.level]}`}
-        />
-      )
-    },
-    [dateStatusMap],
-  )
-}

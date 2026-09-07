@@ -1,9 +1,11 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CaretLeft } from '@phosphor-icons/react'
 import MonthCalendar from '@/presentation/components/MonthCalendar'
 import { useTaskHistoryStore } from '@/presentation/hooks/useTaskHistoryStore'
+import { getDayRange } from '@/domain/rules/DateUtils'
 import DateView from './DateView'
+import TaskView from './TaskView'
 import type { ReactNode } from 'react'
 
 type ViewMode = 'date' | 'task'
@@ -13,7 +15,7 @@ const TABS: { key: ViewMode; label: string }[] = [
   { key: 'task', label: '按任务' },
 ]
 
-const LEVEL_COLORS: Record<string, string> = {
+const DATE_LEVEL_COLORS: Record<string, string> = {
   full: 'bg-accent',
   high: 'bg-warning',
   low: 'bg-danger',
@@ -24,12 +26,14 @@ export default function TaskHistoryPage() {
   const navigate = useNavigate()
   const [viewMode, setViewMode] = useState<ViewMode>('date')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
 
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
 
-  const { fetchMonth, ensureTodaySnapshot, dateStatusMap, loading } = useTaskHistoryStore()
+  const { fetchMonth, ensureTodaySnapshot, snapshots, logs, dateStatusMap, loading } =
+    useTaskHistoryStore()
 
   useEffect(() => {
     ensureTodaySnapshot().then(() => fetchMonth(year, month))
@@ -50,10 +54,41 @@ export default function TaskHistoryPage() {
       const status = dateStatusMap[date]
       if (!status || status.level === 'empty') return null
       return (
-        <span className={`inline-block w-[6px] h-[6px] rounded-full ${LEVEL_COLORS[status.level]}`} />
+        <span className={`inline-block w-[6px] h-[6px] rounded-full ${DATE_LEVEL_COLORS[status.level]}`} />
       )
     },
     [dateStatusMap],
+  )
+
+  const taskDayStatus = useMemo(() => {
+    if (!selectedTaskId) return {} as Record<string, 'done' | 'planned'>
+    const result: Record<string, 'done' | 'planned'> = {}
+    for (const snap of snapshots) {
+      const inSnapshot =
+        snap.taskIds.includes(selectedTaskId) || snap.negativeTaskIds.includes(selectedTaskId)
+      if (!inSnapshot) continue
+      const { start: dayStart, end: dayEnd } = getDayRange(snap.date)
+      const hasDone = logs.some(
+        (l) => l.taskId === selectedTaskId && l.completedAt >= dayStart && l.completedAt < dayEnd,
+      )
+      result[snap.date] = hasDone ? 'done' : 'planned'
+    }
+    return result
+  }, [selectedTaskId, snapshots, logs])
+
+  const renderTaskCell = useCallback(
+    (date: string): ReactNode => {
+      const status = taskDayStatus[date]
+      if (!status) return null
+      return (
+        <span
+          className={`inline-block w-[6px] h-[6px] rounded-full ${
+            status === 'done' ? 'bg-accent' : 'bg-border'
+          }`}
+        />
+      )
+    },
+    [taskDayStatus],
   )
 
   return (
@@ -89,6 +124,14 @@ export default function TaskHistoryPage() {
         ))}
       </div>
 
+      {/* TaskView: Chips (above calendar) */}
+      {viewMode === 'task' && (
+        <TaskView
+          selectedTaskId={selectedTaskId}
+          onSelectTask={setSelectedTaskId}
+        />
+      )}
+
       {/* Calendar */}
       <div className="bg-white rounded-clay shadow-clay p-3 mb-4">
         {loading ? (
@@ -100,7 +143,7 @@ export default function TaskHistoryPage() {
             year={year}
             month={month}
             onMonthChange={handleMonthChange}
-            renderCell={viewMode === 'date' ? renderDateCell : () => null}
+            renderCell={viewMode === 'date' ? renderDateCell : renderTaskCell}
             onDayClick={viewMode === 'date' ? handleDayClick : undefined}
           />
         )}
@@ -114,16 +157,16 @@ export default function TaskHistoryPage() {
             <LegendItem color="bg-border" label="未完成" />
           </div>
         )}
+        {viewMode === 'task' && !loading && (
+          <div className="flex items-center justify-center gap-4 mt-2 pb-1">
+            <LegendItem color="bg-accent" label="已完成" />
+            <LegendItem color="bg-border" label="未完成" />
+          </div>
+        )}
       </div>
 
-      {/* View Content */}
-      {viewMode === 'date' ? (
-        <DateView selectedDate={selectedDate} />
-      ) : (
-        <div className="text-center py-8 text-text-sub text-caption">
-          任务视图 (T7)
-        </div>
-      )}
+      {/* DateView: Day detail */}
+      {viewMode === 'date' && <DateView selectedDate={selectedDate} />}
     </div>
   )
 }

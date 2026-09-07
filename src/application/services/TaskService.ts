@@ -4,7 +4,7 @@ import { TaskLog } from '@/domain/models/TaskLog'
 import { TaskType } from '@/domain/valueObjects/TaskType'
 import { DailyTaskSnapshot } from '@/domain/models/DailyTaskSnapshot'
 import { isTaskCompleted, isOneTimeTaskVisible, getTodayCompletedCount, getTodayEarnedPoints } from '@/domain/rules/TaskResetRule'
-import { getTodayStart, getWeekStart, getTodayDateStr, getMonthRange } from '@/domain/rules/DateUtils'
+import { getTodayStart, getWeekStart, getTodayDateStr, getMonthRange, parseDateStrToLocal } from '@/domain/rules/DateUtils'
 import type { ISnapshotRepository } from '@/domain/repositories/ISnapshotRepository'
 import type { PointService } from './PointService'
 import { DEFAULT_CHILD_ID } from '@/shared/constants'
@@ -70,8 +70,8 @@ export class TaskService {
 
   async getMonthLogs(year: number, month: number): Promise<TaskLog[]> {
     const { start, end } = getMonthRange(year, month)
-    const startTs = new Date(start).getTime()
-    const endTs = new Date(end + 'T23:59:59.999').getTime()
+    const startTs = parseDateStrToLocal(start)
+    const endTs = parseDateStrToLocal(end) + 86400000 - 1
     return this.taskRepo.findLogsByDateRange(DEFAULT_CHILD_ID, startTs, endTs)
   }
 
