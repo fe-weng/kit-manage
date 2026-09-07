@@ -42,6 +42,7 @@ export class Reward {
     description?: string
     isPreset?: boolean
   }): Reward {
+    if (params.points <= 0) throw new Error('奖励积分必须为正数')
     return new Reward({
       ...params,
       isPreset: params.isPreset ?? false,
@@ -57,6 +58,7 @@ export class Reward {
     icon?: string
     description?: string
   }): void {
+    if (params.points !== undefined && params.points <= 0) throw new Error('奖励积分必须为正数')
     if (params.title !== undefined) this.title = params.title
     if (params.points !== undefined) this.points = params.points
     if (params.categoryId !== undefined) this.categoryId = params.categoryId

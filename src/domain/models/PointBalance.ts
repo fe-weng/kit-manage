@@ -38,16 +38,18 @@ export class PointBalance {
 
   deduct(amount: number): void {
     if (amount <= 0) throw new Error('扣除积分必须为正数')
-    this.totalEarned = Math.max(0, this.totalEarned - amount)
+    this.totalEarned -= amount
   }
 
   spendOnPet(amount: number): boolean {
+    if (amount <= 0) return false
     if (!this.canAfford(amount)) return false
     this.totalSpentOnPet += amount
     return true
   }
 
   spendOnReward(amount: number): boolean {
+    if (amount <= 0) return false
     if (!this.canAfford(amount)) return false
     this.totalSpentOnReward += amount
     return true
