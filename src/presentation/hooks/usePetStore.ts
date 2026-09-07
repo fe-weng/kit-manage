@@ -29,8 +29,12 @@ export const usePetStore = create<PetStore>((set, get) => ({
 
   fetchPet: async () => {
     set({ loading: true })
-    const status = await petService.getPetStatus()
-    set({ status, loading: false })
+    try {
+      const status = await petService.getPetStatus()
+      set({ status })
+    } finally {
+      set({ loading: false })
+    }
   },
 
   feed: async () => {

@@ -52,8 +52,12 @@ export class Task {
 
   update(params: { title?: string; points?: number; type?: TaskType; icon?: string }): void {
     if (params.title !== undefined) this.title = params.title
-    if (params.points !== undefined) this.points = params.points
     if (params.type !== undefined) this.type = params.type
+    if (params.points !== undefined) {
+      this.points = (this.type === TaskType.NEGATIVE && params.points > 0)
+        ? -params.points
+        : params.points
+    }
     if (params.icon !== undefined) this.icon = params.icon
   }
 

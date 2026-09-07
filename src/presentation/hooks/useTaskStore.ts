@@ -24,8 +24,12 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
   fetchTasks: async () => {
     set({ loading: true })
-    const tasks = await taskService.getTasksWithStatus()
-    set({ tasks, loading: false })
+    try {
+      const tasks = await taskService.getTasksWithStatus()
+      set({ tasks })
+    } finally {
+      set({ loading: false })
+    }
   },
 
   fetchStats: async () => {

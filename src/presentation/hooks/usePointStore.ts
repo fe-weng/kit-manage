@@ -14,7 +14,11 @@ export const usePointStore = create<PointStore>((set) => ({
 
   fetchBalance: async () => {
     set({ loading: true })
-    const balance = await pointService.getBalance()
-    set({ balance, loading: false })
+    try {
+      const balance = await pointService.getBalance()
+      set({ balance })
+    } finally {
+      set({ loading: false })
+    }
   },
 }))

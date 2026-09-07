@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Egg, PawPrint } from '@phosphor-icons/react'
 
 interface CreatePetFormProps {
-  onSubmit: (name: string, type: string) => void
+  onSubmit: (name: string, type: string) => void | Promise<void>
 }
 
 const PET_TYPES = [
@@ -18,7 +18,11 @@ export default function CreatePetForm({ onSubmit }: CreatePetFormProps) {
   const handleSubmit = async () => {
     if (!name.trim() || submitting) return
     setSubmitting(true)
-    onSubmit(name.trim(), type)
+    try {
+      await onSubmit(name.trim(), type)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (

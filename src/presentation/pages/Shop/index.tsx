@@ -103,9 +103,11 @@ export default function ShopPage() {
     setConfirmVisible(true)
   }, [])
 
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>()
   const showToast = useCallback((msg: string) => {
+    clearTimeout(toastTimerRef.current)
     setToastMessage(msg)
-    setTimeout(() => setToastMessage(''), 2500)
+    toastTimerRef.current = setTimeout(() => setToastMessage(''), 2500)
   }, [])
 
   const handleRedeemConfirm = useCallback(async () => {

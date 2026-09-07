@@ -15,8 +15,12 @@ import SettingsRow from './SettingsRow'
 import PetNameEditor from './PetNameEditor'
 
 export default function SettingsPage() {
-  const { status, rename } = usePetStore()
+  const { status, rename, fetchPet } = usePetStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    fetchPet()
+  }, [fetchPet])
 
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmImport, setConfirmImport] = useState(false)

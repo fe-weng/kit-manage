@@ -31,8 +31,12 @@ export const useRewardStore = create<RewardStore>((set, get) => ({
 
   fetchRewards: async () => {
     set({ loading: true })
-    const rewards = await rewardService.getAllRewards()
-    set({ rewards, loading: false })
+    try {
+      const rewards = await rewardService.getAllRewards()
+      set({ rewards })
+    } finally {
+      set({ loading: false })
+    }
   },
 
   fetchCategories: async () => {
