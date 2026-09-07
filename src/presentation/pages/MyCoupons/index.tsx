@@ -136,7 +136,7 @@ function CouponCard({ log, onMarkUsed }: { log: RewardLog; onMarkUsed: (id: stri
         className="bg-accent text-white font-bold rounded-[10px] active:scale-95 transition-transform"
         style={{ padding: '8px 16px', fontSize: '13px', border: 'none', cursor: 'pointer' }}
       >
-        已使用
+        点击使用
       </button>
     </motion.div>
   )
