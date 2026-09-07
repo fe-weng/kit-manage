@@ -3,20 +3,24 @@ import { useNavigate } from 'react-router-dom'
 import { GearSix, Check } from '@phosphor-icons/react'
 import { useTaskStore } from '@/presentation/hooks/useTaskStore'
 import { usePointStore } from '@/presentation/hooks/usePointStore'
+import { useRewardStore } from '@/presentation/hooks/useRewardStore'
 import { TaskType, getTaskTypeLabel } from '@/domain/valueObjects/TaskType'
 import { formatPoints } from '@/domain/rules/PointRule'
 import { ROUTES } from '@/shared/constants'
+import NegativeBalanceGuide from './NegativeBalanceGuide'
 
 export default function TaskCheckinPage() {
   const navigate = useNavigate()
   const { tasks, stats, fetchTasks, fetchStats, completeTask, uncompleteTask } = useTaskStore()
-  const { fetchBalance } = usePointStore()
+  const { balance, fetchBalance } = usePointStore()
+  const { pendingCoupons, fetchPendingCoupons } = useRewardStore()
 
   useEffect(() => {
     fetchTasks()
     fetchStats()
     fetchBalance()
-  }, [fetchTasks, fetchStats, fetchBalance])
+    fetchPendingCoupons()
+  }, [fetchTasks, fetchStats, fetchBalance, fetchPendingCoupons])
 
   const dailyTasks = useMemo(() => tasks.filter((t) => t.task.type === TaskType.DAILY), [tasks])
   const weeklyTasks = useMemo(() => tasks.filter((t) => t.task.type === TaskType.WEEKLY), [tasks])
@@ -28,9 +32,34 @@ export default function TaskCheckinPage() {
   )
 
   const [processing, setProcessing] = useState(false)
+  const [guideInfo, setGuideInfo] = useState<{
+    taskId: string
+    taskTitle: string
+    taskPoints: number
+    currentBalance: number
+    afterBalance: number
+  } | null>(null)
 
   const handleToggle = useCallback(async (taskId: string, completed: boolean) => {
     if (processing) return
+
+    if (completed) {
+      const item = tasks.find((t) => t.task.id === taskId)
+      if (item && item.task.points > 0 && balance) {
+        const afterBalance = balance.currentBalance - item.task.points
+        if (afterBalance < 0) {
+          setGuideInfo({
+            taskId,
+            taskTitle: item.task.title,
+            taskPoints: item.task.points,
+            currentBalance: balance.currentBalance,
+            afterBalance,
+          })
+          return
+        }
+      }
+    }
+
     setProcessing(true)
     try {
       if (completed) {
@@ -41,7 +70,27 @@ export default function TaskCheckinPage() {
     } finally {
       setProcessing(false)
     }
-  }, [processing, uncompleteTask, completeTask])
+  }, [processing, tasks, balance, uncompleteTask, completeTask])
+
+  const handleForceCancel = useCallback(async () => {
+    if (!guideInfo || processing) return
+    setGuideInfo(null)
+    setProcessing(true)
+    try {
+      await uncompleteTask(guideInfo.taskId)
+    } finally {
+      setProcessing(false)
+    }
+  }, [guideInfo, processing, uncompleteTask])
+
+  const handleGoReturn = useCallback(() => {
+    setGuideInfo(null)
+    navigate(ROUTES.MY_COUPONS)
+  }, [navigate])
+
+  const handleGuideClose = useCallback(() => {
+    setGuideInfo(null)
+  }, [])
 
   return (
     <div className="px-4 pb-4" style={{ paddingTop: 'calc(var(--safe-top, 0px) + 48px)' }}>
@@ -128,6 +177,19 @@ export default function TaskCheckinPage() {
           </button>
         </div>
       )}
+
+      {/* Negative balance guide dialog */}
+      <NegativeBalanceGuide
+        visible={!!guideInfo}
+        taskTitle={guideInfo?.taskTitle ?? ''}
+        taskPoints={guideInfo?.taskPoints ?? 0}
+        currentBalance={guideInfo?.currentBalance ?? 0}
+        afterBalance={guideInfo?.afterBalance ?? 0}
+        pendingCouponCount={pendingCoupons.length}
+        onGoReturn={handleGoReturn}
+        onForceCancel={handleForceCancel}
+        onClose={handleGuideClose}
+      />
     </div>
   )
 }
