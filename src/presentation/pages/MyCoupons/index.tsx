@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback } from 'react'
+import { useEffect, useMemo, useCallback, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ClockCountdown } from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
@@ -7,6 +7,7 @@ import { rewardService } from '@/shared/container'
 import type { RewardLog } from '@/domain/models/RewardLog'
 import { ROUTES } from '@/shared/constants'
 import { create } from 'zustand'
+import ConfirmDialog from '@/presentation/pages/Settings/ConfirmDialog'
 
 interface MyCouponsLocalStore {
   allLogs: RewardLog[]
@@ -32,7 +33,7 @@ function getTodayStart(): number {
 
 export default function MyCouponsPage() {
   const navigate = useNavigate()
-  const { pendingCoupons, fetchPendingCoupons, markUsed } = useRewardStore()
+  const { pendingCoupons, fetchPendingCoupons, markUsed, returnCoupon } = useRewardStore()
   const { allLogs, loading, fetchAll } = useLocalStore()
 
   useEffect(() => {
@@ -51,6 +52,26 @@ export default function MyCouponsPage() {
     await markUsed(logId)
     await fetchAll()
   }, [markUsed, fetchAll])
+
+  const [returnTarget, setReturnTarget] = useState<RewardLog | null>(null)
+  const returningRef = useRef(false)
+
+  const handleReturnClick = useCallback((log: RewardLog) => {
+    setReturnTarget(log)
+  }, [])
+
+  const handleReturnConfirm = useCallback(async () => {
+    if (!returnTarget || returningRef.current) return
+    returningRef.current = true
+    await returnCoupon(returnTarget.id)
+    await fetchAll()
+    setReturnTarget(null)
+    returningRef.current = false
+  }, [returnTarget, returnCoupon, fetchAll])
+
+  const handleReturnCancel = useCallback(() => {
+    setReturnTarget(null)
+  }, [])
 
   return (
     <div
@@ -86,7 +107,7 @@ export default function MyCouponsPage() {
             待使用 ({pendingCoupons.length})
           </h2>
           {pendingCoupons.map((log) => (
-            <CouponCard key={log.id} log={log} onMarkUsed={handleMarkUsed} />
+            <CouponCard key={log.id} log={log} onMarkUsed={handleMarkUsed} onReturn={handleReturnClick} />
           ))}
         </div>
       )}
@@ -111,33 +132,68 @@ export default function MyCouponsPage() {
       >
         查看全部兑换记录 →
       </button>
+
+      {/* Return coupon confirm dialog */}
+      <ConfirmDialog
+        visible={!!returnTarget}
+        title="退还券"
+        message={returnTarget ? `确认退还「${returnTarget.rewardTitle}」？退还后将返还 ${returnTarget.pointsCost} 积分。` : ''}
+        confirmLabel="确认退还"
+        danger
+        onConfirm={handleReturnConfirm}
+        onCancel={handleReturnCancel}
+      />
     </div>
   )
 }
 
-function CouponCard({ log, onMarkUsed }: { log: RewardLog; onMarkUsed: (id: string) => void }) {
+function CouponCard({
+  log,
+  onMarkUsed,
+  onReturn,
+}: {
+  log: RewardLog
+  onMarkUsed: (id: string) => void
+  onReturn: (log: RewardLog) => void
+}) {
   return (
     <motion.div
       className="bg-card rounded-[14px] shadow-clay flex items-center justify-between"
       style={{ padding: '14px 16px' }}
       whileTap={{ scale: 0.98 }}
     >
-      <div className="flex flex-col" style={{ gap: '4px' }}>
-        <span className="text-[15px] font-bold text-text-main">{log.rewardTitle}</span>
+      <div className="flex flex-col" style={{ gap: '4px', flex: 1, minWidth: 0 }}>
+        <span className="text-[15px] font-bold text-text-main truncate">{log.rewardTitle}</span>
         <div className="flex items-center" style={{ gap: '4px' }}>
           <ClockCountdown size={14} className="text-text-sub" />
           <span className="text-[12px] text-text-sub">
-            {new Date(log.redeemedAt).toLocaleDateString('zh-CN')} 兑换
+            {new Date(log.redeemedAt).toLocaleDateString('zh-CN')} 兑换 · {log.pointsCost}分
           </span>
         </div>
       </div>
-      <button
-        onClick={() => onMarkUsed(log.id)}
-        className="bg-accent text-white font-bold rounded-[10px] active:scale-95 transition-transform"
-        style={{ padding: '8px 16px', fontSize: '13px', border: 'none', cursor: 'pointer' }}
-      >
-        点击使用
-      </button>
+      <div className="flex items-center" style={{ gap: '8px', flexShrink: 0 }}>
+        <button
+          onClick={() => onReturn(log)}
+          className="font-medium rounded-[10px] active:scale-95 transition-all"
+          style={{
+            padding: '8px 12px',
+            fontSize: '12px',
+            border: '1.5px solid #CCC',
+            color: '#999',
+            background: 'transparent',
+            cursor: 'pointer',
+          }}
+        >
+          退还
+        </button>
+        <button
+          onClick={() => onMarkUsed(log.id)}
+          className="bg-accent text-white font-bold rounded-[10px] active:scale-95 transition-transform"
+          style={{ padding: '8px 16px', fontSize: '13px', border: 'none', cursor: 'pointer' }}
+        >
+          点击使用
+        </button>
+      </div>
     </motion.div>
   )
 }
