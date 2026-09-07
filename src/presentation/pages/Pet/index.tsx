@@ -13,6 +13,7 @@ export default function PetPage() {
   const { status, loading, fetchPet, feed, petAction, createPet } = usePetStore()
   const { balance, fetchBalance } = usePointStore()
   const [feeding, setFeeding] = useState(false)
+  const feedingRef = useRef(false)
   const [evolved, setEvolved] = useState(false)
   const prevStageRef = useRef<PetStage | undefined>(undefined)
 
@@ -22,7 +23,8 @@ export default function PetPage() {
   }, [fetchPet, fetchBalance])
 
   const handleFeed = useCallback(async () => {
-    if (feeding) return
+    if (feedingRef.current) return
+    feedingRef.current = true
     setFeeding(true)
     try {
       prevStageRef.current = status?.pet.stage
@@ -31,9 +33,10 @@ export default function PetPage() {
         setEvolved(true)
       }
     } finally {
+      feedingRef.current = false
       setFeeding(false)
     }
-  }, [feed, feeding, status])
+  }, [feed, status])
 
   const handlePet = useCallback(async () => {
     await petAction()

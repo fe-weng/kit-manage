@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useRef } from 'react'
 import { CheckCircle, Circle } from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
 import type { Task } from '@/domain/models/Task'
@@ -102,8 +102,15 @@ const TaskRow = memo(function TaskRow({
   onToggle: (id: string) => Promise<boolean>
   showBorder: boolean
 }) {
+  const processingRef = useRef(false)
   const handleClick = async () => {
-    await onToggle(task.id)
+    if (processingRef.current) return
+    processingRef.current = true
+    try {
+      await onToggle(task.id)
+    } finally {
+      processingRef.current = false
+    }
   }
 
   return (

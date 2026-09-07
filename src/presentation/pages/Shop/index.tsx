@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Star, Plus, Ticket, WarningCircle } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -24,6 +24,7 @@ export default function ShopPage() {
   const [confirmVisible, setConfirmVisible] = useState(false)
   const [redeemTarget, setRedeemTarget] = useState<Reward | null>(null)
   const [redeeming, setRedeeming] = useState(false)
+  const redeemingRef = useRef(false)
 
   const [successVisible, setSuccessVisible] = useState(false)
   const [successTitle, setSuccessTitle] = useState('')
@@ -108,7 +109,8 @@ export default function ShopPage() {
   }, [])
 
   const handleRedeemConfirm = useCallback(async () => {
-    if (!redeemTarget || redeeming) return
+    if (!redeemTarget || redeemingRef.current) return
+    redeemingRef.current = true
     setRedeeming(true)
     try {
       const result = await redeem(redeemTarget.id)
@@ -122,9 +124,10 @@ export default function ShopPage() {
         showToast('积分不足')
       }
     } finally {
+      redeemingRef.current = false
       setRedeeming(false)
     }
-  }, [redeemTarget, redeeming, redeem, showToast])
+  }, [redeemTarget, redeem, showToast])
 
   return (
     <div

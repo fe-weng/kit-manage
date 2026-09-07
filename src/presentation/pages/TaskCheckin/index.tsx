@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GearSix, Check } from '@phosphor-icons/react'
 import { useTaskStore } from '@/presentation/hooks/useTaskStore'
@@ -32,6 +32,7 @@ export default function TaskCheckinPage() {
   )
 
   const [processing, setProcessing] = useState(false)
+  const processingRef = useRef(false)
   const [guideInfo, setGuideInfo] = useState<{
     taskId: string
     taskTitle: string
@@ -41,7 +42,7 @@ export default function TaskCheckinPage() {
   } | null>(null)
 
   const handleToggle = useCallback(async (taskId: string, completed: boolean) => {
-    if (processing) return
+    if (processingRef.current) return
 
     if (completed) {
       const item = tasks.find((t) => t.task.id === taskId)
@@ -60,6 +61,7 @@ export default function TaskCheckinPage() {
       }
     }
 
+    processingRef.current = true
     setProcessing(true)
     try {
       if (completed) {
@@ -68,20 +70,23 @@ export default function TaskCheckinPage() {
         await completeTask(taskId)
       }
     } finally {
+      processingRef.current = false
       setProcessing(false)
     }
-  }, [processing, tasks, balance, uncompleteTask, completeTask])
+  }, [tasks, balance, uncompleteTask, completeTask])
 
   const handleForceCancel = useCallback(async () => {
-    if (!guideInfo || processing) return
+    if (!guideInfo || processingRef.current) return
     setGuideInfo(null)
+    processingRef.current = true
     setProcessing(true)
     try {
       await uncompleteTask(guideInfo.taskId)
     } finally {
+      processingRef.current = false
       setProcessing(false)
     }
-  }, [guideInfo, processing, uncompleteTask])
+  }, [guideInfo, uncompleteTask])
 
   const handleGoReturn = useCallback(() => {
     setGuideInfo(null)
