@@ -1,28 +1,28 @@
 import { DayPicker, type DayProps, getDefaultClassNames } from 'react-day-picker'
 import { zhCN } from 'date-fns/locale'
 import { formatDateStr } from '@/domain/rules/DateUtils'
-import type { ReactNode } from 'react'
 import 'react-day-picker/style.css'
 
 interface MonthCalendarProps {
   year: number
   month: number
   onMonthChange: (year: number, month: number) => void
-  renderCell?: (date: string) => ReactNode
+  getCellStatus?: (date: string) => string | null
   onDayClick?: (date: string) => void
 }
 
 function CustomDay({
-  renderCell,
+  getCellStatus,
   onDayClick,
   ...props
 }: DayProps & {
-  renderCell?: (date: string) => ReactNode
+  getCellStatus?: (date: string) => string | null
   onDayClick?: (date: string) => void
 }) {
   const dateStr = formatDateStr(props.day.date)
   const isToday = dateStr === formatDateStr(new Date())
   const isOutside = props.modifiers.outside
+  const status = !isOutside && getCellStatus ? getCellStatus(dateStr) : null
 
   return (
     <td
@@ -35,17 +35,12 @@ function CustomDay({
     >
       <button
         type="button"
-        className="rdp-custom-day"
+        className={`rdp-custom-day ${status ? `rdp-status-${status}` : ''} ${isToday && !status ? 'rdp-today-ring' : ''}`}
         tabIndex={isOutside ? -1 : 0}
       >
         <span className={`rdp-day-number ${isToday ? 'rdp-today-number' : ''}`}>
           {props.day.date.getDate()}
         </span>
-        {!isOutside && renderCell && (
-          <span className="rdp-day-indicator">
-            {renderCell(dateStr)}
-          </span>
-        )}
       </button>
     </td>
   )
@@ -55,7 +50,7 @@ export default function MonthCalendar({
   year,
   month,
   onMonthChange,
-  renderCell,
+  getCellStatus,
   onDayClick,
 }: MonthCalendarProps) {
   const defaultClassNames = getDefaultClassNames()
@@ -80,7 +75,7 @@ export default function MonthCalendar({
           Day: (dayProps) => (
             <CustomDay
               {...dayProps}
-              renderCell={renderCell}
+              getCellStatus={getCellStatus}
               onDayClick={onDayClick}
             />
           ),

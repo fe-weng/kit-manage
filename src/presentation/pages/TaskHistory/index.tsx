@@ -6,7 +6,6 @@ import { useTaskHistoryStore } from '@/presentation/hooks/useTaskHistoryStore'
 import { getDayRange } from '@/domain/rules/DateUtils'
 import DateView from './DateView'
 import TaskView from './TaskView'
-import type { ReactNode } from 'react'
 
 type ViewMode = 'date' | 'task'
 
@@ -14,13 +13,6 @@ const TABS: { key: ViewMode; label: string }[] = [
   { key: 'date', label: '按日期' },
   { key: 'task', label: '按任务' },
 ]
-
-const DATE_LEVEL_COLORS: Record<string, string> = {
-  full: 'bg-accent',
-  high: 'bg-warning',
-  low: 'bg-danger',
-  none: 'bg-border',
-}
 
 export default function TaskHistoryPage() {
   const navigate = useNavigate()
@@ -49,13 +41,11 @@ export default function TaskHistoryPage() {
     setSelectedDate((prev) => (prev === date ? null : date))
   }, [])
 
-  const renderDateCell = useCallback(
-    (date: string): ReactNode => {
+  const getDateCellStatus = useCallback(
+    (date: string): string | null => {
       const status = dateStatusMap[date]
       if (!status || status.level === 'empty') return null
-      return (
-        <span className={`inline-block w-[6px] h-[6px] rounded-full ${DATE_LEVEL_COLORS[status.level]}`} />
-      )
+      return status.level
     },
     [dateStatusMap],
   )
@@ -76,17 +66,9 @@ export default function TaskHistoryPage() {
     return result
   }, [selectedTaskId, snapshots, logs])
 
-  const renderTaskCell = useCallback(
-    (date: string): ReactNode => {
-      const status = taskDayStatus[date]
-      if (!status) return null
-      return (
-        <span
-          className={`inline-block w-[6px] h-[6px] rounded-full ${
-            status === 'done' ? 'bg-accent' : 'bg-border'
-          }`}
-        />
-      )
+  const getTaskCellStatus = useCallback(
+    (date: string): string | null => {
+      return taskDayStatus[date] ?? null
     },
     [taskDayStatus],
   )
@@ -143,7 +125,7 @@ export default function TaskHistoryPage() {
             year={year}
             month={month}
             onMonthChange={handleMonthChange}
-            renderCell={viewMode === 'date' ? renderDateCell : renderTaskCell}
+            getCellStatus={viewMode === 'date' ? getDateCellStatus : getTaskCellStatus}
             onDayClick={viewMode === 'date' ? handleDayClick : undefined}
           />
         )}
@@ -151,16 +133,16 @@ export default function TaskHistoryPage() {
         {/* Legend */}
         {viewMode === 'date' && !loading && (
           <div className="flex items-center justify-center gap-4 mt-2 pb-1">
-            <LegendItem color="bg-accent" label="全部完成" />
-            <LegendItem color="bg-warning" label="≥50%" />
-            <LegendItem color="bg-danger" label="<50%" />
-            <LegendItem color="bg-border" label="未完成" />
+            <LegendDot color="bg-accent" label="全部完成" />
+            <LegendDot color="bg-warning" label="≥50%" />
+            <LegendDot color="bg-danger" label="<50%" />
+            <LegendDot color="bg-border" label="未完成" />
           </div>
         )}
         {viewMode === 'task' && !loading && (
           <div className="flex items-center justify-center gap-4 mt-2 pb-1">
-            <LegendItem color="bg-accent" label="已完成" />
-            <LegendItem color="bg-border" label="未完成" />
+            <LegendDot color="bg-accent" label="已完成" />
+            <LegendDot color="bg-border" label="未完成" />
           </div>
         )}
       </div>
@@ -171,10 +153,10 @@ export default function TaskHistoryPage() {
   )
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function LegendDot({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-1">
-      <span className={`w-[6px] h-[6px] rounded-full ${color}`} />
+      <span className={`w-3 h-3 rounded-full ${color}`} />
       <span className="text-label text-text-sub">{label}</span>
     </div>
   )

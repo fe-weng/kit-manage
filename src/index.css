@@ -148,20 +148,19 @@
 
   .rdp-custom-day {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    width: var(--rdp-day-width);
-    height: var(--rdp-day-height);
-    border-radius: 10px;
-    font-size: var(--text-body);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: var(--text-caption);
     color: var(--color-text-main);
-    transition: background-color 0.15s;
+    transition: background-color 0.15s, color 0.15s;
     cursor: pointer;
     border: none;
     background: transparent;
-    padding: 2px;
+    padding: 0;
+    margin: 0 auto;
   }
 
   .rdp-custom-day:hover {
@@ -170,6 +169,46 @@
 
   .rdp-custom-day:active {
     background-color: rgba(255, 155, 176, 0.16);
+  }
+
+  .rdp-today-ring {
+    box-shadow: inset 0 0 0 2px var(--color-primary);
+  }
+
+  .rdp-status-full {
+    background-color: var(--color-accent);
+    color: white;
+    font-weight: 700;
+  }
+
+  .rdp-status-high {
+    background-color: var(--color-warning);
+    color: white;
+    font-weight: 700;
+  }
+
+  .rdp-status-low {
+    background-color: var(--color-danger);
+    color: white;
+    font-weight: 700;
+  }
+
+  .rdp-status-none {
+    background-color: var(--color-border);
+    color: var(--color-text-sub);
+    font-weight: 500;
+  }
+
+  .rdp-status-done {
+    background-color: var(--color-accent);
+    color: white;
+    font-weight: 700;
+  }
+
+  .rdp-status-planned {
+    background-color: var(--color-border);
+    color: var(--color-text-sub);
+    font-weight: 500;
   }
 
   .rdp-kid .rdp-outside .rdp-custom-day {
@@ -188,10 +227,10 @@
     font-weight: 700;
   }
 
-  .rdp-day-indicator {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
+  .rdp-status-full .rdp-today-number,
+  .rdp-status-high .rdp-today-number,
+  .rdp-status-low .rdp-today-number,
+  .rdp-status-done .rdp-today-number {
+    color: white;
   }
 }
