@@ -105,6 +105,17 @@ export class RewardService {
     return true
   }
 
+  async returnCoupon(logId: string): Promise<{ success: boolean; reason?: string }> {
+    const log = await this.rewardRepo.findLogById(logId)
+    if (!log) return { success: false, reason: 'not_found' }
+    if (!log.isPending) return { success: false, reason: 'not_pending' }
+
+    await this.pointService.refundReward(log.pointsCost)
+    log.markReturned()
+    await this.rewardRepo.saveLog(log)
+    return { success: true }
+  }
+
   async initPresetRewards(): Promise<void> {
     await this.rewardRepo.initPresetCategories([...REWARD_CATEGORIES])
     const categories = await this.rewardRepo.findAllCategories()

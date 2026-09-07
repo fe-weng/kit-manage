@@ -1,4 +1,4 @@
-export type RewardLogStatus = 'pending' | 'used'
+export type RewardLogStatus = 'pending' | 'used' | 'returned'
 
 interface RewardLogProps {
   id: string
@@ -9,6 +9,7 @@ interface RewardLogProps {
   redeemedAt: number
   status: RewardLogStatus
   usedAt?: number
+  returnedAt?: number
 }
 
 export class RewardLog {
@@ -20,6 +21,7 @@ export class RewardLog {
   readonly redeemedAt: number
   status: RewardLogStatus
   usedAt?: number
+  returnedAt?: number
 
   constructor(props: RewardLogProps) {
     this.id = props.id
@@ -30,6 +32,7 @@ export class RewardLog {
     this.redeemedAt = props.redeemedAt
     this.status = props.status
     this.usedAt = props.usedAt
+    this.returnedAt = props.returnedAt
   }
 
   static create(params: {
@@ -51,8 +54,18 @@ export class RewardLog {
     this.usedAt = Date.now()
   }
 
+  markReturned(): void {
+    if (!this.isPending) throw new Error('只有待使用的券可以退还')
+    this.status = 'returned'
+    this.returnedAt = Date.now()
+  }
+
   get isPending(): boolean {
     return this.status === 'pending'
+  }
+
+  get isReturned(): boolean {
+    return this.status === 'returned'
   }
 
   toJSON(): RewardLogProps {
@@ -65,6 +78,7 @@ export class RewardLog {
       redeemedAt: this.redeemedAt,
       status: this.status,
       usedAt: this.usedAt,
+      returnedAt: this.returnedAt,
     }
   }
 }

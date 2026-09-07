@@ -55,6 +55,12 @@ export class PointBalance {
     return true
   }
 
+  refundReward(amount: number): void {
+    if (amount <= 0) throw new Error('退还积分必须为正数')
+    if (amount > this.totalSpentOnReward) throw new Error('退还积分不能超过已消费总额')
+    this.totalSpentOnReward -= amount
+  }
+
   canAfford(amount: number): boolean {
     return this.currentBalance >= amount
   }

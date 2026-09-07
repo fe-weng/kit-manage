@@ -20,6 +20,7 @@ interface RewardStore {
   addCustomCategory: (name: string) => Promise<Category>
   redeem: (rewardId: string) => Promise<{ success: boolean; reason?: string }>
   markUsed: (logId: string) => Promise<boolean>
+  returnCoupon: (logId: string) => Promise<{ success: boolean; reason?: string }>
 }
 
 export const useRewardStore = create<RewardStore>((set, get) => ({
@@ -86,5 +87,14 @@ export const useRewardStore = create<RewardStore>((set, get) => ({
       await get().fetchPendingCoupons()
     }
     return ok
+  },
+
+  returnCoupon: async (logId) => {
+    const result = await rewardService.returnCoupon(logId)
+    if (result.success) {
+      await usePointStore.getState().fetchBalance()
+      await get().fetchPendingCoupons()
+    }
+    return result
   },
 }))

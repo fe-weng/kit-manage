@@ -45,4 +45,9 @@ export class PointService {
     return success
   }
 
+  async refundReward(amount: number): Promise<void> {
+    const balance = await this.getBalance()
+    balance.refundReward(amount)
+    await this.pointRepo.save(balance)
+  }
 }
