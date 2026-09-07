@@ -52,8 +52,8 @@ export default function ShopPage() {
     const uncategorized: Reward[] = []
     for (const r of rewards) {
       if (r.categoryId && catIdSet.has(r.categoryId)) {
-        if (!groups[r.categoryId]) groups[r.categoryId] = []
-        groups[r.categoryId].push(r)
+        const group = (groups[r.categoryId] ??= [])
+        group.push(r)
       } else {
         uncategorized.push(r)
       }
