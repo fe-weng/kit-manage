@@ -64,7 +64,8 @@ export default function RewardEditModal({
       document.addEventListener('keydown', handleEsc)
       return () => document.removeEventListener('keydown', handleEsc)
     }
-  }, [visible, reward, isNew, handleEsc, categories])
+  // categories 不加入依赖：仅在弹窗打开时初始化表单，避免分类列表变化时重置表单
+  }, [visible, reward, isNew, handleEsc])
 
   const handleSave = async () => {
     if (!title.trim() || !points.trim() || !categoryId || saving) return
