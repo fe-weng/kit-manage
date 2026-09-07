@@ -71,6 +71,16 @@ export interface CategoryRecord {
   createdAt: number
 }
 
+export interface DailyTaskSnapshotRecord {
+  id: string
+  childId: string
+  date: string
+  taskIds: string
+  negativeTaskIds: string
+  createdAt: number
+  updatedAt: number
+}
+
 export class KidManageDB extends Dexie {
   tasks!: Table<TaskRecord>
   taskLogs!: Table<TaskLogRecord>
@@ -79,6 +89,7 @@ export class KidManageDB extends Dexie {
   rewardLogs!: Table<RewardLogRecord>
   pointBalances!: Table<PointBalanceRecord>
   categories!: Table<CategoryRecord>
+  dailySnapshots!: Table<DailyTaskSnapshotRecord>
 
   constructor() {
     super('kid-manage')
@@ -101,6 +112,9 @@ export class KidManageDB extends Dexie {
     })
     this.version(5).stores({
       rewards: 'id, categoryId, isPreset, isActive',
+    })
+    this.version(6).stores({
+      dailySnapshots: 'id, childId, date, [childId+date]',
     })
   }
 }

@@ -4,14 +4,20 @@ import { TaskLog } from '@/domain/models/TaskLog'
 import { TaskType } from '@/domain/valueObjects/TaskType'
 import { isTaskCompleted, isOneTimeTaskVisible, getTodayCompletedCount, getTodayEarnedPoints } from '@/domain/rules/TaskResetRule'
 import { getTodayStart, getWeekStart } from '@/domain/rules/DateUtils'
+import type { ISnapshotRepository } from '@/domain/repositories/ISnapshotRepository'
 import type { PointService } from './PointService'
 import { DEFAULT_CHILD_ID } from '@/shared/constants'
 
 export class TaskService {
   constructor(
     private taskRepo: ITaskRepository,
-    private pointService: PointService
+    private pointService: PointService,
+    private snapshotRepo?: ISnapshotRepository
   ) {}
+
+  getSnapshotRepo() {
+    return this.snapshotRepo
+  }
 
   async getAllTasks(): Promise<Task[]> {
     return this.taskRepo.findActive(DEFAULT_CHILD_ID)
