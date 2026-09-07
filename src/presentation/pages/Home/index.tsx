@@ -19,11 +19,13 @@ function getGreeting(): string {
 }
 
 export default function HomePage() {
-  const { status, fetchPet } = usePetStore()
-  const { tasks, fetchTasks, completeTask, uncompleteTask } = useTaskStore()
+  const { status, loading: petLoading, fetchPet } = usePetStore()
+  const { tasks, loading: taskLoading, fetchTasks, completeTask, uncompleteTask } = useTaskStore()
   const { balance, fetchBalance } = usePointStore()
   const { pendingCoupons, fetchPendingCoupons } = useRewardStore()
   const navigate = useNavigate()
+
+  const loading = petLoading || taskLoading
 
   useEffect(() => {
     fetchPet()
@@ -72,6 +74,28 @@ export default function HomePage() {
           </span>
         </div>
       </div>
+
+      {/* Loading */}
+      {loading && !status && tasks.length === 0 && (
+        <div className="flex justify-center" style={{ padding: '40px 0' }}>
+          <span className="inline-block w-7 h-7 border-3 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      )}
+
+      {/* No Pet Guide */}
+      {!loading && !status && (
+        <button
+          onClick={() => navigate(ROUTES.PET)}
+          className="w-full bg-card rounded-[16px] shadow-clay flex items-center active:scale-[0.98] transition-transform"
+          style={{ padding: '16px 18px', gap: '14px', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+        >
+          <span style={{ fontSize: '36px' }}>🥚</span>
+          <div className="flex flex-col" style={{ gap: '4px' }}>
+            <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-main)' }}>还没有宠物</span>
+            <span style={{ fontSize: '13px', color: 'var(--color-text-sub)' }}>去领养一只，陪你一起完成任务吧！</span>
+          </div>
+        </button>
+      )}
 
       {/* Pet Mini Card */}
       {status && (

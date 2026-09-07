@@ -45,7 +45,7 @@ export class DexieTaskRepository implements ITaskRepository {
   }
 
   async findLogsByChildId(childId: string): Promise<TaskLog[]> {
-    const records = await this.db.taskLogs.where('childId').equals(childId).toArray()
+    const records = await this.db.taskLogs.where('childId').equals(childId).sortBy('completedAt')
     return records.map((r) => this.toLogDomain(r))
   }
 

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface EvolutionOverlayProps {
@@ -9,12 +9,15 @@ interface EvolutionOverlayProps {
 const EVO_TOTAL_DURATION = 2500
 
 export default function EvolutionOverlay({ visible, onDone }: EvolutionOverlayProps) {
+  const onDoneRef = useRef(onDone)
+  onDoneRef.current = onDone
+
   useEffect(() => {
     if (visible) {
-      const timer = setTimeout(onDone, EVO_TOTAL_DURATION)
+      const timer = setTimeout(() => onDoneRef.current(), EVO_TOTAL_DURATION)
       return () => clearTimeout(timer)
     }
-  }, [visible, onDone])
+  }, [visible])
 
   return (
     <AnimatePresence>
