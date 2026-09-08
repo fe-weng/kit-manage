@@ -1,14 +1,14 @@
 import { useMemo, useRef, useEffect } from 'react'
 import { useTaskHistoryStore } from '@/presentation/hooks/useTaskHistoryStore'
-import { getDayRange } from '@/domain/rules/DateUtils'
 
 interface TaskViewProps {
   selectedTaskId: string | null
   onSelectTask: (taskId: string | null) => void
+  taskDayStatus: Record<string, 'done' | 'planned'>
 }
 
-export default function TaskView({ selectedTaskId, onSelectTask }: TaskViewProps) {
-  const { snapshots, logs, allTasks } = useTaskHistoryStore()
+export default function TaskView({ selectedTaskId, onSelectTask, taskDayStatus }: TaskViewProps) {
+  const { snapshots, allTasks } = useTaskHistoryStore()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const visibleTasks = useMemo(() => {
@@ -38,26 +38,6 @@ export default function TaskView({ selectedTaskId, onSelectTask }: TaskViewProps
       onSelectTask(first.id)
     }
   }, [allSelectableTasks, selectedTaskId, onSelectTask])
-
-  const taskDayStatus = useMemo(() => {
-    if (!selectedTaskId) return {} as Record<string, 'done' | 'planned' | null>
-    const result: Record<string, 'done' | 'planned' | null> = {}
-
-    for (const snap of snapshots) {
-      const isInSnapshot =
-        snap.taskIds.includes(selectedTaskId) || snap.negativeTaskIds.includes(selectedTaskId)
-      if (!isInSnapshot) continue
-
-      const { start: dayStart, end: dayEnd } = getDayRange(snap.date)
-      const hasDone = logs.some(
-        (l) => l.taskId === selectedTaskId && l.completedAt >= dayStart && l.completedAt < dayEnd,
-      )
-
-      result[snap.date] = hasDone ? 'done' : 'planned'
-    }
-
-    return result
-  }, [selectedTaskId, snapshots, logs])
 
   const stats = useMemo(() => {
     const entries = Object.values(taskDayStatus)

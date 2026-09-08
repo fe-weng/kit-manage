@@ -115,6 +115,7 @@ export default function TaskHistoryPage() {
         <TaskView
           selectedTaskId={selectedTaskId}
           onSelectTask={setSelectedTaskId}
+          taskDayStatus={taskDayStatus}
         />
       )}
 

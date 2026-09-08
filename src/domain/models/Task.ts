@@ -57,6 +57,13 @@ export class Task {
       this.points = (this.type === TaskType.NEGATIVE && params.points > 0)
         ? -params.points
         : params.points
+    } else if (params.type !== undefined) {
+      // 类型变更但未显式传 points 时，同步已有积分的符号
+      if (this.type === TaskType.NEGATIVE && this.points > 0) {
+        this.points = -this.points
+      } else if (this.type !== TaskType.NEGATIVE && this.points < 0) {
+        this.points = -this.points
+      }
     }
     if (params.icon !== undefined) this.icon = params.icon
   }
