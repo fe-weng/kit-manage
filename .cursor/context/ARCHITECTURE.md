@@ -85,6 +85,7 @@ src/
 │   │   ├── AppLayout.tsx            # 根布局
 │   │   └── TabBar.tsx               # 底部导航栏
 │   ├── components/                   # 公共组件
+│   │   ├── BaseModal.tsx            # 统一弹窗基座（ESC/focus trap/aria）
 │   │   ├── GlobalToast.tsx          # 全局 Toast 渲染组件
 │   │   └── MonthCalendar.tsx        # 通用月历组件（react-day-picker v10）
 │   └── pages/                        # 9 个页面模块
@@ -140,7 +141,7 @@ Zustand v5 store，5 个业务 store + 1 个基础设施 store：
 | `useTaskStore` | 任务 CRUD + 打卡 + 统计 | `tasks`, `stats`, `loading` |
 | `usePetStore` | 宠物养成 + 喂食 + 互动 | `status`, `loading` |
 | `usePointStore` | 积分余额查询 | `balance`, `loading` |
-| `useRewardStore` | 奖励 CRUD + 兑换 + 券管理 | `rewards`, `loading`, `pendingCoupons` |
+| `useRewardStore` | 奖励 CRUD + 兑换 + 券管理 + 全量日志 | `rewards`, `loading`, `pendingCoupons`, `allLogs` |
 | `useTaskHistoryStore` | 打卡历史（月度快照 + 日志） | `snapshots`, `logs`, `loading` |
 | `useToastStore`（`shared/toast.ts`） | 全局 Toast 状态 | `message`, `type`, `visible` |
 
@@ -187,7 +188,7 @@ Dexie.js v4 操作 IndexedDB，数据库名 `kid-manage`（class 名 `KidManageD
 
 Schema 版本迁移历史：v1(初始 6 表) → v2(复合索引) → v3(rewardLogs status) → v4(+categories) → v5(rewards categoryId) → v6(+dailySnapshots)
 
-> 修改 schema 须在 `DexieDatabase.ts` 中升级版本号。⚠️ 当前缺少 `.upgrade()` 迁移函数（P1-2 待处理）。
+> 修改 schema 须在 `DexieDatabase.ts` 中升级版本号。v3/v5 已配置 `.upgrade()` 迁移函数。
 
 ---
 
@@ -205,6 +206,7 @@ Schema 版本迁移历史：v1(初始 6 表) → v2(复合索引) → v3(rewardL
 
 | 组件 | 路径 | 用途 |
 |------|------|------|
+| `BaseModal` | `src/presentation/components/BaseModal.tsx` | 统一弹窗基座（ESC/focus trap/aria） |
 | `GlobalToast` | `src/presentation/components/GlobalToast.tsx` | 全局命令式 Toast 渲染 |
 | `MonthCalendar` | `src/presentation/components/MonthCalendar.tsx` | 通用月历组件（react-day-picker v10） |
 | `AppLayout` | `src/presentation/layouts/AppLayout.tsx` | 根布局 |

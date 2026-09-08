@@ -191,6 +191,31 @@ import TaskEditModal from './TaskEditModal'
 
 ---
 
+## 弹窗组件约定
+
+新建弹窗/Modal 必须使用 `BaseModal` 组件（`@/presentation/components/BaseModal`），不允许独立实现遮罩+ESC+aria：
+
+```tsx
+import BaseModal from '@/presentation/components/BaseModal'
+
+// ✅ 正确：使用 BaseModal 统一处理 a11y
+<BaseModal
+  visible={visible}
+  onClose={onClose}
+  titleId="my-dialog-title"  // 关联 h2/h3 的 id
+  zIndex={100}               // 默认 100，嵌套弹窗可调高
+  dialogClassName="max-w-[320px] md:max-w-[400px]"
+  dialogStyle={{ backgroundColor: '#FFF', borderRadius: '20px', padding: '24px' }}
+>
+  <h2 id="my-dialog-title">标题</h2>
+  {/* 弹窗内容 */}
+</BaseModal>
+```
+
+BaseModal 自带：`role="dialog"` + `aria-modal` + `aria-labelledby` + ESC 关闭 + Focus Trap + 焦点恢复。
+
+---
+
 ## 错误反馈约定
 
 ### Toast 使用

@@ -160,6 +160,7 @@
 - `useRewardStore.updateReward(id, params)` — 更新奖励
 - `useRewardStore.deleteReward(id)` — 删除奖励
 - `useRewardStore.fetchPendingCoupons()` — 加载待使用券
+- `useRewardStore.fetchAllLogs()` — 加载全量兑换记录
 - `useRewardStore.returnCoupon(logId)` — 退还券
 
 ### Services
@@ -172,7 +173,7 @@
 - `RewardService.initPresetCategories()` — 初始化预设分类
 
 ### Domain Models
-- `Category` → `src/domain/models/Category.ts` — 奖励分类（id/name/isPreset）
+- `Category` → `src/domain/models/Category.ts` — 奖励分类 class（create/toJSON）
 
 ---
 
@@ -182,7 +183,9 @@
 - `/shop/coupons` → `src/presentation/pages/MyCoupons/index.tsx`
 
 ### Hooks
-- 页内 `useLocalStore`（Zustand）— 全量券日志加载
+- `useRewardStore.allLogs` — 全量券日志（全局 store）
+- `useRewardStore.fetchAllLogs()` — 加载全量日志
+- `useRewardStore.markUsed(logId)` — 券核销
 - `useRewardStore.returnCoupon(logId)` — 退还券
 
 ### Services
@@ -198,7 +201,8 @@
 - `/shop/history` → `src/presentation/pages/RedeemHistory/index.tsx`
 
 ### Hooks
-- 页内 `useHistoryStore`（Zustand）— 全量日志加载（按时间倒序）
+- `useRewardStore.allLogs` — 全量日志（全局 store，按 redeemedAt 倒序）
+- `useRewardStore.fetchAllLogs()` — 加载全量日志
 
 ### Services
 - `RewardService.getAllLogs()` — 全部兑换记录
@@ -238,6 +242,7 @@
 - `src/shared/toast.ts` — 全局命令式 Toast API（`toast.success()` / `toast.error()`）
 
 ### Components
+- `BaseModal` → `src/presentation/components/BaseModal.tsx` — 统一弹窗基座（ESC/focus trap/aria-labelledby/焦点恢复）
 - `GlobalToast` → `src/presentation/components/GlobalToast.tsx` — 全局 Toast 渲染组件
 - `MonthCalendar` → `src/presentation/components/MonthCalendar.tsx` — 通用月历组件（react-day-picker v10）
 
@@ -248,7 +253,7 @@
 - `Reward` → `src/domain/models/Reward.ts`（categoryId 关联分类）
 - `RewardLog` → `src/domain/models/RewardLog.ts`（含 status: pending/used/returned）
 - `PointBalance` → `src/domain/models/PointBalance.ts`（含 refundReward）
-- `Category` → `src/domain/models/Category.ts`（奖励分类）
+- `Category` → `src/domain/models/Category.ts`（奖励分类 class，含 create/toJSON）
 - `DailyTaskSnapshot` → `src/domain/models/DailyTaskSnapshot.ts`（每日打卡快照）
 
 ### Value Objects

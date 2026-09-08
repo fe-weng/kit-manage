@@ -41,12 +41,11 @@
 | 赚取积分 | `earn` | PointBalance.earn(amount) |
 | 扣除积分 | `deduct` | PointBalance.deduct(amount)，允许负值 |
 | 退还积分 | `refundReward` | PointBalance.refundReward(amount)，券退还时返还积分 |
-| 宠物 | `Pet` | Domain Model，含 name/type/exp/mood/hunger/stage |
+| 宠物 | `Pet` | Domain Model，含 name/type/exp/mood/stage |
 | 宠物阶段 | `PetStage` | Value Object：EGG → BABY → CHILD → TEEN → ADULT |
 | 宠物进化 | `evolve` | Pet.evolve()，阶段晋升 |
-| 宠物喂食 | `feed` | PetService.feed()，花积分喂食获得经验 |
+| 宠物喂食 | `feed` | PetService.feed()，花积分喂食获得经验+心情 |
 | 宠物互动 | `pet` / `petAction` | PetService.pet()，增加心情 |
-| 饥饿度 | `hunger` | 0-100，越高越饿 |
 | 心情 | `mood` | 0-100，越高越好 |
 | 奖励 | `Reward` | Domain Model，含 title/points/categoryId/icon |
 | 奖励兑换 | `redeem` | RewardService.redeem(rewardId)，产生 pending 券 |
@@ -54,7 +53,7 @@
 | 券状态 | `RewardLogStatus` | 'pending'(待使用) / 'used'(已核销) / 'returned'(已退还) |
 | 券核销 | `markUsed` | RewardService.markUsed(logId)，更新 status + usedAt |
 | 券退还 | `returnCoupon` | RewardService.returnCoupon(logId)，退还积分 + 更新状态 |
-| 奖励分类 | `Category` | Domain Model，持久化到 categories 表，支持自定义 |
+| 奖励分类 | `Category` | Domain class（含 create/toJSON），持久化到 categories 表 |
 | 预设分类 | `REWARD_CATEGORIES` | ['娱乐', '美食', '玩具', '特权', '其他'] |
 | 儿童 ID | `DEFAULT_CHILD_ID` | 固定 'default'，单用户设计 |
 | 数据备份 | `BackupService` | 导出/导入/重置 IndexedDB 数据（含 categories 表） |
@@ -77,7 +76,7 @@
 | 打卡/完成 | complete, completeTask, toggle, handleToggle |
 | 取消完成 | uncomplete, uncompleteTask |
 | 积分 | point, points, balance, earn, deduct, spend, refund |
-| 宠物 | pet, petAction, feed, evolve, mood, hunger |
+| 宠物 | pet, petAction, feed, evolve, mood |
 | 奖励 | reward, redeem, shop |
 | 券/优惠券 | coupon, coupons, pending, used, returned, markUsed, returnCoupon |
 | 日志/记录 | log, taskLog, rewardLog |
