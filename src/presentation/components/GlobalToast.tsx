@@ -9,6 +9,8 @@ export default function GlobalToast() {
     <AnimatePresence>
       {visible && (
         <motion.div
+          role="status"
+          aria-live="polite"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}

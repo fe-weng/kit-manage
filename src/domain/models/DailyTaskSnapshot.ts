@@ -21,8 +21,8 @@ export class DailyTaskSnapshot {
     this.id = props.id
     this.childId = props.childId
     this.date = props.date
-    this.taskIds = props.taskIds
-    this.negativeTaskIds = props.negativeTaskIds
+    this.taskIds = [...props.taskIds]
+    this.negativeTaskIds = [...props.negativeTaskIds]
     this.createdAt = props.createdAt
     this.updatedAt = props.updatedAt
   }

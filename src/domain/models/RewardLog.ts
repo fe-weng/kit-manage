@@ -50,6 +50,7 @@ export class RewardLog {
   }
 
   markUsed(): void {
+    if (!this.isPending) throw new Error('只有待使用的券可以核销')
     this.status = 'used'
     this.usedAt = Date.now()
   }

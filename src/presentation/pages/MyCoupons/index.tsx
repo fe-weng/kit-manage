@@ -7,6 +7,7 @@ import { rewardService } from '@/shared/container'
 import type { RewardLog } from '@/domain/models/RewardLog'
 import { ROUTES } from '@/shared/constants'
 import { toast } from '@/shared/toast'
+import { getTodayStart } from '@/domain/rules/DateUtils'
 import { create } from 'zustand'
 import ConfirmDialog from '@/presentation/pages/Settings/ConfirmDialog'
 
@@ -25,12 +26,6 @@ const useLocalStore = create<MyCouponsLocalStore>((set) => ({
     set({ allLogs: logs, loading: false })
   },
 }))
-
-function getTodayStart(): number {
-  const d = new Date()
-  d.setHours(0, 0, 0, 0)
-  return d.getTime()
-}
 
 export default function MyCouponsPage() {
   const navigate = useNavigate()
