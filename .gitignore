@@ -18,6 +18,9 @@ dist-ssr/
 *.log
 npm-debug.log*
 
+# TypeScript build cache
+*.tsbuildinfo
+
 # OS
 .DS_Store
 Thumbs.db
