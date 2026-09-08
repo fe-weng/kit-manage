@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from './presentation/layouts/AppLayout'
 import GlobalToast from './presentation/components/GlobalToast'
@@ -14,7 +14,28 @@ const RedeemHistoryPage = lazy(() => import('./presentation/pages/RedeemHistory'
 const TaskHistoryPage = lazy(() => import('./presentation/pages/TaskHistory'))
 const SettingsPage = lazy(() => import('./presentation/pages/Settings'))
 
+const prefetchPages = [
+  () => import('./presentation/pages/Home'),
+  () => import('./presentation/pages/TaskCheckin'),
+  () => import('./presentation/pages/TaskManage'),
+  () => import('./presentation/pages/Pet'),
+  () => import('./presentation/pages/Shop'),
+  () => import('./presentation/pages/MyCoupons'),
+  () => import('./presentation/pages/RedeemHistory'),
+  () => import('./presentation/pages/TaskHistory'),
+  () => import('./presentation/pages/Settings'),
+]
+
 function App() {
+  useEffect(() => {
+    const prefetch = () => prefetchPages.forEach((load) => load())
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(prefetch)
+    } else {
+      setTimeout(prefetch, 2000)
+    }
+  }, [])
+
   return (
     <BrowserRouter basename="/kit-manage">
       <GlobalToast />
