@@ -16,7 +16,7 @@ const SettingsPage = lazy(() => import('./presentation/pages/Settings'))
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/kit-manage">
       <GlobalToast />
       <Suspense fallback={
         <div className="flex items-center justify-center min-h-screen bg-bg">
