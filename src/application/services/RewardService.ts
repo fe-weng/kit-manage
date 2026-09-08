@@ -120,12 +120,10 @@ export class RewardService {
     if (existing.length > 0) return
 
     const presets = [
-      { title: '看1小时动画片', points: 50, categoryName: '娱乐', icon: '📺' },
-      { title: '玩30分钟游戏', points: 80, categoryName: '娱乐', icon: '🎮' },
+      { title: '多看30分钟电视', points: 30, categoryName: '娱乐', icon: '📺' },
+      { title: '去游乐场玩', points: 300, categoryName: '娱乐', icon: '🎡' },
       { title: '吃一次冰淇淋', points: 30, categoryName: '美食', icon: '🍦' },
-      { title: '买零食', points: 40, categoryName: '美食', icon: '🍬' },
-      { title: '买一个小玩具', points: 200, categoryName: '玩具', icon: '🎁' },
-      { title: '晚睡30分钟', points: 60, categoryName: '特权', icon: '⏰' },
+      { title: '晚睡30分钟', points: 60, categoryName: '特权', icon: '🛌' },
     ]
 
     for (const preset of presets) {

@@ -15,7 +15,7 @@ interface RewardEditModalProps {
   onDelete: () => void
 }
 
-const ICONS = ['📺', '🎮', '🍦', '🍬', '🎁', '⏰', '🎈', '🎨', '📚', '🏖️']
+const ICONS = ['📺', '🎮', '🍦', '🍬', '🛌', '🎡', '🎈', '🎨', '📚', '🏖️', '🎁', '🎉',]
 
 const inputBaseClass =
   'w-full bg-input-bg border border-input-border rounded-[12px] text-body text-text-main placeholder:text-placeholder focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all'
