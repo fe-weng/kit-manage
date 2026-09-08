@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { PencilSimple } from '@phosphor-icons/react'
 import { toast } from '@/shared/toast'
 import SettingsSection from './SettingsSection'
@@ -20,8 +20,10 @@ export default function PetNameEditor({ currentName, onRename }: PetNameEditorPr
     }
   }
 
+  const savingRef = useRef(false)
   const handleSave = async () => {
-    if (!newName.trim()) return
+    if (!newName.trim() || savingRef.current) return
+    savingRef.current = true
     try {
       await onRename(newName.trim())
       setEditing(false)
@@ -29,6 +31,8 @@ export default function PetNameEditor({ currentName, onRename }: PetNameEditorPr
     } catch (err) {
       console.error('[PetNameEditor] 改名失败:', err)
       toast.error('改名失败，请重试')
+    } finally {
+      savingRef.current = false
     }
   }
 

@@ -142,6 +142,7 @@ export class DexieRewardRepository implements IRewardRepository {
       redeemedAt: record.redeemedAt,
       status: record.status as RewardLog['status'],
       usedAt: record.usedAt,
+      returnedAt: record.returnedAt,
     })
   }
 
@@ -155,6 +156,7 @@ export class DexieRewardRepository implements IRewardRepository {
       redeemedAt: log.redeemedAt,
       status: log.status,
       usedAt: log.usedAt,
+      returnedAt: log.returnedAt,
     }
   }
 }

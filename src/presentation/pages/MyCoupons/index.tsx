@@ -49,13 +49,18 @@ export default function MyCouponsPage() {
     )
   }, [allLogs])
 
+  const markingRef = useRef(false)
   const handleMarkUsed = useCallback(async (logId: string) => {
+    if (markingRef.current) return
+    markingRef.current = true
     try {
       await markUsed(logId)
       await fetchAll()
     } catch (err) {
       console.error('[MyCoupons] 使用券失败:', err)
       toast.error('操作失败，请重试')
+    } finally {
+      markingRef.current = false
     }
   }, [markUsed, fetchAll])
 

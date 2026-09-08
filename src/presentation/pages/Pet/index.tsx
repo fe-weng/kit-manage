@@ -38,8 +38,15 @@ export default function PetPage() {
     }
   }, [feed, status])
 
+  const pettingRef = useRef(false)
   const handlePet = useCallback(async () => {
-    await petAction()
+    if (pettingRef.current) return
+    pettingRef.current = true
+    try {
+      await petAction()
+    } finally {
+      pettingRef.current = false
+    }
   }, [petAction])
 
   const handleCreate = useCallback(

@@ -55,6 +55,7 @@ export interface RewardLogRecord {
   redeemedAt: number
   status: string
   usedAt?: number
+  returnedAt?: number
 }
 
 export interface PointBalanceRecord {
@@ -106,12 +107,20 @@ export class KidManageDB extends Dexie {
     })
     this.version(3).stores({
       rewardLogs: 'id, rewardId, childId, redeemedAt, status, [childId+status], [rewardId+childId+status]',
+    }).upgrade(tx => {
+      return tx.table('rewardLogs').toCollection().modify(log => {
+        if (log.status === undefined) log.status = 'pending'
+      })
     })
     this.version(4).stores({
       categories: 'id, &name, isPreset, createdAt',
     })
     this.version(5).stores({
       rewards: 'id, categoryId, isPreset, isActive',
+    }).upgrade(tx => {
+      return tx.table('rewards').toCollection().modify(reward => {
+        if (reward.categoryId === undefined) reward.categoryId = ''
+      })
     })
     this.version(6).stores({
       dailySnapshots: 'id, childId, date, [childId+date]',

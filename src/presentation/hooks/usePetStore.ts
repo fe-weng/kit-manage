@@ -38,17 +38,23 @@ export const usePetStore = create<PetStore>((set, get) => ({
   },
 
   feed: async () => {
-    const result = await petService.feed()
-    if (result.success) {
-      await get().fetchPet()
-      await usePointStore.getState().fetchBalance()
+    try {
+      const result = await petService.feed()
+      if (result.success) {
+        await get().fetchPet()
+        await usePointStore.getState().fetchBalance()
+      }
+      return { success: result.success, evolved: result.evolved }
+    } catch {
+      return { success: false, evolved: false }
     }
-    return { success: result.success, evolved: result.evolved }
   },
 
   petAction: async () => {
-    await petService.pet()
-    await get().fetchPet()
+    try {
+      await petService.pet()
+      await get().fetchPet()
+    } catch { /* UI 层已有 ref 锁，静默忽略 */ }
   },
 
   createPet: async (name, type) => {

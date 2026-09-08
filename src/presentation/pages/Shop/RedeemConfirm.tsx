@@ -45,7 +45,7 @@ export default function RedeemConfirm({
             <div
               role="dialog"
               aria-modal="true"
-              className="bg-white rounded-[20px] shadow-float w-full max-w-[300px] md:max-w-[380px] pointer-events-auto"
+              className="relative bg-white rounded-[20px] shadow-float w-full max-w-[300px] md:max-w-[380px] pointer-events-auto"
               style={{ padding: '28px 24px' }}
               onClick={(e) => e.stopPropagation()}
             >

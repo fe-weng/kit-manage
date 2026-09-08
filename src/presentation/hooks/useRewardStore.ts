@@ -40,19 +40,25 @@ export const useRewardStore = create<RewardStore>((set, get) => ({
   },
 
   fetchCategories: async () => {
-    const categories = await rewardService.getAllCategories()
-    set({ categories })
+    try {
+      const categories = await rewardService.getAllCategories()
+      set({ categories })
+    } catch { /* 静默降级 */ }
   },
 
   fetchPendingCoupons: async () => {
-    const pendingCoupons = await rewardService.getPendingCoupons()
-    set({ pendingCoupons })
+    try {
+      const pendingCoupons = await rewardService.getPendingCoupons()
+      set({ pendingCoupons })
+    } catch { /* 静默降级 */ }
   },
 
   initPresets: async () => {
-    await rewardService.initPresetRewards()
-    await get().fetchRewards()
-    await get().fetchCategories()
+    try {
+      await rewardService.initPresetRewards()
+      await get().fetchRewards()
+      await get().fetchCategories()
+    } catch { /* 静默降级 */ }
   },
 
   createReward: async (params) => {

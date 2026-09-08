@@ -93,14 +93,20 @@ export default function RewardEditModal({
     }
   }
 
+  const customConfirmingRef = useRef(false)
   const handleCustomConfirm = async (): Promise<string | null> => {
     const name = customInput.trim()
-    if (!name) return null
-    const category = await onAddCategory(name)
-    setCategoryId(category.id)
-    setShowCustomInput(false)
-    setCustomInput('')
-    return category.id
+    if (!name || customConfirmingRef.current) return null
+    customConfirmingRef.current = true
+    try {
+      const category = await onAddCategory(name)
+      setCategoryId(category.id)
+      setShowCustomInput(false)
+      setCustomInput('')
+      return category.id
+    } finally {
+      customConfirmingRef.current = false
+    }
   }
 
   const handleDelete = () => {

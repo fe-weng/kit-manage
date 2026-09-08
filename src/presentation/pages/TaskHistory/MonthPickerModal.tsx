@@ -21,6 +21,11 @@ export default function MonthPickerModal({
 }: MonthPickerModalProps) {
   const [pickerYear, setPickerYear] = useState(year)
 
+  // 同步外部 year 变化
+  if (visible && pickerYear !== year) {
+    setPickerYear(year)
+  }
+
   const now = useMemo(() => new Date(), [])
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth() + 1

@@ -82,18 +82,26 @@ export default function ShopPage() {
   }, [])
 
   const handleSave = async (data: { title: string; points: number; categoryId: string; icon: string }) => {
-    if (isNew) {
-      await createReward({ title: data.title, points: data.points, categoryId: data.categoryId, icon: data.icon })
-    } else if (editTarget) {
-      await updateReward(editTarget.id, { title: data.title, points: data.points, categoryId: data.categoryId })
+    try {
+      if (isNew) {
+        await createReward({ title: data.title, points: data.points, categoryId: data.categoryId, icon: data.icon })
+      } else if (editTarget) {
+        await updateReward(editTarget.id, { title: data.title, points: data.points, categoryId: data.categoryId })
+      }
+      setEditVisible(false)
+    } catch {
+      toast.error('保存失败，请重试')
     }
-    setEditVisible(false)
   }
 
   const handleDelete = async () => {
     if (editTarget) {
-      await deleteReward(editTarget.id)
-      setEditVisible(false)
+      try {
+        await deleteReward(editTarget.id)
+        setEditVisible(false)
+      } catch {
+        toast.error('删除失败，请重试')
+      }
     }
   }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Egg, PawPrint } from '@phosphor-icons/react'
 
 interface CreatePetFormProps {
@@ -15,12 +15,15 @@ export default function CreatePetForm({ onSubmit }: CreatePetFormProps) {
   const [type, setType] = useState('chicken')
   const [submitting, setSubmitting] = useState(false)
 
+  const submittingRef = useRef(false)
   const handleSubmit = async () => {
-    if (!name.trim() || submitting) return
+    if (!name.trim() || submittingRef.current) return
+    submittingRef.current = true
     setSubmitting(true)
     try {
       await onSubmit(name.trim(), type)
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
   }

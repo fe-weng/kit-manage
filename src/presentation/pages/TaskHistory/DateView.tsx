@@ -47,7 +47,8 @@ export default function DateView({ selectedDate }: DateViewProps) {
 
   const formattedDate = useMemo(() => {
     if (!selectedDate) return ''
-    const d = new Date(selectedDate)
+    const parts = selectedDate.split('-')
+    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
     const weekDays = ['日', '一', '二', '三', '四', '五', '六']
     return `${d.getMonth() + 1}月${d.getDate()}日 周${weekDays[d.getDay()]}`
   }, [selectedDate])
