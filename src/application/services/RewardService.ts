@@ -1,7 +1,7 @@
 import type { IRewardRepository } from '@/domain/repositories/IRewardRepository'
 import { Reward } from '@/domain/models/Reward'
 import { RewardLog } from '@/domain/models/RewardLog'
-import type { Category } from '@/domain/models/Category'
+import { Category } from '@/domain/models/Category'
 import type { PointService } from './PointService'
 import { DEFAULT_CHILD_ID, REWARD_CATEGORIES } from '@/shared/constants'
 
@@ -49,12 +49,7 @@ export class RewardService {
   async addCustomCategory(name: string): Promise<Category> {
     const existing = await this.rewardRepo.findCategoryByName(name)
     if (existing) return existing
-    const category: Category = {
-      id: crypto.randomUUID(),
-      name,
-      isPreset: false,
-      createdAt: Date.now(),
-    }
+    const category = Category.create({ name, isPreset: false })
     await this.rewardRepo.saveCategory(category)
     return category
   }

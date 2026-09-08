@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { CaretLeft, CaretRight, X } from '@phosphor-icons/react'
+import BaseModal from '@/presentation/components/BaseModal'
 
 interface MonthPickerModalProps {
   visible: boolean
@@ -21,7 +21,6 @@ export default function MonthPickerModal({
 }: MonthPickerModalProps) {
   const [pickerYear, setPickerYear] = useState(year)
 
-  // 同步外部 year 变化
   if (visible && pickerYear !== year) {
     setPickerYear(year)
   }
@@ -40,75 +39,65 @@ export default function MonthPickerModal({
   }
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/30 z-50"
-            onClick={onClose}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-clay shadow-float p-5 w-[300px]"
-          >
-            {/* Year selector */}
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={() => setPickerYear((y) => y - 1)}
-                className="w-8 h-8 flex items-center justify-center rounded-full active:scale-90 transition-transform"
-              >
-                <CaretLeft size={20} weight="bold" className="text-text-sub" />
-              </button>
-              <span className="text-heading font-bold text-text-main">{pickerYear}年</span>
-              <button
-                onClick={() => setPickerYear((y) => Math.min(y + 1, currentYear))}
-                disabled={pickerYear >= currentYear}
-                className="w-8 h-8 flex items-center justify-center rounded-full active:scale-90 transition-transform disabled:opacity-30"
-              >
-                <CaretRight size={20} weight="bold" className="text-text-sub" />
-              </button>
-            </div>
+    <BaseModal
+      visible={visible}
+      onClose={onClose}
+      titleId="month-picker-title"
+      zIndex={50}
+      dialogClassName="relative max-w-[300px] bg-white rounded-clay shadow-float"
+      dialogStyle={{ padding: '20px' }}
+    >
+      {/* Year selector */}
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => setPickerYear((y) => y - 1)}
+          className="w-8 h-8 flex items-center justify-center rounded-full active:scale-90 transition-transform"
+        >
+          <CaretLeft size={20} weight="bold" className="text-text-sub" />
+        </button>
+        <span id="month-picker-title" className="text-heading font-bold text-text-main">{pickerYear}年</span>
+        <button
+          onClick={() => setPickerYear((y) => Math.min(y + 1, currentYear))}
+          disabled={pickerYear >= currentYear}
+          className="w-8 h-8 flex items-center justify-center rounded-full active:scale-90 transition-transform disabled:opacity-30"
+        >
+          <CaretRight size={20} weight="bold" className="text-text-sub" />
+        </button>
+      </div>
 
-            {/* Month grid */}
-            <div className="grid grid-cols-4 gap-2">
-              {MONTHS.map((label, idx) => {
-                const m = idx + 1
-                const isSelected = pickerYear === year && m === month
-                const disabled = isFuture(m)
-                return (
-                  <button
-                    key={m}
-                    disabled={disabled}
-                    onClick={() => handleSelect(m)}
-                    className={`py-2 rounded-xl text-caption font-medium transition-all ${
-                      isSelected
-                        ? 'bg-primary text-white shadow-clay-button'
-                        : disabled
-                          ? 'text-placeholder'
-                          : 'text-text-main hover:bg-input-bg active:bg-border'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Close */}
+      {/* Month grid */}
+      <div className="grid grid-cols-4 gap-2">
+        {MONTHS.map((label, idx) => {
+          const m = idx + 1
+          const isSelected = pickerYear === year && m === month
+          const disabled = isFuture(m)
+          return (
             <button
-              onClick={onClose}
-              className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full text-text-sub hover:bg-input-bg"
+              key={m}
+              disabled={disabled}
+              onClick={() => handleSelect(m)}
+              className={`py-2 rounded-xl text-caption font-medium transition-all ${
+                isSelected
+                  ? 'bg-primary text-white shadow-clay-button'
+                  : disabled
+                    ? 'text-placeholder'
+                    : 'text-text-main hover:bg-input-bg active:bg-border'
+              }`}
             >
-              <X size={16} weight="bold" />
+              {label}
             </button>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          )
+        })}
+      </div>
+
+      {/* Close */}
+      <button
+        onClick={onClose}
+        aria-label="关闭"
+        className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full text-text-sub hover:bg-input-bg"
+      >
+        <X size={16} weight="bold" />
+      </button>
+    </BaseModal>
   )
 }

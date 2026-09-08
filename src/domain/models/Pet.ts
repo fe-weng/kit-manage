@@ -3,7 +3,6 @@ import { PetStage } from '../valueObjects/PetStage'
 // ── Pet 数值常量 ──
 const INITIAL_MOOD = 80
 const MOOD_MAX = 100
-const FEED_HUNGER_DECREASE = 30
 const FEED_MOOD_INCREASE = 10
 const PET_MOOD_INCREASE = 5
 
@@ -23,9 +22,7 @@ interface PetProps {
   type: string
   stage: PetStage
   exp: number
-  hunger: number
   mood: number
-  lastFedAt: number
   moodUpdatedAt: number
   createdAt: number
 }
@@ -37,9 +34,7 @@ export class Pet {
   readonly type: string
   stage: PetStage
   exp: number
-  hunger: number
   mood: number
-  lastFedAt: number
   moodUpdatedAt: number
   readonly createdAt: number
 
@@ -50,9 +45,7 @@ export class Pet {
     this.type = props.type
     this.stage = props.stage
     this.exp = props.exp
-    this.hunger = props.hunger
     this.mood = props.mood
-    this.lastFedAt = props.lastFedAt
     this.moodUpdatedAt = props.moodUpdatedAt
     this.createdAt = props.createdAt
   }
@@ -63,9 +56,7 @@ export class Pet {
       ...params,
       stage: PetStage.EGG,
       exp: 0,
-      hunger: 0,
       mood: INITIAL_MOOD,
-      lastFedAt: now,
       moodUpdatedAt: now,
       createdAt: now,
     })
@@ -85,9 +76,7 @@ export class Pet {
 
   feed(expGain: number): void {
     this.exp += expGain
-    this.hunger = Math.max(0, this.hunger - FEED_HUNGER_DECREASE)
     this.mood = Math.min(MOOD_MAX, this.mood + FEED_MOOD_INCREASE)
-    this.lastFedAt = Date.now()
     this.moodUpdatedAt = Date.now()
   }
 
@@ -129,9 +118,7 @@ export class Pet {
       type: this.type,
       stage: this.stage,
       exp: this.exp,
-      hunger: this.hunger,
       mood: this.mood,
-      lastFedAt: this.lastFedAt,
       moodUpdatedAt: this.moodUpdatedAt,
       createdAt: this.createdAt,
     }

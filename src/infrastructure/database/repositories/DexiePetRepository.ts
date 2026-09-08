@@ -27,9 +27,7 @@ export class DexiePetRepository implements IPetRepository {
       type: record.type,
       stage: record.stage as PetStage,
       exp: record.exp,
-      hunger: record.hunger,
       mood: record.mood,
-      lastFedAt: record.lastFedAt,
       moodUpdatedAt: record.moodUpdatedAt,
       createdAt: record.createdAt,
     })
@@ -43,9 +41,7 @@ export class DexiePetRepository implements IPetRepository {
       type: pet.type,
       stage: pet.stage,
       exp: pet.exp,
-      hunger: pet.hunger,
       mood: pet.mood,
-      lastFedAt: pet.lastFedAt,
       moodUpdatedAt: pet.moodUpdatedAt,
       createdAt: pet.createdAt,
     }

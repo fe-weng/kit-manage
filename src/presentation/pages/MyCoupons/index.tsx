@@ -3,39 +3,20 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ClockCountdown } from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
 import { useRewardStore } from '@/presentation/hooks/useRewardStore'
-import { rewardService } from '@/shared/container'
 import type { RewardLog } from '@/domain/models/RewardLog'
 import { ROUTES } from '@/shared/constants'
 import { toast } from '@/shared/toast'
 import { getTodayStart } from '@/domain/rules/DateUtils'
-import { create } from 'zustand'
 import ConfirmDialog from '@/presentation/pages/Settings/ConfirmDialog'
-
-interface MyCouponsLocalStore {
-  allLogs: RewardLog[]
-  loading: boolean
-  fetchAll: () => Promise<void>
-}
-
-const useLocalStore = create<MyCouponsLocalStore>((set) => ({
-  allLogs: [],
-  loading: false,
-  fetchAll: async () => {
-    set({ loading: true })
-    const logs = await rewardService.getAllLogs()
-    set({ allLogs: logs, loading: false })
-  },
-}))
 
 export default function MyCouponsPage() {
   const navigate = useNavigate()
-  const { pendingCoupons, fetchPendingCoupons, markUsed, returnCoupon } = useRewardStore()
-  const { allLogs, loading, fetchAll } = useLocalStore()
+  const { pendingCoupons, allLogs, loading, fetchPendingCoupons, fetchAllLogs, markUsed, returnCoupon } = useRewardStore()
 
   useEffect(() => {
     fetchPendingCoupons()
-    fetchAll()
-  }, [fetchPendingCoupons, fetchAll])
+    fetchAllLogs()
+  }, [fetchPendingCoupons, fetchAllLogs])
 
   const todayUsed = useMemo(() => {
     const todayStart = getTodayStart()
@@ -50,14 +31,13 @@ export default function MyCouponsPage() {
     markingRef.current = true
     try {
       await markUsed(logId)
-      await fetchAll()
     } catch (err) {
       console.error('[MyCoupons] 使用券失败:', err)
       toast.error('操作失败，请重试')
     } finally {
       markingRef.current = false
     }
-  }, [markUsed, fetchAll])
+  }, [markUsed])
 
   const [returnTarget, setReturnTarget] = useState<RewardLog | null>(null)
   const returningRef = useRef(false)
@@ -71,7 +51,6 @@ export default function MyCouponsPage() {
     returningRef.current = true
     try {
       await returnCoupon(returnTarget.id)
-      await fetchAll()
       setReturnTarget(null)
     } catch (err) {
       console.error('[MyCoupons] 退还券失败:', err)
@@ -79,7 +58,7 @@ export default function MyCouponsPage() {
     } finally {
       returningRef.current = false
     }
-  }, [returnTarget, returnCoupon, fetchAll])
+  }, [returnTarget, returnCoupon])
 
   const handleReturnCancel = useCallback(() => {
     setReturnTarget(null)

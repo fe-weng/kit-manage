@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Confetti, Star, Ticket } from '@phosphor-icons/react'
 
@@ -9,6 +10,15 @@ interface RedeemSuccessProps {
 }
 
 export default function RedeemSuccess({ visible, rewardTitle, onDone, onViewCoupons }: RedeemSuccessProps) {
+  useEffect(() => {
+    if (!visible) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onDone()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [visible, onDone])
+
   return (
     <AnimatePresence>
       {visible && (
@@ -20,6 +30,9 @@ export default function RedeemSuccess({ visible, rewardTitle, onDone, onViewCoup
           onClick={onDone}
         >
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="redeem-success-title"
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
@@ -37,7 +50,7 @@ export default function RedeemSuccess({ visible, rewardTitle, onDone, onViewCoup
 
             <div className="flex items-center" style={{ gap: '4px' }}>
               <Star size={20} weight="fill" className="text-pet-gold" />
-              <h2 className="text-[22px] font-bold text-text-main">兑换成功！</h2>
+              <h2 id="redeem-success-title" className="text-[22px] font-bold text-text-main">兑换成功！</h2>
               <Star size={20} weight="fill" className="text-pet-gold" />
             </div>
 

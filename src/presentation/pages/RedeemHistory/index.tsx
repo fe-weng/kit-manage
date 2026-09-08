@@ -1,35 +1,16 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from '@phosphor-icons/react'
-import { rewardService } from '@/shared/container'
-import type { RewardLog } from '@/domain/models/RewardLog'
+import { useRewardStore } from '@/presentation/hooks/useRewardStore'
 import { ROUTES } from '@/shared/constants'
-import { create } from 'zustand'
-
-interface HistoryStore {
-  logs: RewardLog[]
-  loading: boolean
-  fetch: () => Promise<void>
-}
-
-const useHistoryStore = create<HistoryStore>((set) => ({
-  logs: [],
-  loading: false,
-  fetch: async () => {
-    set({ loading: true })
-    const logs = await rewardService.getAllLogs()
-    logs.sort((a, b) => b.redeemedAt - a.redeemedAt)
-    set({ logs, loading: false })
-  },
-}))
 
 export default function RedeemHistoryPage() {
   const navigate = useNavigate()
-  const { logs, loading, fetch } = useHistoryStore()
+  const { allLogs: logs, loading, fetchAllLogs } = useRewardStore()
 
   useEffect(() => {
-    fetch()
-  }, [fetch])
+    fetchAllLogs()
+  }, [fetchAllLogs])
 
   return (
     <div

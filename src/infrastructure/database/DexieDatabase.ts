@@ -27,9 +27,7 @@ export interface PetRecord {
   type: string
   stage: number
   exp: number
-  hunger: number
   mood: number
-  lastFedAt: number
   moodUpdatedAt: number
   createdAt: number
 }

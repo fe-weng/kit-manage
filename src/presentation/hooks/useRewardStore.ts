@@ -9,10 +9,12 @@ interface RewardStore {
   rewards: Reward[]
   categories: Category[]
   pendingCoupons: RewardLog[]
+  allLogs: RewardLog[]
   loading: boolean
   fetchRewards: () => Promise<void>
   fetchCategories: () => Promise<void>
   fetchPendingCoupons: () => Promise<void>
+  fetchAllLogs: () => Promise<void>
   initPresets: () => Promise<void>
   createReward: (params: { title: string; points: number; categoryId: string; icon?: string }) => Promise<void>
   updateReward: (id: string, params: { title?: string; points?: number; categoryId?: string }) => Promise<void>
@@ -27,6 +29,7 @@ export const useRewardStore = create<RewardStore>((set, get) => ({
   rewards: [],
   categories: [],
   pendingCoupons: [],
+  allLogs: [],
   loading: false,
 
   fetchRewards: async () => {
@@ -50,6 +53,14 @@ export const useRewardStore = create<RewardStore>((set, get) => ({
     try {
       const pendingCoupons = await rewardService.getPendingCoupons()
       set({ pendingCoupons })
+    } catch { /* 静默降级 */ }
+  },
+
+  fetchAllLogs: async () => {
+    try {
+      const logs = await rewardService.getAllLogs()
+      logs.sort((a, b) => b.redeemedAt - a.redeemedAt)
+      set({ allLogs: logs })
     } catch { /* 静默降级 */ }
   },
 
@@ -86,7 +97,7 @@ export const useRewardStore = create<RewardStore>((set, get) => ({
     const result = await rewardService.redeem(rewardId)
     if (result.success) {
       await usePointStore.getState().fetchBalance()
-      await get().fetchPendingCoupons()
+      await Promise.all([get().fetchPendingCoupons(), get().fetchAllLogs()])
     }
     return { success: result.success, reason: result.reason }
   },
@@ -94,7 +105,7 @@ export const useRewardStore = create<RewardStore>((set, get) => ({
   markUsed: async (logId) => {
     const ok = await rewardService.markUsed(logId)
     if (ok) {
-      await get().fetchPendingCoupons()
+      await Promise.all([get().fetchPendingCoupons(), get().fetchAllLogs()])
     }
     return ok
   },
@@ -103,7 +114,7 @@ export const useRewardStore = create<RewardStore>((set, get) => ({
     const result = await rewardService.returnCoupon(logId)
     if (result.success) {
       await usePointStore.getState().fetchBalance()
-      await get().fetchPendingCoupons()
+      await Promise.all([get().fetchPendingCoupons(), get().fetchAllLogs()])
     }
     return result
   },

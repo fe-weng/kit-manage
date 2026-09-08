@@ -1,7 +1,7 @@
 import type { IRewardRepository } from '@/domain/repositories/IRewardRepository'
 import { Reward } from '@/domain/models/Reward'
 import { RewardLog } from '@/domain/models/RewardLog'
-import type { Category } from '@/domain/models/Category'
+import { Category } from '@/domain/models/Category'
 import type { KidManageDB, RewardRecord, RewardLogRecord } from '../DexieDatabase'
 
 export class DexieRewardRepository implements IRewardRepository {
@@ -62,7 +62,7 @@ export class DexieRewardRepository implements IRewardRepository {
 
   async findAllCategories(): Promise<Category[]> {
     const records = await this.db.categories.orderBy('createdAt').toArray()
-    return records.map((r) => ({
+    return records.map((r) => new Category({
       id: r.id,
       name: r.name,
       isPreset: r.isPreset === 1,
@@ -73,12 +73,12 @@ export class DexieRewardRepository implements IRewardRepository {
   async findCategoryByName(name: string): Promise<Category | null> {
     const record = await this.db.categories.where('name').equals(name).first()
     if (!record) return null
-    return {
+    return new Category({
       id: record.id,
       name: record.name,
       isPreset: record.isPreset === 1,
       createdAt: record.createdAt,
-    }
+    })
   }
 
   async saveCategory(category: Category): Promise<void> {
