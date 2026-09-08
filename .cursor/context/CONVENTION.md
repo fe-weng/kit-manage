@@ -1,6 +1,6 @@
 # CONVENTION.md — 编码约定
 
-> 最后更新：2026-09-03
+> 最后更新：2026-09-08
 > 维护方式：人工维护
 
 ## 文件组织约定
@@ -188,6 +188,46 @@ import TaskEditModal from './TaskEditModal'
 | 引号 | 单引号 `'` |
 | 分号 | 无分号 |
 | 缩进 | 2 空格 |
+
+---
+
+## 错误反馈约定
+
+### Toast 使用
+
+使用全局命令式 Toast API（`@/shared/toast`），禁止页面内自建 Toast 状态：
+
+```typescript
+import { toast } from '@/shared/toast'
+
+// ✅ 正确：命令式调用
+toast.success('操作成功')
+toast.error('操作失败，请重试')
+
+// ❌ 错误：页面内自建 toast state
+const [showToast, setShowToast] = useState(false)
+```
+
+### 并发竞态防护
+
+mutation 操作（打卡/喂食/兑换等）须使用 `useRef` 同步锁 + `useState` UI 双重机制：
+
+```typescript
+const processingRef = useRef(false)
+const [processing, setProcessing] = useState(false)
+
+const handleAction = async () => {
+  if (processingRef.current) return
+  processingRef.current = true
+  setProcessing(true)
+  try {
+    await service.doAction()
+  } finally {
+    processingRef.current = false
+    setProcessing(false)
+  }
+}
+```
 
 ---
 

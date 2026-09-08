@@ -17,11 +17,15 @@ const PET_IMAGES: Record<string, Partial<Record<PetStage, string>>> = {
     [PetStage.EGG]: '/pets/chicken/stage-1-egg.png',
     [PetStage.HATCHED]: '/pets/chicken/stage-2-hatched.png',
     [PetStage.GROWING]: '/pets/chicken/stage-3-growing.png',
-    [PetStage.MATURE]: '/pets/chicken/stage-2-hatched.png',
-    [PetStage.MAX]: '/pets/chicken/stage-3-growing.png',
+    [PetStage.MATURE]: '/pets/chicken/stage-4-mature.png',
+    [PetStage.MAX]: '/pets/chicken/stage-5-max.png',
   },
   rabbit: {
+    [PetStage.EGG]: '/pets/rabbit/stage-1-egg.png',
+    [PetStage.HATCHED]: '/pets/rabbit/stage-2-hatched.png',
     [PetStage.GROWING]: '/pets/rabbit/stage-3-growing.png',
+    [PetStage.MATURE]: '/pets/rabbit/stage-4-mature.png',
+    [PetStage.MAX]: '/pets/rabbit/stage-5-max.png',
   },
 }
 
