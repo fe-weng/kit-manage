@@ -112,7 +112,7 @@ export default function PetDisplay({ stage, name, petType, onPet, evolving = fal
       <motion.button
         onClick={handlePet}
         whileTap={evolving ? undefined : { scale: 0.92 }}
-        className="relative w-48 h-48 bg-card rounded-full shadow-clay flex items-center justify-center cursor-pointer overflow-visible"
+        className="relative w-48 h-48 rounded-full flex items-center justify-center cursor-pointer overflow-visible"
       >
         {/* Evolution glow — golden ring pulsing from pet center */}
         <AnimatePresence>
