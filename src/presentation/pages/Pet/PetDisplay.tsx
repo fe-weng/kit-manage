@@ -12,28 +12,32 @@ interface PetDisplayProps {
   prevStage?: PetStage
 }
 
+function withBase(path: string): string {
+  return `${import.meta.env.BASE_URL}${path}`
+}
+
 const PET_IMAGES: Record<string, Partial<Record<PetStage, string>>> = {
   chicken: {
-    [PetStage.EGG]: '/pets/chicken/stage-1-egg.png',
-    [PetStage.HATCHED]: '/pets/chicken/stage-2-hatched.png',
-    [PetStage.GROWING]: '/pets/chicken/stage-3-growing.png',
-    [PetStage.MATURE]: '/pets/chicken/stage-4-mature.png',
-    [PetStage.MAX]: '/pets/chicken/stage-5-max.png',
+    [PetStage.EGG]: 'pets/chicken/stage-1-egg.png',
+    [PetStage.HATCHED]: 'pets/chicken/stage-2-hatched.png',
+    [PetStage.GROWING]: 'pets/chicken/stage-3-growing.png',
+    [PetStage.MATURE]: 'pets/chicken/stage-4-mature.png',
+    [PetStage.MAX]: 'pets/chicken/stage-5-max.png',
   },
   rabbit: {
-    [PetStage.EGG]: '/pets/rabbit/stage-1-egg.png',
-    [PetStage.HATCHED]: '/pets/rabbit/stage-2-hatched.png',
-    [PetStage.GROWING]: '/pets/rabbit/stage-3-growing.png',
-    [PetStage.MATURE]: '/pets/rabbit/stage-4-mature.png',
-    [PetStage.MAX]: '/pets/rabbit/stage-5-max.png',
+    [PetStage.EGG]: 'pets/rabbit/stage-1-egg.png',
+    [PetStage.HATCHED]: 'pets/rabbit/stage-2-hatched.png',
+    [PetStage.GROWING]: 'pets/rabbit/stage-3-growing.png',
+    [PetStage.MATURE]: 'pets/rabbit/stage-4-mature.png',
+    [PetStage.MAX]: 'pets/rabbit/stage-5-max.png',
   },
 }
 
 export function getPetImage(petType: string, stage: PetStage): string {
   const typeImages = PET_IMAGES[petType]
-  if (typeImages?.[stage]) return typeImages[stage]!
-  if (typeImages?.[PetStage.GROWING]) return typeImages[PetStage.GROWING]!
-  return '/pets/chicken/stage-3-growing.png'
+  if (typeImages?.[stage]) return withBase(typeImages[stage]!)
+  if (typeImages?.[PetStage.GROWING]) return withBase(typeImages[PetStage.GROWING]!)
+  return withBase('pets/chicken/stage-3-growing.png')
 }
 
 const STAGE_SIZES: Record<PetStage, number> = {
