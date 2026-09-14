@@ -12,7 +12,7 @@ export class PetService {
   ) {}
 
   async getPet(): Promise<Pet | null> {
-    const pet = await this.petRepo.findByChildId(DEFAULT_CHILD_ID)
+    const pet = await this.petRepo.findDisplayedByChildId(DEFAULT_CHILD_ID)
     if (pet) {
       pet.applyMoodDecay()
       await this.petRepo.save(pet)
@@ -32,7 +32,7 @@ export class PetService {
   }
 
   async feed(): Promise<{ success: boolean; evolved: boolean; pet: Pet | null }> {
-    const pet = await this.petRepo.findByChildId(DEFAULT_CHILD_ID)
+    const pet = await this.petRepo.findDisplayedByChildId(DEFAULT_CHILD_ID)
     if (!pet) return { success: false, evolved: false, pet: null }
 
     const isMaxLevel = pet.stage >= PetStage.MAX
@@ -55,7 +55,7 @@ export class PetService {
   }
 
   async pet(): Promise<Pet | null> {
-    const pet = await this.petRepo.findByChildId(DEFAULT_CHILD_ID)
+    const pet = await this.petRepo.findDisplayedByChildId(DEFAULT_CHILD_ID)
     if (!pet) return null
 
     pet.applyMoodDecay()
@@ -65,7 +65,7 @@ export class PetService {
   }
 
   async rename(newName: string): Promise<Pet | null> {
-    const pet = await this.petRepo.findByChildId(DEFAULT_CHILD_ID)
+    const pet = await this.petRepo.findDisplayedByChildId(DEFAULT_CHILD_ID)
     if (!pet) return null
 
     pet.rename(newName)

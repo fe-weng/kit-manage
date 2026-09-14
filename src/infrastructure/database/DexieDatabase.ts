@@ -30,6 +30,7 @@ export interface PetRecord {
   mood: number
   moodUpdatedAt: number
   createdAt: number
+  isDisplayed: number // Dexie 不支持 boolean 索引，用 0/1
 }
 
 export interface RewardRecord {
@@ -122,6 +123,13 @@ export class KidManageDB extends Dexie {
     })
     this.version(6).stores({
       dailySnapshots: 'id, childId, date, [childId+date]',
+    })
+    this.version(7).stores({
+      pets: 'id, childId, type, stage, isDisplayed, [childId+isDisplayed], [childId+type]',
+    }).upgrade((tx) => {
+      return tx.table('pets').toCollection().modify((pet: Partial<PetRecord>) => {
+        if (pet.isDisplayed === undefined) pet.isDisplayed = 1
+      })
     })
   }
 }
