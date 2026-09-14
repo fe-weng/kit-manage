@@ -448,4 +448,4 @@ Negative: realistic, dark, scary, sharp edges, adult
 | 成长 → 成熟 | 旋转 + 光柱 → 新形态 + 皇冠/花环出现 | 2.5s |
 | 成熟 → 满级 | 金色爆发光效 + 彩虹光弧 → 最终形态 + 大量星星 | 3s |
 
-> MVP 阶段可以用简单的 Framer Motion 缩放 + 闪光效果代替复杂动画。
+> 分阶段实现见 [2026-09-14-evolution-animation-spec.md](./2026-09-14-evolution-animation-spec.md)（Framer Motion + 孵化壳碎片）。

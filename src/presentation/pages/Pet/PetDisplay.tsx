@@ -1,7 +1,13 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Crown } from '@phosphor-icons/react'
 import { PetStage } from '@/domain/valueObjects/PetStage'
+import EvolutionFx from './EvolutionFx'
+import {
+  EvolutionKind,
+  EVOLUTION_REVEAL_DELAY_S,
+  type EvolutionKind as EvolutionKindType,
+} from './evolutionTransition'
 
 interface PetDisplayProps {
   stage: PetStage
@@ -10,6 +16,7 @@ interface PetDisplayProps {
   onPet: () => void
   evolving?: boolean
   prevStage?: PetStage
+  evolutionKind?: EvolutionKindType | null
 }
 
 function withBase(path: string): string {
@@ -75,47 +82,66 @@ function useIsTablet() {
   return isTablet
 }
 
-// ── Evolution particles ──
-const EVO_PARTICLE_COUNT = 14
-const EVO_DURATION = 2.2
-const EVO_EMOJIS = ['✨', '⭐', '🌟', '💫', '⭐']
-
-interface EvoParticle {
-  id: number
-  angle: number
-  distance: number
-  size: number
-  delay: number
-  emoji: string
+function oldImageAnimate(kind: EvolutionKindType | null) {
+  if (kind === EvolutionKind.HATCH) {
+    return { x: [0, -5, 5, -4, 4, 0], rotate: [0, -4, 4, -3, 3, 0], opacity: 1, scale: 1 }
+  }
+  if (kind === EvolutionKind.GLOW) {
+    return { opacity: 1, scale: [1, 1.04, 1], filter: ['brightness(1)', 'brightness(1.8)', 'brightness(1.4)'] }
+  }
+  if (kind === EvolutionKind.ASCEND) {
+    return { rotate: [0, 12, -8, 360], scale: [1, 0.92, 0.92, 1], opacity: 1 }
+  }
+  if (kind === EvolutionKind.LEGEND) {
+    return { scale: [1, 1.12, 1.2], opacity: 1 }
+  }
+  return { opacity: 1, scale: 1 }
 }
 
-function generateEvoParticles(sizeScale: number): EvoParticle[] {
-  return Array.from({ length: EVO_PARTICLE_COUNT }, (_, i) => ({
-    id: i,
-    angle: (360 / EVO_PARTICLE_COUNT) * i + (Math.random() - 0.5) * 20,
-    distance: (80 + Math.random() * 60) * sizeScale,
-    size: 14 + Math.random() * 12,
-    delay: Math.random() * 0.25,
-    emoji: EVO_EMOJIS[i % EVO_EMOJIS.length] ?? '✨',
-  }))
+function oldImageTransition(kind: EvolutionKindType | null) {
+  if (kind === EvolutionKind.HATCH) return { duration: 0.45, ease: 'easeInOut' as const }
+  if (kind === EvolutionKind.ASCEND) return { duration: 0.85, ease: 'easeInOut' as const }
+  return { duration: 0.55 }
 }
 
-export default function PetDisplay({ stage, name, petType, onPet, evolving = false, prevStage }: PetDisplayProps) {
+function newImageInitial(kind: EvolutionKindType | null, evolving: boolean) {
+  if (!evolving || !kind) return { opacity: 1, scale: 1, y: 0 }
+  if (kind === EvolutionKind.HATCH) return { opacity: 0, scale: 0.2, y: 18 }
+  if (kind === EvolutionKind.LEGEND) return { opacity: 0, scale: 1.35, y: 0 }
+  return { opacity: 0, scale: 1.15, y: 0 }
+}
+
+export default function PetDisplay({
+  stage,
+  name,
+  petType,
+  onPet,
+  evolving = false,
+  prevStage,
+  evolutionKind = null,
+}: PetDisplayProps) {
   const [hearts, setHearts] = useState<number[]>([])
+  const [revealed, setRevealed] = useState(false)
   const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
   const isTablet = useIsTablet()
   const sizeMap = isTablet ? STAGE_SIZES_TABLET : STAGE_SIZES_PHONE
   const imageSize = sizeMap[stage] || sizeMap[PetStage.EGG]
   const hitArea = imageSize + 40
   const sizeScale = imageSize / STAGE_SIZES_PHONE[PetStage.MAX]
-  const evoParticles = useMemo(
-    () => (evolving ? generateEvoParticles(sizeScale) : []),
-    [evolving, sizeScale],
-  )
+  const kind = evolving ? (evolutionKind ?? EvolutionKind.GLOW) : null
 
   useEffect(() => {
     return () => { timersRef.current.forEach(clearTimeout) }
   }, [])
+
+  useEffect(() => {
+    if (!evolving || !kind) {
+      setRevealed(false)
+      return
+    }
+    const timer = setTimeout(() => setRevealed(true), EVOLUTION_REVEAL_DELAY_S[kind] * 1000)
+    return () => clearTimeout(timer)
+  }, [evolving, kind])
 
   const handlePet = () => {
     if (evolving) return
@@ -129,11 +155,10 @@ export default function PetDisplay({ stage, name, petType, onPet, evolving = fal
     timersRef.current.add(timer)
   }
 
-  const showOldImage = evolving && prevStage != null && prevStage !== stage
+  const showOldImage = evolving && prevStage != null && prevStage !== stage && !revealed
 
   return (
     <div className="flex flex-col items-center" style={{ gap: '12px' }}>
-      {/* Pet Name */}
       <div className="flex items-center" style={{ gap: '8px' }}>
         <span className="text-[14px]">{petType === 'rabbit' ? '🐰' : '🐣'}</span>
         <h2 className="text-[18px] font-bold text-text-main">{name}</h2>
@@ -142,48 +167,12 @@ export default function PetDisplay({ stage, name, petType, onPet, evolving = fal
         )}
       </div>
 
-      {/* Pet Area */}
       <motion.button
         onClick={handlePet}
         whileTap={evolving ? undefined : { scale: 0.92 }}
         className="relative rounded-full flex items-center justify-center cursor-pointer overflow-visible"
         style={{ width: hitArea, height: hitArea }}
       >
-        {/* Evolution glow — golden ring pulsing from pet center */}
-        <AnimatePresence>
-          {evolving && (
-            <>
-              <motion.div
-                className="absolute inset-0 rounded-full pointer-events-none"
-                initial={{ boxShadow: '0 0 0px 0px rgba(255,215,0,0)' }}
-                animate={{
-                  boxShadow: [
-                    '0 0 0px 0px rgba(255,215,0,0)',
-                    `0 0 ${40 * sizeScale}px ${20 * sizeScale}px rgba(255,215,0,0.6)`,
-                    `0 0 ${60 * sizeScale}px ${30 * sizeScale}px rgba(255,215,0,0.3)`,
-                    `0 0 ${20 * sizeScale}px ${10 * sizeScale}px rgba(255,215,0,0)`,
-                  ],
-                }}
-                exit={{ boxShadow: '0 0 0px 0px rgba(255,215,0,0)' }}
-                transition={{ duration: EVO_DURATION * 0.8, ease: 'easeOut' }}
-              />
-              <motion.div
-                className="absolute rounded-full pointer-events-none"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: [0.8, 1.6, 2], opacity: [0, 0.5, 0] }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: EVO_DURATION * 0.7, ease: 'easeOut' }}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  background: 'radial-gradient(circle, rgba(255,215,0,0.4) 0%, rgba(255,165,0,0.2) 50%, transparent 70%)',
-                }}
-              />
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* Pet Image — with evolution crossfade */}
         <motion.div
           animate={evolving ? { y: 0 } : { y: [0, -6 * sizeScale, 0] }}
           transition={evolving ? { duration: 0.3 } : { duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -194,10 +183,10 @@ export default function PetDisplay({ stage, name, petType, onPet, evolving = fal
                 key={`old-${prevStage}`}
                 src={getPetImage(petType, prevStage)}
                 alt={name}
-                initial={{ opacity: 1, scale: 1 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                transition={{ duration: 0.4 }}
+                initial={{ opacity: 1, scale: 1, rotate: 0 }}
+                animate={oldImageAnimate(kind)}
+                exit={{ opacity: 0, scale: kind === EvolutionKind.HATCH ? 0.55 : 0.8 }}
+                transition={oldImageTransition(kind)}
                 style={{ width: imageSize, height: imageSize, objectFit: 'contain', pointerEvents: 'none' }}
                 draggable={false}
               />
@@ -206,9 +195,12 @@ export default function PetDisplay({ stage, name, petType, onPet, evolving = fal
                 key={`new-${stage}`}
                 src={getPetImage(petType, stage)}
                 alt={name}
-                initial={evolving ? { opacity: 0, scale: 1.3 } : { opacity: 1, scale: 1 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: evolving ? 0.3 : 0 }}
+                initial={newImageInitial(kind, evolving)}
+                animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
+                transition={{
+                  duration: kind === EvolutionKind.HATCH ? 0.7 : 0.55,
+                  ease: 'easeOut',
+                }}
                 style={{ width: imageSize, height: imageSize, objectFit: 'contain', pointerEvents: 'none' }}
                 draggable={false}
               />
@@ -216,29 +208,10 @@ export default function PetDisplay({ stage, name, petType, onPet, evolving = fal
           </AnimatePresence>
         </motion.div>
 
-        {/* Evolution particles — fly out from pet center */}
-        <AnimatePresence>
-          {evolving && evoParticles.map((p) => {
-            const rad = (p.angle * Math.PI) / 180
-            const tx = Math.cos(rad) * p.distance
-            const ty = Math.sin(rad) * p.distance
-            return (
-              <motion.span
-                key={`evo-${p.id}`}
-                className="absolute pointer-events-none"
-                initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
-                animate={{ x: tx, y: ty, scale: [0, 1.3, 0.6], opacity: [1, 1, 0], rotate: [0, 180 + Math.random() * 180] }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: EVO_DURATION * 0.6, delay: p.delay + 0.3, ease: 'easeOut' }}
-                style={{ fontSize: `${p.size}px`, lineHeight: 1 }}
-              >
-                {p.emoji}
-              </motion.span>
-            )
-          })}
-        </AnimatePresence>
+        {kind && (
+          <EvolutionFx kind={kind} petType={petType} sizeScale={sizeScale} hitArea={hitArea} />
+        )}
 
-        {/* Hearts Animation (normal interaction) */}
         <AnimatePresence>
           {!evolving && hearts.map((id) => (
             <motion.span
@@ -255,7 +228,6 @@ export default function PetDisplay({ stage, name, petType, onPet, evolving = fal
           ))}
         </AnimatePresence>
 
-        {/* Tap hint (hidden during evolution) */}
         {!evolving && (
           <span className="absolute bottom-3 text-[11px] text-text-sub/60">
             点击抚摸

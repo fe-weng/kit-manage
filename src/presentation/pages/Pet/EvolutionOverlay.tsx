@@ -1,42 +1,46 @@
 import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { EVOLUTION_DURATION_MS, EVOLUTION_TINT, type EvolutionKind } from './evolutionTransition'
 
 interface EvolutionOverlayProps {
   visible: boolean
+  kind: EvolutionKind | null
   onDone: () => void
 }
 
-const EVO_TOTAL_DURATION = 2500
-
-export default function EvolutionOverlay({ visible, onDone }: EvolutionOverlayProps) {
+export default function EvolutionOverlay({ visible, kind, onDone }: EvolutionOverlayProps) {
   const onDoneRef = useRef(onDone)
   onDoneRef.current = onDone
+  const durationMs = kind ? EVOLUTION_DURATION_MS[kind] : 2500
+  const tint = kind ? EVOLUTION_TINT[kind] : 'rgba(0,0,0,0.15)'
 
   useEffect(() => {
-    if (visible) {
-      const timer = setTimeout(() => onDoneRef.current(), EVO_TOTAL_DURATION)
-      return () => clearTimeout(timer)
-    }
-  }, [visible])
+    if (!visible || !kind) return
+    const timer = setTimeout(() => onDoneRef.current(), durationMs)
+    return () => clearTimeout(timer)
+  }, [visible, kind, durationMs])
 
   return (
     <AnimatePresence>
-      {visible && (
+      {visible && kind && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-[200]"
-          onClick={onDone}
+          aria-hidden="true"
           style={{ pointerEvents: 'auto' }}
         >
           <motion.div
             className="absolute inset-0"
-            initial={{ backgroundColor: 'rgba(0,0,0,0)' }}
-            animate={{ backgroundColor: 'rgba(0,0,0,0.15)' }}
-            exit={{ backgroundColor: 'rgba(0,0,0,0)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
+            style={{
+              background: `radial-gradient(circle at 50% 42%, transparent 0 18%, ${tint} 72%)`,
+            }}
           />
         </motion.div>
       )}

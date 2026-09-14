@@ -12,6 +12,7 @@ import ActionButtons from './ActionButtons'
 import EvolutionOverlay from './EvolutionOverlay'
 import PetToolbar from './PetToolbar'
 import RaisingShortcutCard from './RaisingShortcutCard'
+import { getEvolutionKind } from './evolutionTransition'
 
 export default function PetPage() {
   const {
@@ -113,6 +114,10 @@ export default function PetPage() {
   }
 
   const { pet, stageName, expToNext, expProgress, nextStageName, feedCost } = status
+  const evolutionKind =
+    evolved && prevStageRef.current != null
+      ? getEvolutionKind(prevStageRef.current, pet.stage)
+      : null
   const showRaisingShortcut =
     isMaxLevel &&
     raisingStatus !== null &&
@@ -149,6 +154,7 @@ export default function PetPage() {
         onPet={handlePet}
         evolving={evolved}
         prevStage={prevStageRef.current}
+        evolutionKind={evolutionKind}
       />
 
       <StatusPanel
@@ -185,6 +191,7 @@ export default function PetPage() {
 
       <EvolutionOverlay
         visible={evolved}
+        kind={evolutionKind}
         onDone={() => setEvolved(false)}
       />
     </div>
