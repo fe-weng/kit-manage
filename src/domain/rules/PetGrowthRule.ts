@@ -7,6 +7,17 @@ export const FEED_EXP_GAIN = 10
 /** 每次喂食消耗的积分 */
 export const FEED_POINT_COST = 10
 
+/** 后续领养消耗的积分 */
+export const PET_ADOPTION_COST = 100
+
+export function isMaxLevel(pet: Pet): boolean {
+  return pet.isMaxLevel()
+}
+
+export function canContinueRaising(pet: Pet): boolean {
+  return pet.canContinueRaising()
+}
+
 export function canEvolve(pet: Pet): boolean {
   const nextConfig = getNextStageConfig(pet.stage)
   if (!nextConfig) return false

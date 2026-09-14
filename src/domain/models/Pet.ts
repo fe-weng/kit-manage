@@ -25,6 +25,8 @@ interface PetProps {
   mood: number
   moodUpdatedAt: number
   createdAt: number
+  /** 缺省视为展示宠物，兼容尚未写入该字段的旧记录 */
+  isDisplayed?: boolean
 }
 
 export class Pet {
@@ -37,6 +39,7 @@ export class Pet {
   mood: number
   moodUpdatedAt: number
   readonly createdAt: number
+  isDisplayed: boolean
 
   constructor(props: PetProps) {
     this.id = props.id
@@ -48,6 +51,7 @@ export class Pet {
     this.mood = props.mood
     this.moodUpdatedAt = props.moodUpdatedAt
     this.createdAt = props.createdAt
+    this.isDisplayed = props.isDisplayed ?? true
   }
 
   static create(params: { id: string; childId: string; name: string; type: string }): Pet {
@@ -59,11 +63,26 @@ export class Pet {
       mood: INITIAL_MOOD,
       moodUpdatedAt: now,
       createdAt: now,
+      isDisplayed: true,
     })
   }
 
-  /** 结算累积的心情衰减，将 mood 更新为当前真实值 */
+  isMaxLevel(): boolean {
+    return this.stage >= PetStage.MAX
+  }
+
+  canContinueRaising(): boolean {
+    return !this.isMaxLevel()
+  }
+
+  setDisplayed(displayed: boolean): void {
+    this.isDisplayed = displayed
+  }
+
+  /** 结算累积的心情衰减，将 mood 更新为当前真实值。满级宠物不衰减。 */
   applyMoodDecay(): void {
+    if (this.isMaxLevel()) return
+
     const now = Date.now()
     const ref = this.moodUpdatedAt
     const hoursSinceUpdate = (now - ref) / (1000 * 60 * 60)
@@ -75,6 +94,8 @@ export class Pet {
   }
 
   feed(expGain: number): void {
+    if (this.isMaxLevel()) return
+
     this.exp += expGain
     this.mood = Math.min(MOOD_MAX, this.mood + FEED_MOOD_INCREASE)
     this.moodUpdatedAt = Date.now()
@@ -121,6 +142,7 @@ export class Pet {
       mood: this.mood,
       moodUpdatedAt: this.moodUpdatedAt,
       createdAt: this.createdAt,
+      isDisplayed: this.isDisplayed,
     }
   }
 }
