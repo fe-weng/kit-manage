@@ -40,12 +40,39 @@ export function getPetImage(petType: string, stage: PetStage): string {
   return withBase('pets/chicken/stage-3-growing.png')
 }
 
-const STAGE_SIZES: Record<PetStage, number> = {
+/** 手机端维持原尺寸；平板竖屏走方案 C（满级 400） */
+const STAGE_SIZES_PHONE: Record<PetStage, number> = {
   [PetStage.EGG]: 120,
   [PetStage.HATCHED]: 130,
   [PetStage.GROWING]: 140,
   [PetStage.MATURE]: 150,
   [PetStage.MAX]: 160,
+}
+
+const STAGE_SIZES_TABLET: Record<PetStage, number> = {
+  [PetStage.EGG]: 300,
+  [PetStage.HATCHED]: 325,
+  [PetStage.GROWING]: 350,
+  [PetStage.MATURE]: 375,
+  [PetStage.MAX]: 400,
+}
+
+/** 覆盖 iPad Mini（744）及更大平板，避开手机竖屏（≤430） */
+const TABLET_MIN_WIDTH = 700
+
+function useIsTablet() {
+  const [isTablet, setIsTablet] = useState(() =>
+    window.matchMedia(`(min-width: ${TABLET_MIN_WIDTH}px)`).matches,
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(min-width: ${TABLET_MIN_WIDTH}px)`)
+    const onChange = () => setIsTablet(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  return isTablet
 }
 
 // ── Evolution particles ──
@@ -62,11 +89,11 @@ interface EvoParticle {
   emoji: string
 }
 
-function generateEvoParticles(): EvoParticle[] {
+function generateEvoParticles(sizeScale: number): EvoParticle[] {
   return Array.from({ length: EVO_PARTICLE_COUNT }, (_, i) => ({
     id: i,
     angle: (360 / EVO_PARTICLE_COUNT) * i + (Math.random() - 0.5) * 20,
-    distance: 80 + Math.random() * 60,
+    distance: (80 + Math.random() * 60) * sizeScale,
     size: 14 + Math.random() * 12,
     delay: Math.random() * 0.25,
     emoji: EVO_EMOJIS[i % EVO_EMOJIS.length] ?? '✨',
@@ -76,8 +103,15 @@ function generateEvoParticles(): EvoParticle[] {
 export default function PetDisplay({ stage, name, petType, onPet, evolving = false, prevStage }: PetDisplayProps) {
   const [hearts, setHearts] = useState<number[]>([])
   const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
-  const imageSize = STAGE_SIZES[stage] || STAGE_SIZES[PetStage.EGG]
-  const evoParticles = useMemo(() => (evolving ? generateEvoParticles() : []), [evolving])
+  const isTablet = useIsTablet()
+  const sizeMap = isTablet ? STAGE_SIZES_TABLET : STAGE_SIZES_PHONE
+  const imageSize = sizeMap[stage] || sizeMap[PetStage.EGG]
+  const hitArea = imageSize + 40
+  const sizeScale = imageSize / STAGE_SIZES_PHONE[PetStage.MAX]
+  const evoParticles = useMemo(
+    () => (evolving ? generateEvoParticles(sizeScale) : []),
+    [evolving, sizeScale],
+  )
 
   useEffect(() => {
     return () => { timersRef.current.forEach(clearTimeout) }
@@ -112,7 +146,8 @@ export default function PetDisplay({ stage, name, petType, onPet, evolving = fal
       <motion.button
         onClick={handlePet}
         whileTap={evolving ? undefined : { scale: 0.92 }}
-        className="relative w-48 h-48 rounded-full flex items-center justify-center cursor-pointer overflow-visible"
+        className="relative rounded-full flex items-center justify-center cursor-pointer overflow-visible"
+        style={{ width: hitArea, height: hitArea }}
       >
         {/* Evolution glow — golden ring pulsing from pet center */}
         <AnimatePresence>
@@ -124,9 +159,9 @@ export default function PetDisplay({ stage, name, petType, onPet, evolving = fal
                 animate={{
                   boxShadow: [
                     '0 0 0px 0px rgba(255,215,0,0)',
-                    '0 0 40px 20px rgba(255,215,0,0.6)',
-                    '0 0 60px 30px rgba(255,215,0,0.3)',
-                    '0 0 20px 10px rgba(255,215,0,0)',
+                    `0 0 ${40 * sizeScale}px ${20 * sizeScale}px rgba(255,215,0,0.6)`,
+                    `0 0 ${60 * sizeScale}px ${30 * sizeScale}px rgba(255,215,0,0.3)`,
+                    `0 0 ${20 * sizeScale}px ${10 * sizeScale}px rgba(255,215,0,0)`,
                   ],
                 }}
                 exit={{ boxShadow: '0 0 0px 0px rgba(255,215,0,0)' }}
@@ -150,7 +185,7 @@ export default function PetDisplay({ stage, name, petType, onPet, evolving = fal
 
         {/* Pet Image — with evolution crossfade */}
         <motion.div
-          animate={evolving ? { y: 0 } : { y: [0, -6, 0] }}
+          animate={evolving ? { y: 0 } : { y: [0, -6 * sizeScale, 0] }}
           transition={evolving ? { duration: 0.3 } : { duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         >
           <AnimatePresence mode="wait">
@@ -209,7 +244,7 @@ export default function PetDisplay({ stage, name, petType, onPet, evolving = fal
             <motion.span
               key={id}
               initial={{ opacity: 1, y: 0, scale: 0.5 }}
-              animate={{ opacity: 0, y: -60, scale: 1.2 }}
+              animate={{ opacity: 0, y: -60 * sizeScale, scale: 1.2 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1 }}
               className="absolute text-[28px] pointer-events-none"
