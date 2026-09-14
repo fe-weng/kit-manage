@@ -28,10 +28,11 @@ export default function TabBar() {
   const navigate = useNavigate()
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full z-50" style={{ maxWidth: 'var(--app-max-width, 480px)' }}>
-      <div className="mx-4 mb-2 bg-white rounded-clay shadow-clay flex items-center justify-around h-[68px] px-2"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)' }}
-      >
+    <nav
+      className="w-full shrink-0 z-50"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <div className="mx-4 mb-2 bg-white rounded-clay shadow-clay flex items-center justify-around h-[68px] px-2">
         {tabs.map((tab) => {
           const isActive = tab.matchPaths.some((p) => location.pathname.startsWith(p))
           const Icon = tab.icon

@@ -72,7 +72,7 @@ export default function PetPage() {
 
   if (!status) {
     return (
-      <div style={{ paddingTop: '48px', paddingBottom: '100px', paddingLeft: '20px', paddingRight: '20px' }}>
+      <div style={{ paddingTop: '48px', paddingBottom: '24px', paddingLeft: '20px', paddingRight: '20px' }}>
         <CreatePetForm onSubmit={handleCreate} />
       </div>
     )
@@ -85,7 +85,7 @@ export default function PetPage() {
       className="flex flex-col items-center"
       style={{
         paddingTop: 'calc(var(--safe-top, 0px) + 24px)',
-        paddingBottom: '100px',
+        paddingBottom: '24px',
         paddingLeft: '20px',
         paddingRight: '20px',
         gap: '20px',

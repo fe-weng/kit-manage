@@ -47,7 +47,7 @@ export default function HomePage() {
       className="flex flex-col"
       style={{
         paddingTop: 'calc(var(--safe-top, 0px) + 20px)',
-        paddingBottom: '100px',
+        paddingBottom: '24px',
         paddingLeft: '20px',
         paddingRight: '20px',
         gap: '16px',

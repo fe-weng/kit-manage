@@ -69,7 +69,7 @@ export default function MyCouponsPage() {
       className="flex flex-col"
       style={{
         paddingTop: 'calc(var(--safe-top, 0px) + 16px)',
-        paddingBottom: '100px',
+        paddingBottom: '24px',
         paddingLeft: '20px',
         paddingRight: '20px',
       }}
