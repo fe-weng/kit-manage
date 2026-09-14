@@ -11,12 +11,13 @@ export default function GlobalToast() {
         <motion.div
           role="status"
           aria-live="polite"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
+          exit={{ opacity: 0, y: -16 }}
           className="fixed left-1/2 -translate-x-1/2 z-[999] text-white text-[14px] font-medium rounded-[12px] shadow-float flex items-center"
           style={{
-            bottom: 'calc(80px + var(--safe-bottom, 0px) + 24px)',
+            top: 'calc(var(--safe-top, 0px) + 120px)',
+            maxWidth: 'calc(100% - 40px)',
             padding: '10px 18px',
             gap: '8px',
             backgroundColor: type === 'success' ? 'var(--color-text-main)' : 'var(--color-danger)',
