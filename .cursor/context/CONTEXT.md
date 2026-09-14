@@ -47,7 +47,10 @@
 | 宠物图鉴 | `PetCollection` / `getCollection` | 已领养 + 未领养种类列表；后续领养唯一入口 |
 | 宠物种类 | `ADOPTABLE_PET_TYPES` | 小鸡 `chicken`、小兔 `rabbit`，每种限一只 |
 | 宠物阶段 | `PetStage` | Value Object：EGG → HATCHED → GROWING → MATURE → MAX |
-| 宠物进化 | `evolve` | Pet.evolve()，阶段晋升 |
+| 阶段经验门槛 | `PET_STAGE_CONFIGS.requiredExp` | 累计 EXP：0 / 50 / 200 / **700** / **1500** |
+| 宠物进化 | `evolve` | Pet.evolve()，喂食达标后自动升一档 |
+| 进化演出 | `EvolutionKind` | hatch / glow / ascend / legend，由 prevStage→新 stage 推导 |
+| 壳碎片名册 | `SHELL_SHARD_IMAGES` | 有登记用 PNG，无登记用几何占位；小兔已接入，小鸡未登记 |
 | 宠物喂食 | `feed` | PetService.feed()，只喂养成宠；满级不加 EXP |
 | 后续领养 | `adoptPet` / `PET_ADOPTION_COST` | 养成宠满级后花费 100 积分领养下一只，计入宠物消费 |
 | 宠物互动 | `pet` / `petAction` | PetService.pet()，对展示宠增加心情 |
@@ -82,6 +85,8 @@
 | 取消完成 | uncomplete, uncompleteTask |
 | 积分 | point, points, balance, earn, deduct, spend, refund |
 | 宠物 | pet, petAction, feed, evolve, mood, adopt, collection, isDisplayed, raising |
+| 进化/破壳 | evolve, EvolutionKind, hatch, glow, ascend, legend, EvolutionFx, EvolutionOverlay |
+| 蛋壳碎片 | SHELL_SHARD_IMAGES, evo-shell-left, evo-shell-right, evo-shell-top |
 | 图鉴 | collection, PetCollection, adoptPet, setDisplayed, renamePet |
 | 奖励 | reward, redeem, shop |
 | 券/优惠券 | coupon, coupons, pending, used, returned, markUsed, returnCoupon |
@@ -111,7 +116,7 @@
     → 满级后领养下一只（spendOnPet 100分，种类不重复）
     → 兑换奖励（spend N分 → 产生 RewardLog[pending]）
                 ↓
-宠物经验累积 → 满足条件触发进化（stage 晋升）
+宠物经验累积 → 满足条件触发进化（stage 晋升）→ 宠物页按段播动画
 满级宠物保留抚摸，不再喂食/加 EXP/心情自然衰减
 首页与宠物页展示 `isDisplayed` 宠物；可在图鉴切换
 
@@ -153,6 +158,15 @@
 - 本期最多两只（小鸡、小兔）；两只都满级即集齐
 - 改名只在图鉴；设置页「宠物管理」进入图鉴
 - 规范：[docs/specs/2026-09-14-multi-pet-design-spec.md](../../docs/specs/2026-09-14-multi-pet-design-spec.md)
+
+### 宠物成长与进化
+
+- **经验门槛**（累计 EXP）：神秘蛋 0 → 刚孵化 50 → 成长期 200 → 成熟期 **700** → 满级 **1500**
+- **喂食**：10 积分 = 10 EXP，无冷却；只喂当前养成宠
+- **进化**：达标后自动 `evolve()`，每次升一档；宠物页按段演出，不能跳过、无音效、无庆祝文案
+- **演出 kind**：蛋→孵化 `hatch`（2.5s）/ 孵化→成长 `glow`（2.0s）/ 成长→成熟 `ascend`（2.5s）/ 成熟→满级 `legend`（3.0s）
+- **壳碎片**：`SHELL_SHARD_IMAGES` 名册登记，不靠加载 `evo-shell-left.png` 猜测。小兔 left/right/top 已接入；小鸡未登记，孵化用几何占位
+- **规范**：[进化动画](../../docs/specs/2026-09-14-evolution-animation-spec.md) · [壳图 Prompt](../../docs/specs/2026-09-14-pet-evolution-shard-prompts.md) · [grill-me](../../docs/grill-me-2026-09-14-evolution-animation.md)
 
 ### 打卡历史
 

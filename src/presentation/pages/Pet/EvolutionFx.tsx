@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Crown, Flower } from '@phosphor-icons/react'
 import {
@@ -43,33 +43,30 @@ function generateParticles(kind: EvolutionKind, petType: string, sizeScale: numb
 
 const CONFETTI_COLORS = ['#FF9BB0', '#FFD54F', '#7ECFC0', '#C4A8E0', '#FFB74D']
 
+const SHELL_SIDES = ['left', 'right', 'top'] as const
+type ShellSide = (typeof SHELL_SIDES)[number]
+
+/** 已到位的孵化壳碎片。小鸡仍走几何占位，等素材后再登记。 */
+const SHELL_SHARD_IMAGES: Record<string, Record<ShellSide, string>> = {
+  rabbit: {
+    left: 'pets/rabbit/evo-shell-left.png',
+    right: 'pets/rabbit/evo-shell-right.png',
+    top: 'pets/rabbit/evo-shell-top.png',
+  },
+}
+
 function HatchShards({ petType, sizeScale }: { petType: string; sizeScale: number }) {
-  const [useArt, setUseArt] = useState(false)
-  const leftSrc = withBase(`pets/${petType}/evo-shell-left.png`)
+  const art = SHELL_SHARD_IMAGES[petType]
+  const shardSize = (art ? 168 : 72) * sizeScale
+  const placeholderBg =
+    petType === 'rabbit'
+      ? 'radial-gradient(circle at 36% 32%, #FFFFFF 0 5px, transparent 6px), #C4A8E0'
+      : 'radial-gradient(circle at 30% 28%, #FFE08A 0 6px, transparent 7px), #F7C9D0'
 
-  useEffect(() => {
-    let cancelled = false
-    const img = new Image()
-    img.onload = () => {
-      if (!cancelled) setUseArt(true)
-    }
-    img.src = leftSrc
-    if (img.complete && img.naturalWidth > 0) setUseArt(true)
-    return () => {
-      cancelled = true
-    }
-  }, [leftSrc])
-
-  const shardSize = 72 * sizeScale
-  const chicken = petType !== 'rabbit'
-  const placeholderBg = chicken
-    ? 'radial-gradient(circle at 30% 28%, #FFE08A 0 6px, transparent 7px), #F7C9D0'
-    : 'radial-gradient(circle at 36% 32%, #FFFFFF 0 5px, transparent 6px), #C4A8E0'
-
-  const shards = [
-    { side: 'left' as const, x: -110 * sizeScale, y: -24 * sizeScale, rotate: -38 },
-    { side: 'right' as const, x: 110 * sizeScale, y: 12 * sizeScale, rotate: 42 },
-    { side: 'top' as const, x: 8 * sizeScale, y: -130 * sizeScale, rotate: -12 },
+  const shards: { side: ShellSide; x: number; y: number; rotate: number }[] = [
+    { side: 'left', x: -110 * sizeScale, y: -24 * sizeScale, rotate: -38 },
+    { side: 'right', x: 110 * sizeScale, y: 12 * sizeScale, rotate: 42 },
+    { side: 'top', x: 8 * sizeScale, y: -130 * sizeScale, rotate: -12 },
   ]
 
   return (
@@ -96,9 +93,9 @@ function HatchShards({ petType, sizeScale }: { petType: string; sizeScale: numbe
             marginTop: -shardSize / 2,
           }}
         >
-          {useArt ? (
+          {art ? (
             <img
-              src={withBase(`pets/${petType}/evo-shell-${shard.side}.png`)}
+              src={withBase(art[shard.side])}
               alt=""
               draggable={false}
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}

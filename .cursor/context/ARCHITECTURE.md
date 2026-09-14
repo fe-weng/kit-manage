@@ -93,7 +93,7 @@ src/
 │       ├── TaskCheckin/              # 任务打卡（含 NegativeBalanceGuide 负分引导）
 │       ├── TaskManage/               # 任务管理（TaskEditModal）
 │       ├── TaskHistory/              # 打卡历史（DateView + TaskView + MonthPickerModal + MonthStats）
-│       ├── Pet/                      # 宠物展示（PetToolbar + RaisingShortcutCard + 满级隐藏喂食）
+│       ├── Pet/                      # 宠物展示（PetToolbar + EvolutionFx 分阶段进化 + 满级隐藏喂食）
 │       ├── PetCollection/            # 宠物图鉴（CollectionCard + PetNameModal）
 │       ├── Shop/                     # 商城（RewardCard + RewardEditModal + RedeemConfirm + RedeemSuccess）
 │       ├── MyCoupons/                # 我的券（券列表 + 核销/退还）

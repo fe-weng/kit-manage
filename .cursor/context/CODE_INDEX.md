@@ -115,11 +115,13 @@
 - `/pet` → `src/presentation/pages/Pet/index.tsx`
 
 ### Components
-- `PetDisplay` → `src/presentation/pages/Pet/PetDisplay.tsx`
+- `PetDisplay` → `src/presentation/pages/Pet/PetDisplay.tsx` — 按 `EvolutionKind` 换图（抖动/弹出/旋转/爆发）
+- `EvolutionFx` → `src/presentation/pages/Pet/EvolutionFx.tsx` — 四段附加层（碎片、光柱、彩虹、粒子）；`SHELL_SHARD_IMAGES` 登记壳图
+- `evolutionTransition.ts` → `src/presentation/pages/Pet/evolutionTransition.ts` — kind / 时长 / 揭晓延迟 / 遮罩色 / 粒子色
 - `StatusPanel` → `src/presentation/pages/Pet/StatusPanel.tsx`
 - `ActionButtons` → `src/presentation/pages/Pet/ActionButtons.tsx` — 满级隐藏喂食
 - `CreatePetForm` → `src/presentation/pages/Pet/CreatePetForm.tsx` — 仅第一只免费领养
-- `EvolutionOverlay` → `src/presentation/pages/Pet/EvolutionOverlay.tsx`
+- `EvolutionOverlay` → `src/presentation/pages/Pet/EvolutionOverlay.tsx` — 按段 vignette；点击不跳过，按时长 `onDone`
 - `PetToolbar` → `src/presentation/pages/Pet/PetToolbar.tsx` — 图鉴 X/Y + 可领养提示 + 积分
 - `RaisingShortcutCard` → `src/presentation/pages/Pet/RaisingShortcutCard.tsx` — 展示满级时切回养成宠
 
@@ -144,6 +146,9 @@
 - `PetGrowthRule.FEED_EXP_GAIN` — 喂食获得经验（10）
 - `PetGrowthRule.FEED_POINT_COST` — 喂食花费积分（10）
 - `PetGrowthRule.PET_ADOPTION_COST` — 后续领养花费积分（100）
+- `PET_STAGE_CONFIGS` — 累计 EXP：0 / 50 / 200 / 700 / 1500
+- `getEvolutionKind(prev, next)` — 推导 hatch / glow / ascend / legend
+- `SHELL_SHARD_IMAGES` — 壳图名册（小兔已接入；小鸡未登记则几何占位）
 - `Pet.isMaxLevel()` / `Pet.canContinueRaising()` — 满级与可养成判定
 - `Pet.applyMoodDecay()` — 心情自然衰减（-1/h）；满级不执行
 - `Pet.isDisplayed` / `Pet.setDisplayed()` — 展示状态
@@ -153,6 +158,10 @@
 - `IPetRepository.findRaisingByChildId` — 当前养成宠物（唯一未满级）
 - `IPetRepository.findAllByChildId` — 全部宠物
 - `IPetRepository.switchDisplayed` — 原子切换展示
+
+### Assets
+- `public/pets/rabbit/evo-shell-{left,right,top}.png` — 小兔孵化壳碎片（已登记）
+- 小鸡壳图未到：`public/pets/chicken/evo-shell-*.png` + `SHELL_SHARD_IMAGES.chicken`
 
 ---
 
@@ -299,7 +308,7 @@
 
 ### Value Objects
 - `TaskType` → `src/domain/valueObjects/TaskType.ts`（DAILY / WEEKLY / ONE_TIME / NEGATIVE）
-- `PetStage` → `src/domain/valueObjects/PetStage.ts`（EGG → HATCHED → GROWING → MATURE → MAX）
+- `PetStage` → `src/domain/valueObjects/PetStage.ts`（EGG → HATCHED → GROWING → MATURE → MAX；门槛 0/50/200/700/1500）
 
 ### Infrastructure
 - `KidManageDB` → `src/infrastructure/database/DexieDatabase.ts`（Dexie schema v7，8 张表）

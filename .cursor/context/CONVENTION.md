@@ -10,6 +10,7 @@
 | 页面目录 | `src/presentation/pages/<PageName>/` | **PascalCase** 目录 |
 | 页面入口 | `<PageName>/index.tsx` | `index.tsx` |
 | 页面子组件 | `<PageName>/XxxComponent.tsx` | **PascalCase** |
+| 页面辅助模块 | `<PageName>/xxxHelper.ts` | **camelCase**（如 `evolutionTransition.ts`） |
 | 布局组件 | `src/presentation/layouts/` | **PascalCase** |
 | Zustand Store | `src/presentation/hooks/use<Name>Store.ts` | `use` 前缀 + **camelCase** |
 | Domain Model | `src/domain/models/<Name>.ts` | **PascalCase** |
