@@ -1,26 +1,45 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { usePetStore } from '@/presentation/hooks/usePetStore'
 import { usePointStore } from '@/presentation/hooks/usePointStore'
 import { FEED_POINT_COST } from '@/domain/rules/PetGrowthRule'
+import { ROUTES } from '@/shared/constants'
 import type { PetStage } from '@/domain/valueObjects/PetStage'
 import CreatePetForm from './CreatePetForm'
 import PetDisplay from './PetDisplay'
 import StatusPanel from './StatusPanel'
 import ActionButtons from './ActionButtons'
 import EvolutionOverlay from './EvolutionOverlay'
+import PetToolbar from './PetToolbar'
+import RaisingShortcutCard from './RaisingShortcutCard'
 
 export default function PetPage() {
-  const { status, loading, fetchPet, feed, petAction, createPet } = usePetStore()
+  const {
+    status,
+    raisingStatus,
+    collection,
+    loading,
+    switchingDisplay,
+    fetchPet,
+    fetchCollection,
+    feed,
+    petAction,
+    createPet,
+    setDisplayed,
+  } = usePetStore()
   const { balance, fetchBalance } = usePointStore()
+  const navigate = useNavigate()
   const [feeding, setFeeding] = useState(false)
   const feedingRef = useRef(false)
   const [evolved, setEvolved] = useState(false)
   const prevStageRef = useRef<PetStage | undefined>(undefined)
+  const switchingRef = useRef(false)
 
   useEffect(() => {
     fetchPet()
+    fetchCollection()
     fetchBalance()
-  }, [fetchPet, fetchBalance])
+  }, [fetchPet, fetchCollection, fetchBalance])
 
   const handleFeed = useCallback(async () => {
     if (feedingRef.current) return
@@ -52,12 +71,27 @@ export default function PetPage() {
   const handleCreate = useCallback(
     async (name: string, type: string) => {
       await createPet(name, type)
+      await fetchCollection()
     },
-    [createPet],
+    [createPet, fetchCollection],
   )
 
+  const handleOpenCollection = useCallback(() => {
+    navigate(ROUTES.PET_COLLECTION)
+  }, [navigate])
+
+  const handleSwitchToRaising = useCallback(async () => {
+    if (!raisingStatus || switchingRef.current) return
+    switchingRef.current = true
+    try {
+      await setDisplayed(raisingStatus.pet.id)
+    } finally {
+      switchingRef.current = false
+    }
+  }, [raisingStatus, setDisplayed])
+
   const isMaxLevel = status?.isMaxLevel ?? false
-  const canAfford = isMaxLevel || (balance ? balance.currentBalance >= FEED_POINT_COST : false)
+  const canAfford = balance ? balance.currentBalance >= FEED_POINT_COST : false
 
   if (loading && !status) {
     return (
@@ -79,6 +113,15 @@ export default function PetPage() {
   }
 
   const { pet, stageName, expToNext, expProgress, nextStageName, feedCost } = status
+  const showRaisingShortcut =
+    isMaxLevel &&
+    raisingStatus !== null &&
+    raisingStatus.pet.id !== pet.id
+  const canAdoptHint = Boolean(
+    collection &&
+    collection.items.some((item) => !item.adopted) &&
+    !raisingStatus,
+  )
 
   return (
     <div
@@ -91,16 +134,14 @@ export default function PetPage() {
         gap: '20px',
       }}
     >
-      {/* Points Display */}
-      <div className="self-end bg-card rounded-full shadow-clay-button flex items-center" style={{ padding: '6px 14px', gap: '6px' }}>
-        <span className="text-[13px] text-text-sub">⭐</span>
-        <span className="text-[15px] font-bold text-accent">
-          {balance?.currentBalance ?? 0}
-        </span>
-        <span className="text-[12px] text-text-sub">分</span>
-      </div>
+      <PetToolbar
+        adoptedCount={collection?.adoptedCount ?? 1}
+        totalCount={collection?.totalCount ?? 2}
+        canAdoptHint={canAdoptHint}
+        balance={balance?.currentBalance ?? 0}
+        onOpenCollection={handleOpenCollection}
+      />
 
-      {/* Pet Display */}
       <PetDisplay
         stage={pet.stage}
         name={pet.name}
@@ -110,7 +151,6 @@ export default function PetPage() {
         prevStage={prevStageRef.current}
       />
 
-      {/* Status Panel */}
       <StatusPanel
         mood={pet.mood}
         moodEmoji={pet.getMoodEmoji()}
@@ -121,7 +161,19 @@ export default function PetPage() {
         nextStageName={nextStageName}
       />
 
-      {/* Action Buttons */}
+      {showRaisingShortcut && (
+        <RaisingShortcutCard
+          petName={raisingStatus.pet.name}
+          petType={raisingStatus.pet.type}
+          stageName={raisingStatus.stageName}
+          stage={raisingStatus.pet.stage}
+          moodEmoji={raisingStatus.pet.getMoodEmoji()}
+          expProgress={raisingStatus.expProgress}
+          disabled={switchingDisplay}
+          onTap={handleSwitchToRaising}
+        />
+      )}
+
       <ActionButtons
         onFeed={handleFeed}
         onPet={handlePet}
@@ -131,7 +183,6 @@ export default function PetPage() {
         isMaxLevel={isMaxLevel}
       />
 
-      {/* Evolution Overlay */}
       <EvolutionOverlay
         visible={evolved}
         onDone={() => setEvolved(false)}
