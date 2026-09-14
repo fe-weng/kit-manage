@@ -132,7 +132,7 @@ eyelashes, confident smile, warm yellow with golden wing tips,
 chibi proportions, pastel colors, children's game character, white background
 ```
 
-#### 阶段 4：成熟期（500 EXP）
+#### 阶段 4：成熟期（700 EXP）
 
 ```
 外形：完全体小鸡，身材匀称但仍Q版
@@ -158,7 +158,7 @@ chibi/SD proportions, pastel royal style, children's game character,
 white background
 ```
 
-#### 阶段 5：满级 ✨（1000 EXP）
+#### 阶段 5：满级 ✨（1500 EXP）
 
 ```
 外形：最华丽的小鸡形态，全身闪闪发光
@@ -275,7 +275,7 @@ eyelashes, curious expression with tilted head,
 chibi proportions, pastel colors, children's game character, white background
 ```
 
-#### 阶段 4：成熟期（500 EXP）
+#### 阶段 4：成熟期（700 EXP）
 
 ```
 外形：优雅的完全体兔子，仍保持Q版比例
@@ -302,7 +302,7 @@ chibi/SD proportions, pastel fantasy style, children's game character,
 white background
 ```
 
-#### 阶段 5：满级 ✨（1000 EXP）
+#### 阶段 5：满级 ✨（1500 EXP）
 
 ```
 外形：最华丽的兔子形态，梦幻仙子风

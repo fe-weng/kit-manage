@@ -18,8 +18,8 @@ export const PET_STAGE_CONFIGS: readonly PetStageConfig[] = [
   { stage: PetStage.EGG, name: '神秘蛋', requiredExp: 0 },
   { stage: PetStage.HATCHED, name: '刚孵化', requiredExp: 50 },
   { stage: PetStage.GROWING, name: '成长期', requiredExp: 200 },
-  { stage: PetStage.MATURE, name: '成熟期', requiredExp: 500 },
-  { stage: PetStage.MAX, name: '满级', requiredExp: 1000 },
+  { stage: PetStage.MATURE, name: '成熟期', requiredExp: 700 },
+  { stage: PetStage.MAX, name: '满级', requiredExp: 1500 },
 ] as const
 
 export function getStageConfig(stage: PetStage): PetStageConfig {
