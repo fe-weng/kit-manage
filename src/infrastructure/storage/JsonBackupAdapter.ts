@@ -61,7 +61,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
         const bulkOps = [
           this.db.tasks.bulkAdd(data.tasks as TaskRecord[]),
           this.db.taskLogs.bulkAdd(data.taskLogs as TaskLogRecord[]),
-          this.db.pets.bulkAdd(data.pets as PetRecord[]),
+          this.db.pets.bulkAdd(this.normalizePets(data.pets)),
           this.db.rewards.bulkAdd(data.rewards as RewardRecord[]),
           this.db.rewardLogs.bulkAdd(data.rewardLogs as RewardLogRecord[]),
           this.db.pointBalances.bulkAdd(data.pointBalances as PointBalanceRecord[]),
@@ -129,5 +129,38 @@ export class JsonBackupAdapter implements IBackupAdapter {
     if (data.dailySnapshots && !Array.isArray(data.dailySnapshots)) {
       throw new Error('备份数据 dailySnapshots 格式错误')
     }
+  }
+
+  /** 旧备份缺 isDisplayed 时补齐；同一 childId 只保留一只展示宠物。养成资格仍由 stage 判定。 */
+  private normalizePets(rawPets: unknown[]): PetRecord[] {
+    const pets = rawPets as Array<PetRecord & { isDisplayed?: number | boolean }>
+    const grouped = new Map<string, typeof pets>()
+
+    for (const pet of pets) {
+      const list = grouped.get(pet.childId) ?? []
+      list.push(pet)
+      grouped.set(pet.childId, list)
+    }
+
+    const normalized: PetRecord[] = []
+    for (const group of grouped.values()) {
+      let displayIndex = group.findIndex((pet) => this.toDisplayedFlag(pet.isDisplayed) === 1)
+      if (displayIndex < 0) displayIndex = 0
+
+      group.forEach((pet, index) => {
+        normalized.push({
+          ...pet,
+          isDisplayed: index === displayIndex ? 1 : 0,
+        })
+      })
+    }
+
+    return normalized
+  }
+
+  private toDisplayedFlag(value: unknown): 0 | 1 | undefined {
+    if (value === 1 || value === true) return 1
+    if (value === 0 || value === false) return 0
+    return undefined
   }
 }

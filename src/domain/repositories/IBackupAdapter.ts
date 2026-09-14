@@ -3,6 +3,7 @@ export interface BackupData {
   exportedAt: number
   tasks: unknown[]
   taskLogs: unknown[]
+  /** 宠物记录；旧备份可能缺少 isDisplayed，导入时由适配器补齐 */
   pets: unknown[]
   rewards: unknown[]
   rewardLogs: unknown[]
