@@ -1,25 +1,22 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   DownloadSimple,
   UploadSimple,
   Trash,
   Info,
+  PawPrint,
 } from '@phosphor-icons/react'
-import { usePetStore } from '@/presentation/hooks/usePetStore'
 import { backupService } from '@/shared/container'
 import ConfirmDialog from './ConfirmDialog'
 import SettingsSection from './SettingsSection'
 import SettingsRow from './SettingsRow'
-import PetNameEditor from './PetNameEditor'
 import { toast } from '@/shared/toast'
+import { ROUTES } from '@/shared/constants'
 
 export default function SettingsPage() {
-  const { status, rename, fetchPet } = usePetStore()
+  const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    fetchPet()
-  }, [fetchPet])
 
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmImport, setConfirmImport] = useState(false)
@@ -86,10 +83,14 @@ export default function SettingsPage() {
         ⚙️ 设置
       </h1>
 
-      <PetNameEditor
-        currentName={status?.pet.name}
-        onRename={rename}
-      />
+      <SettingsSection title="宠物">
+        <SettingsRow
+          icon={<PawPrint size={18} weight="bold" />}
+          label="宠物管理"
+          hint="改名、领养和切换展示"
+          onTap={() => navigate(ROUTES.PET_COLLECTION)}
+        />
+      </SettingsSection>
 
       {/* Section: Data Management */}
       <SettingsSection title="数据管理">
