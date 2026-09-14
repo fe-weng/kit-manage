@@ -18,7 +18,7 @@ interface TabItem {
 const tabs: TabItem[] = [
   { path: ROUTES.HOME, matchPaths: [ROUTES.HOME], label: '首页', icon: House },
   { path: ROUTES.TASKS, matchPaths: [ROUTES.TASKS, ROUTES.TASKS_MANAGE], label: '任务', icon: CheckCircle },
-  { path: ROUTES.PET, matchPaths: [ROUTES.PET], label: '宠物', icon: PawPrint },
+  { path: ROUTES.PET, matchPaths: [ROUTES.PET, ROUTES.PET_COLLECTION], label: '宠物', icon: PawPrint },
   { path: ROUTES.SHOP, matchPaths: [ROUTES.SHOP], label: '商城', icon: Gift },
   { path: ROUTES.SETTINGS, matchPaths: [ROUTES.SETTINGS], label: '设置', icon: GearSix },
 ]

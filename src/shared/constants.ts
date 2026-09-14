@@ -10,6 +10,7 @@ export const ROUTES = {
   TASKS: '/tasks',
   TASKS_MANAGE: '/tasks/manage',
   PET: '/pet',
+  PET_COLLECTION: '/pet/collection',
   SHOP: '/shop',
   MY_COUPONS: '/shop/coupons',
   REDEEM_HISTORY: '/shop/history',
