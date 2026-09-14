@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — 代码结构
 
-> 最后更新：2026-09-08
+> 最后更新：2026-09-14
 > 维护方式：人工维护，架构变动时同步更新
 
 ## 技术栈
@@ -43,18 +43,18 @@ src/
 │   │   ├── ITaskRepository.ts
 │   │   ├── IRewardRepository.ts     # 含分类 + 券 log 查询
 │   │   ├── IPointRepository.ts
-│   │   ├── IPetRepository.ts
+│   │   ├── IPetRepository.ts        # 展示/养成/全部/按 ID/按种类/原子切换展示
 │   │   ├── IBackupAdapter.ts       # 备份适配器接口 + BackupData（含 categories）
 │   │   └── ISnapshotRepository.ts   # 快照仓储接口
 │   └── rules/                       # 业务规则（纯函数）
 │       ├── TaskResetRule.ts         # 完成判定 + 统计
-│       ├── PetGrowthRule.ts         # 进化 + 经验计算
+│       ├── PetGrowthRule.ts         # 进化 + 经验计算 + PET_ADOPTION_COST
 │       ├── PointRule.ts             # 积分格式化
 │       └── DateUtils.ts            # 日期工具（getTodayStart/getWeekStart/parseDateStrToLocal/getDayRange/getMonthRange）
 │
 ├── infrastructure/                   # 基础设施层（Dexie 实现）
 │   ├── database/
-│   │   ├── DexieDatabase.ts         # DB schema（v6，8 张表）
+│   │   ├── DexieDatabase.ts         # DB schema（v7，8 张表）
 │   │   └── repositories/            # 5 个 Dexie 实现
 │   │       ├── DexieTaskRepository.ts
 │   │       ├── DexieRewardRepository.ts  # 含分类 CRUD + 券查询
@@ -62,7 +62,7 @@ src/
 │   │       ├── DexiePetRepository.ts
 │   │       └── DexieSnapshotRepository.ts  # 快照持久化
 │   ├── storage/
-│   │   └── JsonBackupAdapter.ts     # JSON 文件备份/恢复（含 categories）
+│   │   └── JsonBackupAdapter.ts     # JSON 文件备份/恢复（含 pets.isDisplayed 补齐）
 │   └── pwa/                          # PWA 相关（如有）
 │
 ├── application/                      # 应用层（编排业务逻辑）
@@ -70,7 +70,7 @@ src/
 │   │   ├── TaskService.ts           # 含快照生成/更新/月度查询
 │   │   ├── RewardService.ts         # 含分类管理 + 券核销/退还
 │   │   ├── PointService.ts          # 含 refundReward
-│   │   ├── PetService.ts
+│   │   ├── PetService.ts            # 多宠物：展示/养成/图鉴/免费首养/付费续养
 │   │   └── BackupService.ts
 │   └── dto/                          # 数据传输对象（如有）
 │
@@ -79,7 +79,7 @@ src/
 │   │   ├── useTaskStore.ts
 │   │   ├── useRewardStore.ts        # 含券核销/退还/pending 查询
 │   │   ├── usePointStore.ts
-│   │   ├── usePetStore.ts
+│   │   ├── usePetStore.ts           # 展示宠 + 养成宠 + 图鉴 + 领养/改名/切换展示
 │   │   └── useTaskHistoryStore.ts   # 打卡历史数据管理
 │   ├── layouts/
 │   │   ├── AppLayout.tsx            # 根布局
@@ -88,19 +88,20 @@ src/
 │   │   ├── BaseModal.tsx            # 统一弹窗基座（ESC/focus trap/aria）
 │   │   ├── GlobalToast.tsx          # 全局 Toast 渲染组件
 │   │   └── MonthCalendar.tsx        # 通用月历组件（react-day-picker v10）
-│   └── pages/                        # 9 个页面模块
+│   └── pages/                        # 10 个页面模块
 │       ├── Home/                     # 首页（PetMiniCard + TodayTaskList + CouponMiniCard）
 │       ├── TaskCheckin/              # 任务打卡（含 NegativeBalanceGuide 负分引导）
 │       ├── TaskManage/               # 任务管理（TaskEditModal）
 │       ├── TaskHistory/              # 打卡历史（DateView + TaskView + MonthPickerModal + MonthStats）
-│       ├── Pet/                      # 宠物（PetDisplay + StatusPanel + ActionButtons + CreatePetForm + EvolutionOverlay）
+│       ├── Pet/                      # 宠物展示（PetToolbar + RaisingShortcutCard + 满级隐藏喂食）
+│       ├── PetCollection/            # 宠物图鉴（CollectionCard + PetNameModal）
 │       ├── Shop/                     # 商城（RewardCard + RewardEditModal + RedeemConfirm + RedeemSuccess）
 │       ├── MyCoupons/                # 我的券（券列表 + 核销/退还）
 │       ├── RedeemHistory/            # 兑换历史
-│       └── Settings/                 # 设置（SettingsSection + SettingsRow + PetNameEditor + ConfirmDialog）
+│       └── Settings/                 # 设置（SettingsSection + SettingsRow + ConfirmDialog；宠物管理进图鉴）
 │
 └── shared/                           # 跨层共享
-    ├── constants.ts                  # DEFAULT_CHILD_ID, REWARD_CATEGORIES, ROUTES（9 个路由）
+    ├── constants.ts                  # DEFAULT_CHILD_ID, REWARD_CATEGORIES, ROUTES（10 个路由）
     ├── container.ts                  # DI 容器（实例化 Service 并注入 Repository，含 snapshotRepo）
     ├── toast.ts                      # 全局命令式 Toast API（toast.success/error）
     ├── types/                        # 共享类型（如有）
@@ -112,23 +113,24 @@ src/
 ## 路由组织
 
 使用 React Router v7，所有路由定义在 `src/App.tsx`。
-6 个页面均通过 `React.lazy()` 懒加载，外层 `<Suspense>` + `<AppLayout>` 包裹。
+页面均通过 `React.lazy()` 懒加载，外层 `<Suspense>` + `<AppLayout>` 包裹。
 
 | Path | 页面 | 说明 |
 |------|------|------|
 | `/` | `<Navigate to="/home">` | 根路径重定向 |
-| `/home` | `HomePage` | 首页 |
+| `/home` | `HomePage` | 首页（只读当前展示宠物） |
 | `/tasks` | `TaskCheckinPage` | 任务打卡 |
 | `/tasks/manage` | `TaskManagePage` | 任务管理 |
 | `/tasks/history` | `TaskHistoryPage` | 打卡历史 |
-| `/pet` | `PetPage` | 宠物 |
+| `/pet` | `PetPage` | 宠物展示 |
+| `/pet/collection` | `PetCollectionPage` | 宠物图鉴；底部宠物 Tab 保持选中 |
 | `/shop` | `ShopPage` | 奖励商城 |
 | `/shop/coupons` | `MyCouponsPage` | 我的券 |
 | `/shop/history` | `RedeemHistoryPage` | 兑换历史 |
 | `/settings` | `SettingsPage` | 设置 |
 
 路由常量定义在 `src/shared/constants.ts` 的 `ROUTES` 对象中。
-全局 `GlobalToast` 组件挂载于 Router 内，提供命令式 Toast 能力。
+全局 `GlobalToast` 组件挂载于 Router 内，固定在页面顶部展示。
 
 ---
 
@@ -139,7 +141,7 @@ Zustand v5 store，5 个业务 store + 1 个基础设施 store：
 | Store | 职责 | 核心 State |
 |-------|------|-----------|
 | `useTaskStore` | 任务 CRUD + 打卡 + 统计 | `tasks`, `stats`, `loading` |
-| `usePetStore` | 宠物养成 + 喂食 + 互动 | `status`, `loading` |
+| `usePetStore` | 展示宠 + 养成宠 + 图鉴 + 领养/改名/切换展示 | `status`, `raisingStatus`, `collection`, `loading` |
 | `usePointStore` | 积分余额查询 | `balance`, `loading` |
 | `useRewardStore` | 奖励 CRUD + 兑换 + 券管理 + 全量日志 | `rewards`, `loading`, `pendingCoupons`, `allLogs` |
 | `useTaskHistoryStore` | 打卡历史（月度快照 + 日志） | `snapshots`, `logs`, `loading` |
@@ -173,22 +175,22 @@ Zustand Store 内部通过 `import { xxxService } from '@/shared/container'` 获
 
 ## 数据持久化
 
-Dexie.js v4 操作 IndexedDB，数据库名 `kid-manage`（class 名 `KidManageDB`），当前 schema 版本 v6。
+Dexie.js v4 操作 IndexedDB，数据库名 `kid-manage`（class 名 `KidManageDB`），当前 schema 版本 v7。
 
 | 表名 | 主键 | 索引 | 版本 |
 |------|------|------|------|
 | `tasks` | `id` | `childId`, `type`, `isActive`, `[childId+isActive]`, `[childId+type]` | v1 (v2 加复合索引) |
 | `taskLogs` | `id` | `taskId`, `childId`, `completedAt` | v1 |
-| `pets` | `id` | `childId` | v1 |
+| `pets` | `id` | `childId`, `type`, `stage`, `isDisplayed`, `[childId+isDisplayed]`, `[childId+type]` | v1（**v7** 加 `isDisplayed` 与复合索引） |
 | `rewards` | `id` | `isPreset`, `isActive`, `categoryId` | v1 (v5 加 categoryId) |
 | `rewardLogs` | `id` | `rewardId`, `childId`, `redeemedAt`, `status`, `[childId+status]`, `[rewardId+childId+status]` | v1 (v3 加 status) |
 | `pointBalances` | `childId` | — | v1 |
 | `categories` | `id` | `&name`（唯一） | **v4 新增** |
 | `dailySnapshots` | `id` | `[childId+date]` | **v6 新增** |
 
-Schema 版本迁移历史：v1(初始 6 表) → v2(复合索引) → v3(rewardLogs status) → v4(+categories) → v5(rewards categoryId) → v6(+dailySnapshots)
+Schema 版本迁移历史：v1(初始 6 表) → v2(复合索引) → v3(rewardLogs status) → v4(+categories) → v5(rewards categoryId) → v6(+dailySnapshots) → v7(pets.isDisplayed)
 
-> 修改 schema 须在 `DexieDatabase.ts` 中升级版本号。v3/v5 已配置 `.upgrade()` 迁移函数。
+> 修改 schema 须在 `DexieDatabase.ts` 中升级版本号。v3/v5/v7 已配置 `.upgrade()` 迁移函数。旧备份导入时由 `JsonBackupAdapter.normalizePets()` 补齐 `isDisplayed`。
 
 ---
 
@@ -207,7 +209,7 @@ Schema 版本迁移历史：v1(初始 6 表) → v2(复合索引) → v3(rewardL
 | 组件 | 路径 | 用途 |
 |------|------|------|
 | `BaseModal` | `src/presentation/components/BaseModal.tsx` | 统一弹窗基座（ESC/focus trap/aria） |
-| `GlobalToast` | `src/presentation/components/GlobalToast.tsx` | 全局命令式 Toast 渲染 |
+| `GlobalToast` | `src/presentation/components/GlobalToast.tsx` | 全局命令式 Toast，固定页面顶部 |
 | `MonthCalendar` | `src/presentation/components/MonthCalendar.tsx` | 通用月历组件（react-day-picker v10） |
 | `AppLayout` | `src/presentation/layouts/AppLayout.tsx` | 根布局 |
 | `TabBar` | `src/presentation/layouts/TabBar.tsx` | 底部导航栏 |

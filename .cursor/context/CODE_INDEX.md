@@ -1,7 +1,7 @@
 # CODE_INDEX.md — 代码索引
 
 > 自动生成，请勿手动编辑
-> 生成时间：2026-09-08
+> 生成时间：2026-09-14
 > 生成方式：project-context-generator Skill
 
 ---
@@ -19,14 +19,14 @@
 ### Hooks
 - `useTaskStore.fetchTasks()` — 加载任务列表
 - `useTaskStore.fetchStats()` — 加载今日统计
-- `usePetStore.fetchPet()` — 加载宠物状态
+- `usePetStore.fetchPet()` — 加载当前展示宠物 + 养成宠物状态
 - `usePointStore.fetchBalance()` — 加载积分余额
 - `useRewardStore.fetchPendingCoupons()` — 加载待使用券
 
 ### Services
 - `TaskService.getTasksWithStatus()` — 获取带完成状态的任务列表
 - `TaskService.getTodayStats()` — 今日统计（completedCount, earnedPoints, totalTasks）
-- `PetService.getPetStatus()` — 宠物完整状态
+- `PetService.getPetStatus()` — 当前展示宠物完整状态
 - `RewardService.getPendingCoupons()` — 待使用券列表
 
 ---
@@ -117,20 +117,25 @@
 ### Components
 - `PetDisplay` → `src/presentation/pages/Pet/PetDisplay.tsx`
 - `StatusPanel` → `src/presentation/pages/Pet/StatusPanel.tsx`
-- `ActionButtons` → `src/presentation/pages/Pet/ActionButtons.tsx`
-- `CreatePetForm` → `src/presentation/pages/Pet/CreatePetForm.tsx`
+- `ActionButtons` → `src/presentation/pages/Pet/ActionButtons.tsx` — 满级隐藏喂食
+- `CreatePetForm` → `src/presentation/pages/Pet/CreatePetForm.tsx` — 仅第一只免费领养
 - `EvolutionOverlay` → `src/presentation/pages/Pet/EvolutionOverlay.tsx`
+- `PetToolbar` → `src/presentation/pages/Pet/PetToolbar.tsx` — 图鉴 X/Y + 可领养提示 + 积分
+- `RaisingShortcutCard` → `src/presentation/pages/Pet/RaisingShortcutCard.tsx` — 展示满级时切回养成宠
 
 ### Hooks
-- `usePetStore.feed()` — 喂食（花积分 → 获经验）
-- `usePetStore.petAction()` — 互动（增加心情）
-- `usePetStore.createPet(name, type)` — 创建宠物
+- `usePetStore.fetchPet()` — 加载展示宠 + 养成宠
+- `usePetStore.feed()` — 只喂养成宠（花积分 → 获经验）
+- `usePetStore.petAction()` — 对展示宠互动（增加心情）
+- `usePetStore.createPet(name, type)` — 免费创建第一只
+- `usePetStore.setDisplayed(petId)` — 切换展示宠物
 
 ### Services
-- `PetService.feed()` — 喂食编排（扣积分 → 加经验 → 检查进化）
-- `PetService.pet()` — 互动（mood +5）
-- `PetService.getPetStatus()` — 完整状态（含阶段、经验进度、下阶段名）
-- `PetService.createPet(name, type)` — 创建宠物
+- `PetService.getPetStatus()` — 展示宠物状态
+- `PetService.getRaisingStatus()` — 养成中宠物状态
+- `PetService.feed()` — 只对养成宠扣积分加 EXP，满级不加 EXP
+- `PetService.pet()` — 对展示宠互动（mood +5）
+- `PetService.createPet(name, type)` — 免费首养；已有宠物时拒绝
 
 ### Domain Rules
 - `PetGrowthRule.canEvolve(pet)` — 是否可进化
@@ -138,7 +143,41 @@
 - `PetGrowthRule.getExpToNextStage(pet)` — 到下阶段需要的经验
 - `PetGrowthRule.FEED_EXP_GAIN` — 喂食获得经验（10）
 - `PetGrowthRule.FEED_POINT_COST` — 喂食花费积分（10）
-- `Pet.applyMoodDecay()` — 结算心情衰减（-1/h），更新 moodUpdatedAt
+- `PetGrowthRule.PET_ADOPTION_COST` — 后续领养花费积分（100）
+- `Pet.isMaxLevel()` / `Pet.canContinueRaising()` — 满级与可养成判定
+- `Pet.applyMoodDecay()` — 心情自然衰减（-1/h）；满级不执行
+- `Pet.isDisplayed` / `Pet.setDisplayed()` — 展示状态
+
+### Repository
+- `IPetRepository.findDisplayedByChildId` — 当前展示宠物
+- `IPetRepository.findRaisingByChildId` — 当前养成宠物（唯一未满级）
+- `IPetRepository.findAllByChildId` — 全部宠物
+- `IPetRepository.switchDisplayed` — 原子切换展示
+
+---
+
+## PetCollection（宠物图鉴）
+
+### Pages
+- `/pet/collection` → `src/presentation/pages/PetCollection/index.tsx`
+
+### Components
+- `CollectionCard` → `src/presentation/pages/PetCollection/CollectionCard.tsx` — 已领养 / 未领养卡片
+- `PetNameModal` → `src/presentation/pages/PetCollection/PetNameModal.tsx` — 改名与领养命名（BaseModal）
+
+### Hooks
+- `usePetStore.fetchCollection()` — 加载图鉴列表
+- `usePetStore.checkAdoption(type)` — 领养前校验（含积分差额文案）
+- `usePetStore.adoptPet(name, type)` — 付费领养并切为展示
+- `usePetStore.renamePet(petId, name)` — 按 ID 改名
+- `usePetStore.setDisplayed(petId)` — 设为展示后返回宠物页
+
+### Services
+- `PetService.getCollection()` — 图鉴列表（含未领养种类）
+- `PetService.checkAdoption(type)` — 领养资格与余额
+- `PetService.adoptPet(name, type)` — 二次校验 + 并发锁 + `spendOnPet(100)`
+- `PetService.renamePet(petId, name)` — 按 ID 改名
+- `PetService.setDisplayed(petId)` — 切换展示宠物
 
 ---
 
@@ -217,14 +256,15 @@
 ### Components
 - `SettingsSection` → `src/presentation/pages/Settings/SettingsSection.tsx`
 - `SettingsRow` → `src/presentation/pages/Settings/SettingsRow.tsx`
-- `PetNameEditor` → `src/presentation/pages/Settings/PetNameEditor.tsx`
 - `ConfirmDialog` → `src/presentation/pages/Settings/ConfirmDialog.tsx`
 
+### Hooks
+- 设置页「宠物管理」跳转 `ROUTES.PET_COLLECTION`，不在设置内改名
+
 ### Services
-- `BackupService.exportData()` — 导出数据为 JSON 文件
-- `BackupService.importData(file)` — 从 JSON 文件恢复
+- `BackupService.exportData()` — 导出数据为 JSON 文件（含全部宠物与 isDisplayed）
+- `BackupService.importData(file)` — 从 JSON 文件恢复（旧备份自动补齐展示字段）
 - `BackupService.resetAllData()` — 重置全部数据
-- `PetService.rename(newName)` — 宠物改名
 
 ---
 
@@ -233,13 +273,14 @@
 ### Constants
 - `DEFAULT_CHILD_ID` = `'default'` — 默认儿童 ID
 - `REWARD_CATEGORIES` = `['娱乐', '美食', '玩具', '特权', '其他']` — 奖励分类（预设）
-- `ROUTES` — 路由路径对象（HOME / TASKS / TASKS_MANAGE / TASK_HISTORY / PET / SHOP / MY_COUPONS / REDEEM_HISTORY / SETTINGS）
+- `ROUTES` — 路由路径对象（含 `PET_COLLECTION: '/pet/collection'`）
 
 ### DI Container
 - `src/shared/container.ts` — 导出 5 个 Service 单例（含 snapshotRepo 注入）
 
 ### Toast
 - `src/shared/toast.ts` — 全局命令式 Toast API（`toast.success()` / `toast.error()`）
+- `GlobalToast` 固定页面顶部展示
 
 ### Components
 - `BaseModal` → `src/presentation/components/BaseModal.tsx` — 统一弹窗基座（ESC/focus trap/aria-labelledby/焦点恢复）
@@ -249,7 +290,7 @@
 ### Domain Models（可直接引用）
 - `Task` → `src/domain/models/Task.ts`
 - `TaskLog` → `src/domain/models/TaskLog.ts`
-- `Pet` → `src/domain/models/Pet.ts`
+- `Pet` → `src/domain/models/Pet.ts`（含 `isDisplayed`）
 - `Reward` → `src/domain/models/Reward.ts`（categoryId 关联分类）
 - `RewardLog` → `src/domain/models/RewardLog.ts`（含 status: pending/used/returned）
 - `PointBalance` → `src/domain/models/PointBalance.ts`（含 refundReward）
@@ -258,9 +299,10 @@
 
 ### Value Objects
 - `TaskType` → `src/domain/valueObjects/TaskType.ts`（DAILY / WEEKLY / ONE_TIME / NEGATIVE）
-- `PetStage` → `src/domain/valueObjects/PetStage.ts`（EGG → BABY → CHILD → TEEN → ADULT）
+- `PetStage` → `src/domain/valueObjects/PetStage.ts`（EGG → HATCHED → GROWING → MATURE → MAX）
 
 ### Infrastructure
-- `KidManageDB` → `src/infrastructure/database/DexieDatabase.ts`（Dexie schema v6，8 张表）
+- `KidManageDB` → `src/infrastructure/database/DexieDatabase.ts`（Dexie schema v7，8 张表）
+- `DexiePetRepository` → `src/infrastructure/database/repositories/DexiePetRepository.ts`
 - `DexieSnapshotRepository` → `src/infrastructure/database/repositories/DexieSnapshotRepository.ts`
-- `JsonBackupAdapter` → `src/infrastructure/storage/JsonBackupAdapter.ts`（含 categories 表备份）
+- `JsonBackupAdapter` → `src/infrastructure/storage/JsonBackupAdapter.ts`（导入时补齐 `pets.isDisplayed`）

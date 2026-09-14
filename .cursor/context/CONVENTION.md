@@ -1,6 +1,6 @@
 # CONVENTION.md — 编码约定
 
-> 最后更新：2026-09-08
+> 最后更新：2026-09-14
 > 维护方式：人工维护
 
 ## 文件组织约定
@@ -35,7 +35,7 @@
 | React 状态 | camelCase | `loading`, `editVisible` |
 | 事件处理 | `handle` 前缀 | `handleToggle`, `handleSave`, `handleRedeemClick` |
 | 常量 | UPPER_SNAKE_CASE | `DEFAULT_CHILD_ID`, `REWARD_CATEGORIES`, `ROUTES` |
-| Domain Model 常量 | UPPER_SNAKE_CASE | `INITIAL_MOOD`, `FEED_POINT_COST` |
+| Domain Model 常量 | UPPER_SNAKE_CASE | `INITIAL_MOOD`, `FEED_POINT_COST`, `PET_ADOPTION_COST` |
 
 ### 类型 / 接口
 
@@ -220,7 +220,7 @@ BaseModal 自带：`role="dialog"` + `aria-modal` + `aria-labelledby` + ESC 关�
 
 ### Toast 使用
 
-使用全局命令式 Toast API（`@/shared/toast`），禁止页面内自建 Toast 状态：
+使用全局命令式 Toast API（`@/shared/toast`），禁止页面内自建 Toast 状态。`GlobalToast` 固定在页面顶部（避开 `--safe-top`）。
 
 ```typescript
 import { toast } from '@/shared/toast'

@@ -1,6 +1,6 @@
 # CONTEXT.md — 业务知识
 
-> 最后更新：2026-09-08
+> 最后更新：2026-09-14
 > 维护方式：人工维护，业务变动时同步更新
 
 ## 项目概述
@@ -19,11 +19,11 @@
 | 任务打卡 | 每日/每周/一次性/扣分任务的完成与取消 | `/tasks` |
 | 任务管理 | 任务的增删改查 | `/tasks/manage` |
 | 打卡历史 | 月历视图查看历史打卡记录（按日期/按任务） | `/tasks/history` |
-| 宠物系统 | 宠物养成、喂食、互动、进化 | `/pet` |
+| 宠物系统 | 宠物养成、喂食、互动、进化、图鉴领养与展示切换 | `/pet`、`/pet/collection` |
 | 奖励商城 | 奖励的浏览、兑换、管理（含分类体系） | `/shop` |
 | 我的券 | 已兑换券的查看、核销、退还 | `/shop/coupons` |
 | 兑换历史 | 全部兑换记录（含已使用、已退还） | `/shop/history` |
-| 设置 | 数据备份/恢复/重置、宠物改名 | `/settings` |
+| 设置 | 数据备份/恢复/重置、入口进入宠物图鉴 | `/settings` |
 
 ---
 
@@ -41,12 +41,17 @@
 | 赚取积分 | `earn` | PointBalance.earn(amount) |
 | 扣除积分 | `deduct` | PointBalance.deduct(amount)，允许负值 |
 | 退还积分 | `refundReward` | PointBalance.refundReward(amount)，券退还时返还积分 |
-| 宠物 | `Pet` | Domain Model，含 name/type/exp/mood/stage |
-| 宠物阶段 | `PetStage` | Value Object：EGG → BABY → CHILD → TEEN → ADULT |
+| 宠物 | `Pet` | Domain Model，含 name/type/exp/mood/stage/`isDisplayed`；每只独立落库 |
+| 展示宠物 | `isDisplayed` / `findDisplayedByChildId` | 首页与宠物页展示对象，用户可切换，需持久化 |
+| 养成宠物 | `findRaisingByChildId` | 当前唯一未满级宠物；满级后为空，可领养下一只 |
+| 宠物图鉴 | `PetCollection` / `getCollection` | 已领养 + 未领养种类列表；后续领养唯一入口 |
+| 宠物种类 | `ADOPTABLE_PET_TYPES` | 小鸡 `chicken`、小兔 `rabbit`，每种限一只 |
+| 宠物阶段 | `PetStage` | Value Object：EGG → HATCHED → GROWING → MATURE → MAX |
 | 宠物进化 | `evolve` | Pet.evolve()，阶段晋升 |
-| 宠物喂食 | `feed` | PetService.feed()，花积分喂食获得经验+心情 |
-| 宠物互动 | `pet` / `petAction` | PetService.pet()，增加心情 |
-| 心情 | `mood` | 0-100，越高越好 |
+| 宠物喂食 | `feed` | PetService.feed()，只喂养成宠；满级不加 EXP |
+| 后续领养 | `adoptPet` / `PET_ADOPTION_COST` | 养成宠满级后花费 100 积分领养下一只，计入宠物消费 |
+| 宠物互动 | `pet` / `petAction` | PetService.pet()，对展示宠增加心情 |
+| 心情 | `mood` | 0-100，越高越好；满级不自然衰减 |
 | 奖励 | `Reward` | Domain Model，含 title/points/categoryId/icon |
 | 奖励兑换 | `redeem` | RewardService.redeem(rewardId)，产生 pending 券 |
 | 兑换记录 | `RewardLog` | 每次兑换产生一条 log，含状态生命周期 |
@@ -76,7 +81,8 @@
 | 打卡/完成 | complete, completeTask, toggle, handleToggle |
 | 取消完成 | uncomplete, uncompleteTask |
 | 积分 | point, points, balance, earn, deduct, spend, refund |
-| 宠物 | pet, petAction, feed, evolve, mood |
+| 宠物 | pet, petAction, feed, evolve, mood, adopt, collection, isDisplayed, raising |
+| 图鉴 | collection, PetCollection, adoptPet, setDisplayed, renamePet |
 | 奖励 | reward, redeem, shop |
 | 券/优惠券 | coupon, coupons, pending, used, returned, markUsed, returnCoupon |
 | 日志/记录 | log, taskLog, rewardLog |
@@ -101,10 +107,13 @@
 用户完成任务 → 产生 TaskLog → 积分增加（earn）或扣除（deduct）
               → 自动更新当日 DailyTaskSnapshot
                 ↓
-积分 → 喂食宠物（spend 10分 → 获得 10 经验）
+积分 → 喂食当前养成宠物（spend 10分 → 获得 10 经验）
+    → 满级后领养下一只（spendOnPet 100分，种类不重复）
     → 兑换奖励（spend N分 → 产生 RewardLog[pending]）
                 ↓
 宠物经验累积 → 满足条件触发进化（stage 晋升）
+满级宠物保留抚摸，不再喂食/加 EXP/心情自然衰减
+首页与宠物页展示 `isDisplayed` 宠物；可在图鉴切换
 
 券生命周期：pending（待使用）→ used（已核销）
                            → returned（已退还，积分返还）
@@ -126,7 +135,7 @@
 
 - **赚取**：完成正分任务 → `earn(task.points)`
 - **扣除**：完成扣分行为 → `deduct(|task.points|)`，允许余额为负
-- **消费**：喂食宠物 → `spendOnPet(10)` / 兑换奖励 → `spendOnReward(reward.points)`
+- **消费**：喂食养成宠 → `spendOnPet(10)` / 后续领养 → `spendOnPet(100)` / 兑换奖励 → `spendOnReward(reward.points)`
 - **退还**：退还已兑换券 → `refundReward(reward.points)`，积分返还
 
 ### 券核销流程
@@ -135,6 +144,15 @@
 - **核销**：在「我的券」页点击「点击使用」→ markUsed() → status=used
 - **退还**：在「我的券」页点击「退还」→ returnCoupon() → status=returned + 积分返还
 - **限制**：同一奖励只能有一张 pending 券
+
+### 多宠物
+
+- 每只宠物独立持久化（名字、种类、阶段、EXP、心情）；不覆盖旧宠
+- 展示角色落库 `isDisplayed`；养成角色由「唯一未满级宠物」推导
+- 第一只免费创建；后续从图鉴付费领养，同种类不可重复
+- 本期最多两只（小鸡、小兔）；两只都满级即集齐
+- 改名只在图鉴；设置页「宠物管理」进入图鉴
+- 规范：[docs/specs/2026-09-14-multi-pet-design-spec.md](../../docs/specs/2026-09-14-multi-pet-design-spec.md)
 
 ### 打卡历史
 
