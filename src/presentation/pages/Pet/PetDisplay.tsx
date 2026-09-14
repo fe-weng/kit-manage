@@ -209,7 +209,13 @@ export default function PetDisplay({
         </motion.div>
 
         {kind && (
-          <EvolutionFx kind={kind} petType={petType} sizeScale={sizeScale} hitArea={hitArea} />
+          <EvolutionFx
+            kind={kind}
+            petType={petType}
+            sizeScale={sizeScale}
+            hitArea={hitArea}
+            fromSize={prevStage != null ? sizeMap[prevStage] : imageSize}
+          />
         )}
 
         <AnimatePresence>

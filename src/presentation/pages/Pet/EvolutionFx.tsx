@@ -6,16 +6,16 @@ import {
   EVOLUTION_DURATION_MS,
   getEvolutionParticles,
 } from './evolutionTransition'
+import rabbitShellLeft from '@/assets/pets/rabbit/evo-shell-left.png'
+import rabbitShellRight from '@/assets/pets/rabbit/evo-shell-right.png'
+import rabbitShellTop from '@/assets/pets/rabbit/evo-shell-top.png'
 
 interface EvolutionFxProps {
   kind: EvolutionKind
   petType: string
   sizeScale: number
   hitArea: number
-}
-
-function withBase(path: string): string {
-  return `${import.meta.env.BASE_URL}${path}`
+  fromSize: number
 }
 
 interface Particle {
@@ -28,7 +28,7 @@ interface Particle {
 }
 
 function generateParticles(kind: EvolutionKind, petType: string, sizeScale: number): Particle[] {
-  const emojis = getEvolutionParticles(petType, kind)
+  const emojis = getEvolutionParticles(resolveShellKey(petType), kind)
   const count = kind === EvolutionKind.LEGEND ? 22 : kind === EvolutionKind.HATCH ? 16 : 12
   const spread = kind === EvolutionKind.LEGEND ? 110 : 90
   return Array.from({ length: count }, (_, i) => ({
@@ -41,32 +41,36 @@ function generateParticles(kind: EvolutionKind, petType: string, sizeScale: numb
   }))
 }
 
-const CONFETTI_COLORS = ['#FF9BB0', '#FFD54F', '#7ECFC0', '#C4A8E0', '#FFB74D']
-
 const SHELL_SIDES = ['left', 'right', 'top'] as const
 type ShellSide = (typeof SHELL_SIDES)[number]
 
-/** 已到位的孵化壳碎片。小鸡仍走几何占位，等素材后再登记。 */
+/** 已到位的孵化壳碎片。未登记的种类不播假壳片。 */
 const SHELL_SHARD_IMAGES: Record<string, Record<ShellSide, string>> = {
   rabbit: {
-    left: 'pets/rabbit/evo-shell-left.png',
-    right: 'pets/rabbit/evo-shell-right.png',
-    top: 'pets/rabbit/evo-shell-top.png',
+    left: rabbitShellLeft,
+    right: rabbitShellRight,
+    top: rabbitShellTop,
   },
 }
 
-function HatchShards({ petType, sizeScale }: { petType: string; sizeScale: number }) {
-  const art = SHELL_SHARD_IMAGES[petType]
-  const shardSize = (art ? 168 : 72) * sizeScale
-  const placeholderBg =
-    petType === 'rabbit'
-      ? 'radial-gradient(circle at 36% 32%, #FFFFFF 0 5px, transparent 6px), #C4A8E0'
-      : 'radial-gradient(circle at 30% 28%, #FFE08A 0 6px, transparent 7px), #F7C9D0'
+function resolveShellKey(petType: string): string {
+  const raw = petType.trim()
+  const lower = raw.toLowerCase()
+  if (lower === 'rabbit' || lower === 'bunny' || raw.includes('兔')) return 'rabbit'
+  if (lower === 'chicken' || raw.includes('鸡')) return 'chicken'
+  return lower
+}
 
-  const shards: { side: ShellSide; x: number; y: number; rotate: number }[] = [
-    { side: 'left', x: -110 * sizeScale, y: -24 * sizeScale, rotate: -38 },
-    { side: 'right', x: 110 * sizeScale, y: 12 * sizeScale, rotate: 42 },
-    { side: 'top', x: 8 * sizeScale, y: -130 * sizeScale, rotate: -12 },
+function HatchShards({ petType, fromSize, sizeScale }: { petType: string; fromSize: number; sizeScale: number }) {
+  const art = SHELL_SHARD_IMAGES[resolveShellKey(petType)]
+  if (!art) return null
+
+  // PNG 画布留白大，容器要比蛋略大，碎壳才看得清
+  const shardSize = fromSize * 1.55
+  const shards: { side: ShellSide; startX: number; startY: number; x: number; y: number; rotate: number }[] = [
+    { side: 'left', startX: -8 * sizeScale, startY: 2 * sizeScale, x: -130 * sizeScale, y: -36 * sizeScale, rotate: -38 },
+    { side: 'right', startX: 8 * sizeScale, startY: 2 * sizeScale, x: 130 * sizeScale, y: 20 * sizeScale, rotate: 40 },
+    { side: 'top', startX: 0, startY: -12 * sizeScale, x: 4 * sizeScale, y: -150 * sizeScale, rotate: -8 },
   ]
 
   return (
@@ -75,15 +79,15 @@ function HatchShards({ petType, sizeScale }: { petType: string; sizeScale: numbe
         <motion.div
           key={shard.side}
           className="absolute pointer-events-none"
-          initial={{ x: 0, y: 0, opacity: 1, rotate: 0, scale: 1 }}
+          initial={{ x: shard.startX, y: shard.startY, opacity: 0, rotate: 0, scale: 0.96 }}
           animate={{
-            x: shard.x,
-            y: shard.y,
-            opacity: [1, 1, 0],
-            rotate: shard.rotate,
-            scale: [1, 1.05, 0.85],
+            x: [shard.startX, shard.startX, shard.x],
+            y: [shard.startY, shard.startY, shard.y],
+            opacity: [0, 1, 1, 0],
+            rotate: [0, 6 * (i === 1 ? 1 : -1), shard.rotate],
+            scale: [0.96, 1, 0.92],
           }}
-          transition={{ duration: 1.1, delay: 0.35 + i * 0.04, ease: 'easeOut' }}
+          transition={{ duration: 1.2, delay: 0.32 + i * 0.03, times: [0, 0.1, 0.72, 1], ease: 'easeOut' }}
           style={{
             width: shardSize,
             height: shardSize,
@@ -93,59 +97,25 @@ function HatchShards({ petType, sizeScale }: { petType: string; sizeScale: numbe
             marginTop: -shardSize / 2,
           }}
         >
-          {art ? (
-            <img
-              src={withBase(art[shard.side])}
-              alt=""
-              draggable={false}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-          ) : (
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: shard.side === 'top' ? '50% 50% 40% 40%' : '46%',
-                background: placeholderBg,
-                boxShadow: '2px 3px 0 rgba(255,255,255,0.35) inset, 0 4px 10px rgba(0,0,0,0.08)',
-                clipPath:
-                  shard.side === 'left'
-                    ? 'polygon(8% 10%, 72% 0%, 58% 100%, 0% 88%)'
-                    : shard.side === 'right'
-                      ? 'polygon(28% 4%, 100% 18%, 92% 92%, 18% 100%)'
-                      : 'polygon(18% 8%, 82% 8%, 70% 78%, 30% 78%)',
-              }}
-            />
-          )}
+          <img
+            src={art[shard.side]}
+            alt=""
+            draggable={false}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          />
         </motion.div>
       ))}
     </>
   )
 }
 
-export default function EvolutionFx({ kind, petType, sizeScale, hitArea }: EvolutionFxProps) {
+export default function EvolutionFx({ kind, petType, sizeScale, hitArea, fromSize }: EvolutionFxProps) {
   const durationS = EVOLUTION_DURATION_MS[kind] / 1000
   const particles = useMemo(
     () => generateParticles(kind, petType, sizeScale),
     [kind, petType, sizeScale],
   )
   const particleDelay = kind === EvolutionKind.HATCH ? 0.45 : kind === EvolutionKind.ASCEND ? 0.7 : 0.25
-  const confetti = useMemo(
-    () =>
-      kind === EvolutionKind.HATCH
-        ? Array.from({ length: 18 }, (_, i) => ({
-            id: i,
-            x: (Math.random() - 0.5) * 220 * sizeScale,
-            y: (Math.random() * 160 + 40) * sizeScale,
-            color: CONFETTI_COLORS[i % CONFETTI_COLORS.length]!,
-            delay: 0.4 + Math.random() * 0.2,
-            w: 6 + Math.random() * 5,
-            h: 10 + Math.random() * 8,
-            rot: (Math.random() - 0.5) * 220,
-          }))
-        : [],
-    [kind, sizeScale],
-  )
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-visible">
@@ -164,24 +134,7 @@ export default function EvolutionFx({ kind, petType, sizeScale, hitArea }: Evolu
               <path d="M58 30 L54 48 L62 72" stroke="#E8C07A" strokeWidth="2.2" fill="none" strokeLinecap="round" />
               <path d="M50 22 L51 44" stroke="#FFE9A8" strokeWidth="1.6" fill="none" />
             </motion.svg>
-            <HatchShards petType={petType} sizeScale={sizeScale} />
-            {confetti.map((c) => (
-              <motion.span
-                key={`paper-${c.id}`}
-                className="absolute pointer-events-none"
-                initial={{ x: 0, y: 0, opacity: 1, rotate: 0, scale: 1 }}
-                animate={{ x: c.x, y: c.y, opacity: [1, 1, 0], rotate: c.rot, scale: [1, 1.1, 0.6] }}
-                transition={{ duration: 1.15, delay: c.delay, ease: 'easeOut' }}
-                style={{
-                  width: c.w,
-                  height: c.h,
-                  borderRadius: 2,
-                  backgroundColor: c.color,
-                  left: 0,
-                  top: 0,
-                }}
-              />
-            ))}
+            <HatchShards petType={petType} fromSize={fromSize} sizeScale={sizeScale} />
           </>
         )}
 

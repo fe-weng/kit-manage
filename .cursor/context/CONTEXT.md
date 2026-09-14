@@ -165,7 +165,7 @@
 - **喂食**：10 积分 = 10 EXP，无冷却；只喂当前养成宠
 - **进化**：达标后自动 `evolve()`，每次升一档；宠物页按段演出，不能跳过、无音效、无庆祝文案
 - **演出 kind**：蛋→孵化 `hatch`（2.5s）/ 孵化→成长 `glow`（2.0s）/ 成长→成熟 `ascend`（2.5s）/ 成熟→满级 `legend`（3.0s）
-- **壳碎片**：`SHELL_SHARD_IMAGES` 名册登记，不靠加载 `evo-shell-left.png` 猜测。小兔 left/right/top 已接入；小鸡未登记，孵化用几何占位
+- **壳碎片**：`SHELL_SHARD_IMAGES` 名册登记。有图才在破开瞬间飞出；无图（小鸡）不画假色块。小兔 left/right/top 已接入
 - **规范**：[进化动画](../../docs/specs/2026-09-14-evolution-animation-spec.md) · [壳图 Prompt](../../docs/specs/2026-09-14-pet-evolution-shard-prompts.md) · [grill-me](../../docs/grill-me-2026-09-14-evolution-animation.md)
 
 ### 打卡历史

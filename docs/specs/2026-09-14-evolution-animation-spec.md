@@ -33,8 +33,6 @@
 
 ## 3. 分镜
 
-## 3. 分镜
-
 **hatch**：旧图抖动 → 裂纹 → 三片壳飞出 + 彩色碎纸 → 新形态从小弹出。
 
 **glow**：白光从中心扩开裹住旧形态 → 光散 → 交叉淡入新形态 + 星星。
@@ -47,12 +45,12 @@
 
 ### 3.1 孵化壳图
 
-`EvolutionFx.tsx` 里的 `SHELL_SHARD_IMAGES` 写明每种宠物用哪三张图。名册里有的宠物走 PNG，没有的走几何色块，时间轴不变。
+`EvolutionFx.tsx` 里的 `SHELL_SHARD_IMAGES` 写明每种宠物用哪三张图。名册里有的宠物，壳片在破开瞬间才出现并飞出，不提前盖在蛋上。没有登记的（小鸡）不画几何色块，只保留裂纹和碎纸，避免三块糊斑。
 
 | 宠物 | 状态 | 文件 |
 |------|------|------|
 | 小兔 | 已接入 | `public/pets/rabbit/evo-shell-left.png` / `right` / `top` |
-| 小鸡 | 未到，几何占位 | 出图后放到 `public/pets/chicken/evo-shell-{left,right,top}.png`，并在 `SHELL_SHARD_IMAGES` 增加 `chicken` 三条路径 |
+| 小鸡 | 未到 | 出图并登记前，孵化不播假壳片（只裂纹+碎纸） |
 
 小兔图带透明边，显示边长约 `168 × sizeScale`，避免碎片显得过小。
 
