@@ -84,7 +84,12 @@ function useIsTablet() {
 
 function oldImageAnimate(kind: EvolutionKindType | null) {
   if (kind === EvolutionKind.HATCH) {
-    return { x: [0, -5, 5, -4, 4, 0], rotate: [0, -4, 4, -3, 3, 0], opacity: 1, scale: 1 }
+    return {
+      x: [0, -5, 5, -4, 4, 0],
+      rotate: [0, -4, 4, -3, 3, 0],
+      opacity: 1,
+      scale: [1, 1.04],
+    }
   }
   if (kind === EvolutionKind.GLOW) {
     return { opacity: 1, scale: [1, 1.04, 1], filter: ['brightness(1)', 'brightness(1.8)', 'brightness(1.4)'] }
@@ -99,16 +104,35 @@ function oldImageAnimate(kind: EvolutionKindType | null) {
 }
 
 function oldImageTransition(kind: EvolutionKindType | null) {
-  if (kind === EvolutionKind.HATCH) return { duration: 0.45, ease: 'easeInOut' as const }
+  if (kind === EvolutionKind.HATCH) return { duration: 0.28, ease: 'easeInOut' as const }
   if (kind === EvolutionKind.ASCEND) return { duration: 0.85, ease: 'easeInOut' as const }
   return { duration: 0.55 }
 }
 
 function newImageInitial(kind: EvolutionKindType | null, evolving: boolean) {
   if (!evolving || !kind) return { opacity: 1, scale: 1, y: 0 }
-  if (kind === EvolutionKind.HATCH) return { opacity: 0, scale: 0.2, y: 18 }
+  if (kind === EvolutionKind.HATCH) return { opacity: 0, scale: 0.55, y: 18 }
   if (kind === EvolutionKind.LEGEND) return { opacity: 0, scale: 1.35, y: 0 }
   return { opacity: 0, scale: 1.15, y: 0 }
+}
+
+function newImageAnimate(kind: EvolutionKindType | null, evolving: boolean) {
+  if (evolving && kind === EvolutionKind.HATCH) {
+    return {
+      opacity: [0, 1, 1],
+      scale: [0.55, 1.06, 1],
+      y: [18, -2, 0],
+      rotate: 0,
+    }
+  }
+  return { opacity: 1, scale: 1, y: 0, rotate: 0 }
+}
+
+function newImageTransition(kind: EvolutionKindType | null) {
+  if (kind === EvolutionKind.HATCH) {
+    return { duration: 0.59, times: [0, 0.7, 1], ease: 'easeOut' as const }
+  }
+  return { duration: 0.55, ease: 'easeOut' as const }
 }
 
 export default function PetDisplay({
@@ -129,6 +153,7 @@ export default function PetDisplay({
   const hitArea = imageSize + 40
   const sizeScale = imageSize / STAGE_SIZES_PHONE[PetStage.MAX]
   const kind = evolving ? (evolutionKind ?? EvolutionKind.GLOW) : null
+  const oldImageSize = prevStage != null ? sizeMap[prevStage] : imageSize
 
   useEffect(() => {
     return () => { timersRef.current.forEach(clearTimeout) }
@@ -174,10 +199,12 @@ export default function PetDisplay({
         style={{ width: hitArea, height: hitArea }}
       >
         <motion.div
+          className="relative flex items-center justify-center"
           animate={evolving ? { y: 0 } : { y: [0, -6 * sizeScale, 0] }}
           transition={evolving ? { duration: 0.3 } : { duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ width: imageSize, height: imageSize }}
         >
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode={kind === EvolutionKind.HATCH ? 'sync' : 'wait'}>
             {showOldImage ? (
               <motion.img
                 key={`old-${prevStage}`}
@@ -185,9 +212,21 @@ export default function PetDisplay({
                 alt={name}
                 initial={{ opacity: 1, scale: 1, rotate: 0 }}
                 animate={oldImageAnimate(kind)}
-                exit={{ opacity: 0, scale: kind === EvolutionKind.HATCH ? 0.55 : 0.8 }}
+                exit={{
+                  opacity: 0,
+                  scale: kind === EvolutionKind.HATCH ? 1.04 : 0.8,
+                  transition: kind === EvolutionKind.HATCH
+                    ? { duration: 0.08, ease: 'easeOut' }
+                    : undefined,
+                }}
                 transition={oldImageTransition(kind)}
-                style={{ width: imageSize, height: imageSize, objectFit: 'contain', pointerEvents: 'none' }}
+                style={{
+                  position: 'absolute',
+                  width: oldImageSize,
+                  height: oldImageSize,
+                  objectFit: 'contain',
+                  pointerEvents: 'none',
+                }}
                 draggable={false}
               />
             ) : (
@@ -196,12 +235,15 @@ export default function PetDisplay({
                 src={getPetImage(petType, stage)}
                 alt={name}
                 initial={newImageInitial(kind, evolving)}
-                animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
-                transition={{
-                  duration: kind === EvolutionKind.HATCH ? 0.7 : 0.55,
-                  ease: 'easeOut',
+                animate={newImageAnimate(kind, evolving)}
+                transition={newImageTransition(kind)}
+                style={{
+                  position: 'absolute',
+                  width: imageSize,
+                  height: imageSize,
+                  objectFit: 'contain',
+                  pointerEvents: 'none',
                 }}
-                style={{ width: imageSize, height: imageSize, objectFit: 'contain', pointerEvents: 'none' }}
                 draggable={false}
               />
             )}

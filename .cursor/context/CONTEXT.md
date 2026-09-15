@@ -50,7 +50,7 @@
 | 阶段经验门槛 | `PET_STAGE_CONFIGS.requiredExp` | 累计 EXP：0 / 50 / 200 / **700** / **1500** |
 | 宠物进化 | `evolve` | Pet.evolve()，喂食达标后自动升一档 |
 | 进化演出 | `EvolutionKind` | hatch / glow / ascend / legend，由 prevStage→新 stage 推导 |
-| 壳碎片名册 | `SHELL_SHARD_IMAGES` | 有登记用 PNG，无登记用几何占位；小兔已接入，小鸡未登记 |
+| 壳碎片名册 | `SHELL_SHARD_IMAGES` | 有登记用 PNG；无登记跳过壳片，只播闪光与粒子；小兔已接入，小鸡未登记 |
 | 宠物喂食 | `feed` | PetService.feed()，只喂养成宠；满级不加 EXP |
 | 后续领养 | `adoptPet` / `PET_ADOPTION_COST` | 养成宠满级后花费 100 积分领养下一只，计入宠物消费 |
 | 宠物互动 | `pet` / `petAction` | PetService.pet()，对展示宠增加心情 |
@@ -164,8 +164,8 @@
 - **经验门槛**（累计 EXP）：神秘蛋 0 → 刚孵化 50 → 成长期 200 → 成熟期 **700** → 满级 **1500**
 - **喂食**：10 积分 = 10 EXP，无冷却；只喂当前养成宠
 - **进化**：达标后自动 `evolve()`，每次升一档；宠物页按段演出，不能跳过、无音效、无庆祝文案
-- **演出 kind**：蛋→孵化 `hatch`（2.5s）/ 孵化→成长 `glow`（2.0s）/ 成长→成熟 `ascend`（2.5s）/ 成熟→满级 `legend`（3.0s）
-- **壳碎片**：`SHELL_SHARD_IMAGES` 名册登记。有图才在破开瞬间飞出；无图（小鸡）不画假色块。小兔 left/right/top 已接入
+- **演出 kind**：蛋→孵化 `hatch`（1.8s）/ 孵化→成长 `glow`（2.0s）/ 成长→成熟 `ascend`（2.5s）/ 成熟→满级 `legend`（3.0s）
+- **壳碎片**：`SHELL_SHARD_IMAGES` 名册登记。有图才在闪光遮切时飞出；无图（小鸡）跳过壳片但保留闪光与粒子。小兔 left/right/top 已接入
 - **规范**：[进化动画](../../docs/specs/2026-09-14-evolution-animation-spec.md) · [壳图 Prompt](../../docs/specs/2026-09-14-pet-evolution-shard-prompts.md) · [grill-me](../../docs/grill-me-2026-09-14-evolution-animation.md)
 
 ### 打卡历史
