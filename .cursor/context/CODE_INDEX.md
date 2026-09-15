@@ -148,7 +148,7 @@
 - `PetGrowthRule.PET_ADOPTION_COST` — 后续领养花费积分（100）
 - `PET_STAGE_CONFIGS` — 累计 EXP：0 / 50 / 200 / 700 / 1500
 - `getEvolutionKind(prev, next)` — 推导 hatch / glow / ascend / legend
-- `SHELL_SHARD_IMAGES` — 壳图名册（小兔已接入；未登记不播假壳片）
+- `SHELL_SHARD_IMAGES` — 壳图名册（小兔、小鸡均已接入；未登记不播假壳片）
 - `Pet.isMaxLevel()` / `Pet.canContinueRaising()` — 满级与可养成判定
 - `Pet.applyMoodDecay()` — 心情自然衰减（-1/h）；满级不执行
 - `Pet.isDisplayed` / `Pet.setDisplayed()` — 展示状态
@@ -160,8 +160,8 @@
 - `IPetRepository.switchDisplayed` — 原子切换展示
 
 ### Assets
-- `src/assets/pets/rabbit/evo-shell-{left,right,top}.png` — 小兔孵化壳碎片（import 进动画）
-- 小鸡壳图未到：`public/pets/chicken/evo-shell-*.png` + `SHELL_SHARD_IMAGES.chicken`
+- `public/pets/rabbit/evo-shell-{left,right,top}.png` — 小兔孵化壳碎片
+- `public/pets/chicken/evo-shell-{left,right,top}.png` — 小鸡孵化壳碎片
 
 ---
 

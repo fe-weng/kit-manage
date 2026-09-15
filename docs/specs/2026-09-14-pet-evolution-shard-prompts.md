@@ -3,7 +3,7 @@
 > **日期**：2026-09-14  
 > **用途**：ChatGPT 出图，供「蛋 → 刚孵化」碎壳动画  
 > **接入**：图放进对应路径后，还要在 `src/presentation/pages/Pet/EvolutionFx.tsx` 的 `SHELL_SHARD_IMAGES` 里登记，动画才会用 PNG（不会自动探测文件）。  
-> **进度**：小兔 3 张已接入；小鸡 3 张未出。  
+> **进度**：小兔 3 张已接入；小鸡 3 张已接入。  
 > **参考图**：先上传现有蛋图，再贴对应 Prompt  
 > - 小鸡：`public/pets/chicken/stage-1-egg.png`  
 > - 小兔：`public/pets/rabbit/stage-1-egg.png`
@@ -26,7 +26,7 @@ Square 1:1, shard centered, clean transparent background (or pure white if trans
 
 ## 小鸡 🐔
 
-> **未接入**。出图后按路径保存，并登记到 `SHELL_SHARD_IMAGES.chicken`。
+> **已接入**。路径：`public/pets/chicken/evo-shell-{left,right,top}.png`，已登记到 `SHELL_SHARD_IMAGES.chicken`。
 
 花纹：粉白底 + 金色圆点 + 粉色爱心。断面：浅金/奶白，像糖果壳。
 
@@ -82,4 +82,4 @@ A TOP eggshell cap from that lavender egg, including the small purple bow with t
 - 单片大约占画面 40%–60%，不要太小
 - 2x 即可（512–1024）
 - 若 ChatGPT 给了白底，自己抠透明后再放进上述路径
-- 小鸡图齐后：把三张放进 `public/pets/chicken/`，并在 `SHELL_SHARD_IMAGES` 增加 `chicken`（left / right / top）。只放文件、不改名册，孵化仍走占位。
+- 接入时必须三张一起写入 `SHELL_SHARD_IMAGES`。只放文件、不改名册，孵化仍跳过壳片。

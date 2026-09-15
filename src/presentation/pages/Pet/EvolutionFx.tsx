@@ -53,6 +53,11 @@ const SHELL_SHARD_IMAGES: Record<string, Record<ShellSide, string>> = {
     right: withBase('pets/rabbit/evo-shell-right.png'),
     top: withBase('pets/rabbit/evo-shell-top.png'),
   },
+  chicken: {
+    left: withBase('pets/chicken/evo-shell-left.png'),
+    right: withBase('pets/chicken/evo-shell-right.png'),
+    top: withBase('pets/chicken/evo-shell-top.png'),
+  },
 }
 
 function resolveShellKey(petType: string): string {
