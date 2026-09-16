@@ -23,6 +23,7 @@ export abstract class BasePetTypeStrategy implements IPetTypeStrategy {
   protected abstract readonly hatchParticles: readonly string[]
   protected abstract readonly legendParticles: readonly string[]
   protected abstract readonly defaultParticles: readonly string[]
+  protected abstract readonly foods: readonly string[]
 
   matches(petType: string): boolean {
     const raw = petType.trim()
@@ -37,6 +38,10 @@ export abstract class BasePetTypeStrategy implements IPetTypeStrategy {
     if (kind === 'hatch') return [...this.hatchParticles]
     if (kind === 'legend') return [...this.legendParticles]
     return [...this.defaultParticles]
+  }
+
+  feedFoods(): readonly string[] {
+    return this.foods
   }
 
   stageImage(stage: PetStage): string {

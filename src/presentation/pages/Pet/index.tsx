@@ -18,6 +18,7 @@ import { getEvolutionKind } from './evolutionTransition'
 import {
   FEEDING_DURATION_MS,
   captureFeedFlight,
+  pickFeedFood,
   type FeedPoint,
 } from './feedingTransition'
 
@@ -42,8 +43,9 @@ export default function PetPage() {
   const [eating, setEating] = useState(false)
   const [evolved, setEvolved] = useState(false)
   const [pendingEvolution, setPendingEvolution] = useState(false)
-  const [flightPoints, setFlightPoints] = useState<{ start: FeedPoint; mouth: FeedPoint } | null>(null)
+  const [flightPoints, setFlightPoints] = useState<{ start: FeedPoint; mouth: FeedPoint; food: string } | null>(null)
   const prevStageRef = useRef<PetStage | undefined>(undefined)
+  const lastFeedFoodRef = useRef<string | undefined>(undefined)
   const switchingRef = useRef(false)
   const stageRef = useRef<HTMLDivElement>(null)
   const feedButtonRef = useRef<HTMLDivElement>(null)
@@ -65,8 +67,10 @@ export default function PetPage() {
       const result = await feed()
       if (!result.success) return
       const flight = captureFeedFlight(stageRef.current, feedButtonRef.current, petHitRef.current)
+      const food = pickFeedFood(status?.pet.type ?? '', lastFeedFoodRef.current)
+      lastFeedFoodRef.current = food
       setPendingEvolution(result.evolved)
-      setFlightPoints(flight)
+      setFlightPoints(flight ? { ...flight, food } : null)
       setEating(true)
       startedEating = true
     } finally {
@@ -230,7 +234,7 @@ export default function PetPage() {
       />
 
       {eating && flightPoints && (
-        <FeedingFx start={flightPoints.start} mouth={flightPoints.mouth} />
+        <FeedingFx start={flightPoints.start} mouth={flightPoints.mouth} food={flightPoints.food} />
       )}
 
       <EvolutionOverlay

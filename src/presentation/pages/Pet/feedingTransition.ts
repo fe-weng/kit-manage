@@ -1,3 +1,5 @@
+import { resolvePetTypeStrategy } from '@/shared/petTypes'
+
 export interface FeedPoint {
   x: number
   y: number
@@ -93,4 +95,15 @@ export function sampleCubicArc(
     })
   }
   return points
+}
+
+const FALLBACK_FOOD = '🍪'
+
+export function pickFeedFood(petType: string, exclude?: string): string {
+  const foods = resolvePetTypeStrategy(petType).feedFoods()
+  const pool = exclude && foods.length > 1
+    ? foods.filter((food) => food !== exclude)
+    : foods
+  if (pool.length === 0) return foods[0] ?? FALLBACK_FOOD
+  return pool[Math.floor(Math.random() * pool.length)] ?? FALLBACK_FOOD
 }

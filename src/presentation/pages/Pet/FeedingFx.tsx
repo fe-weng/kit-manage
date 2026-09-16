@@ -1,20 +1,20 @@
 import { motion } from 'framer-motion'
-import { Cookie } from '@phosphor-icons/react'
 import type { FeedPoint } from './feedingTransition'
 import { FEEDING_TIMELINE_MS, getCookieTossControls, sampleCubicArc } from './feedingTransition'
 
 interface FeedingFxProps {
   start: FeedPoint
   mouth: FeedPoint
+  food: string
 }
 
-const COOKIE_SIZE = 44
+const FOOD_BADGE_SIZE = 44
 const T = FEEDING_TIMELINE_MS
 const COOKIE_DURATION_S = T.cookieGone / 1000
 const PARTICLE_DURATION_S = (T.duration - T.particleStart) / 1000
 const ARC_STEPS = 16
 
-export default function FeedingFx({ start, mouth }: FeedingFxProps) {
+export default function FeedingFx({ start, mouth, food }: FeedingFxProps) {
   const { c1, c2 } = getCookieTossControls(start, mouth)
   const arc = sampleCubicArc(start, c1, c2, mouth, ARC_STEPS)
   const xs = arc.map((p) => p.x)
@@ -51,13 +51,13 @@ export default function FeedingFx({ start, mouth }: FeedingFxProps) {
           rotate: rotates,
         }}
         transition={{ duration: COOKIE_DURATION_S, ease: 'linear' }}
-        style={{ width: COOKIE_SIZE, height: COOKIE_SIZE, marginLeft: -COOKIE_SIZE / 2, marginTop: -COOKIE_SIZE / 2 }}
+        style={{ width: FOOD_BADGE_SIZE, height: FOOD_BADGE_SIZE, marginLeft: -FOOD_BADGE_SIZE / 2, marginTop: -FOOD_BADGE_SIZE / 2 }}
       >
         <div
           className="flex items-center justify-center rounded-full bg-white shadow-clay"
-          style={{ width: COOKIE_SIZE, height: COOKIE_SIZE }}
+          style={{ width: FOOD_BADGE_SIZE, height: FOOD_BADGE_SIZE, fontSize: '26px', lineHeight: 1 }}
         >
-          <Cookie size={28} weight="duotone" color="#E8A054" />
+          {food}
         </div>
       </motion.div>
 

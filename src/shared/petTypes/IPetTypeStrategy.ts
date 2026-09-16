@@ -14,6 +14,7 @@ export interface IPetTypeStrategy {
   readonly ascendIcon: AscendIcon
   matches(petType: string): boolean
   particlesFor(kind: PetEvolutionFxKind): string[]
+  feedFoods(): readonly string[]
   stageImage(stage: PetStage): string
   shellImages(): Record<ShellSide, string> | null
 }
