@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import type { Ref } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Crown } from '@phosphor-icons/react'
 import { PetStage } from '@/domain/valueObjects/PetStage'
@@ -9,6 +10,13 @@ import {
   EVOLUTION_REVEAL_DELAY_S,
   type EvolutionKind as EvolutionKindType,
 } from './evolutionTransition'
+import {
+  FEEDING_NOD_DURATION_S,
+  FEEDING_NOD_ORIGIN,
+  FEEDING_NOD_PERSPECTIVE,
+  FEEDING_NOD_ROTATE_X,
+  FEEDING_NOD_TIMES,
+} from './feedingTransition'
 
 interface PetDisplayProps {
   stage: PetStage
@@ -16,8 +24,10 @@ interface PetDisplayProps {
   petType: string
   onPet: () => void
   evolving?: boolean
+  eating?: boolean
   prevStage?: PetStage
   evolutionKind?: EvolutionKindType | null
+  hitAreaRef?: Ref<HTMLDivElement>
 }
 
 function withBase(path: string): string {
@@ -116,14 +126,42 @@ function newImageTransition(kind: EvolutionKindType | null) {
   return { duration: 0.55, ease: 'easeOut' as const }
 }
 
+function petBodyAnimate(evolving: boolean, eating: boolean, sizeScale: number) {
+  if (evolving) return { y: 0, rotateX: 0 }
+  if (eating) {
+    return {
+      y: 0,
+      rotateX: [...FEEDING_NOD_ROTATE_X],
+    }
+  }
+  return { y: [0, -6 * sizeScale, 0], rotateX: 0 }
+}
+
+function petBodyTransition(evolving: boolean, eating: boolean) {
+  if (evolving) return { duration: 0.3 }
+  if (eating) {
+    return {
+      y: { duration: 0.25, ease: 'easeOut' as const },
+      rotateX: {
+        duration: FEEDING_NOD_DURATION_S,
+        times: [...FEEDING_NOD_TIMES],
+        ease: 'easeInOut' as const,
+      },
+    }
+  }
+  return { duration: 2, repeat: Infinity, ease: 'easeInOut' as const }
+}
+
 export default function PetDisplay({
   stage,
   name,
   petType,
   onPet,
   evolving = false,
+  eating = false,
   prevStage,
   evolutionKind = null,
+  hitAreaRef,
 }: PetDisplayProps) {
   const [hearts, setHearts] = useState<number[]>([])
   const [revealed, setRevealed] = useState(false)
@@ -150,7 +188,7 @@ export default function PetDisplay({
   }, [evolving, kind])
 
   const handlePet = () => {
-    if (evolving) return
+    if (evolving || eating) return
     onPet()
     const id = Date.now()
     setHearts((prev) => [...prev, id])
@@ -173,18 +211,29 @@ export default function PetDisplay({
         )}
       </div>
 
+      <div
+        ref={hitAreaRef}
+        className="relative rounded-full flex items-center justify-center overflow-visible"
+        style={{ width: hitArea, height: hitArea, perspective: FEEDING_NOD_PERSPECTIVE }}
+      >
       <motion.button
         onClick={handlePet}
-        whileTap={evolving ? undefined : { scale: 0.92 }}
+        whileTap={evolving || eating ? undefined : { scale: 0.92 }}
         aria-label={`抚摸${name}`}
         className="relative rounded-full flex items-center justify-center cursor-pointer overflow-visible"
-        style={{ width: hitArea, height: hitArea }}
+        style={{ width: hitArea, height: hitArea, transformStyle: 'preserve-3d' }}
       >
         <motion.div
+          key={evolving ? 'evolving' : 'pet-body'}
           className="relative flex items-center justify-center"
-          animate={evolving ? { y: 0 } : { y: [0, -6 * sizeScale, 0] }}
-          transition={evolving ? { duration: 0.3 } : { duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          style={{ width: imageSize, height: imageSize }}
+          animate={petBodyAnimate(evolving, eating, sizeScale)}
+          transition={petBodyTransition(evolving, eating)}
+          style={{
+            width: imageSize,
+            height: imageSize,
+            transformOrigin: FEEDING_NOD_ORIGIN,
+            transformStyle: 'preserve-3d',
+          }}
         >
           <AnimatePresence mode={kind === EvolutionKind.HATCH ? 'sync' : 'wait'}>
             {showOldImage ? (
@@ -243,7 +292,7 @@ export default function PetDisplay({
         )}
 
         <AnimatePresence>
-          {!evolving && hearts.map((id) => (
+          {!evolving && !eating && hearts.map((id) => (
             <motion.span
               key={id}
               initial={{ opacity: 1, y: 0, scale: 0.5 }}
@@ -258,6 +307,7 @@ export default function PetDisplay({
           ))}
         </AnimatePresence>
       </motion.button>
+      </div>
     </div>
   )
 }

@@ -13,7 +13,13 @@ import ActionButtons from './ActionButtons'
 import EvolutionOverlay from './EvolutionOverlay'
 import PetToolbar from './PetToolbar'
 import RaisingShortcutCard from './RaisingShortcutCard'
+import FeedingFx from './FeedingFx'
 import { getEvolutionKind } from './evolutionTransition'
+import {
+  FEEDING_DURATION_MS,
+  captureFeedFlight,
+  type FeedPoint,
+} from './feedingTransition'
 
 export default function PetPage() {
   const {
@@ -33,9 +39,15 @@ export default function PetPage() {
   const navigate = useNavigate()
   const [feeding, setFeeding] = useState(false)
   const feedingRef = useRef(false)
+  const [eating, setEating] = useState(false)
   const [evolved, setEvolved] = useState(false)
+  const [pendingEvolution, setPendingEvolution] = useState(false)
+  const [flightPoints, setFlightPoints] = useState<{ start: FeedPoint; mouth: FeedPoint } | null>(null)
   const prevStageRef = useRef<PetStage | undefined>(undefined)
   const switchingRef = useRef(false)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const feedButtonRef = useRef<HTMLDivElement>(null)
+  const petHitRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchPet()
@@ -47,17 +59,35 @@ export default function PetPage() {
     if (feedingRef.current) return
     feedingRef.current = true
     setFeeding(true)
+    let startedEating = false
     try {
       prevStageRef.current = status?.pet.stage
       const result = await feed()
-      if (result.evolved) {
-        setEvolved(true)
-      }
+      if (!result.success) return
+      const flight = captureFeedFlight(stageRef.current, feedButtonRef.current, petHitRef.current)
+      setPendingEvolution(result.evolved)
+      setFlightPoints(flight)
+      setEating(true)
+      startedEating = true
     } finally {
-      feedingRef.current = false
       setFeeding(false)
+      if (!startedEating) feedingRef.current = false
     }
   }, [feed, status])
+
+  useEffect(() => {
+    if (!eating) return
+    const timer = setTimeout(() => {
+      setEating(false)
+      setFlightPoints(null)
+      feedingRef.current = false
+      if (pendingEvolution) {
+        setPendingEvolution(false)
+        setEvolved(true)
+      }
+    }, FEEDING_DURATION_MS)
+    return () => clearTimeout(timer)
+  }, [eating, pendingEvolution])
 
   const pettingRef = useRef(false)
   const handlePet = useCallback(async () => {
@@ -115,6 +145,10 @@ export default function PetPage() {
   }
 
   const { pet, stageName, expToNext, expProgress, nextStageName, feedCost } = status
+  const displayStage =
+    eating && pendingEvolution && prevStageRef.current != null
+      ? prevStageRef.current
+      : pet.stage
   const evolutionKind =
     evolved && prevStageRef.current != null
       ? getEvolutionKind(prevStageRef.current, pet.stage)
@@ -131,7 +165,8 @@ export default function PetPage() {
 
   return (
     <div
-      className="flex flex-col items-center"
+      ref={stageRef}
+      className="relative flex flex-col items-center"
       style={{
         paddingTop: 'calc(var(--safe-top, 0px) + 24px)',
         paddingBottom: '24px',
@@ -149,13 +184,15 @@ export default function PetPage() {
       />
 
       <PetDisplay
-        stage={pet.stage}
+        stage={displayStage}
         name={pet.name}
         petType={pet.type}
         onPet={handlePet}
         evolving={evolved}
+        eating={eating}
         prevStage={prevStageRef.current}
         evolutionKind={evolutionKind}
+        hitAreaRef={petHitRef}
       />
 
       <StatusPanel
@@ -187,8 +224,14 @@ export default function PetPage() {
         feedCost={feedCost}
         canAfford={canAfford}
         feeding={feeding}
+        eating={eating}
         isMaxLevel={isMaxLevel}
+        feedButtonRef={feedButtonRef}
       />
+
+      {eating && flightPoints && (
+        <FeedingFx start={flightPoints.start} mouth={flightPoints.mouth} />
+      )}
 
       <EvolutionOverlay
         visible={evolved}
