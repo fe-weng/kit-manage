@@ -1,6 +1,6 @@
 # CONVENTION.md — 编码约定
 
-> 最后更新：2026-09-14
+> 最后更新：2026-09-16
 > 维护方式：人工维护
 
 ## 文件组织约定
@@ -21,6 +21,8 @@
 | Service | `src/application/services/<Name>Service.ts` | **PascalCase** + `Service` 后缀 |
 | 共享常量 | `src/shared/constants.ts` | 小写文件名 |
 | DI 容器 | `src/shared/container.ts` | 小写文件名 |
+| 宠物种类策略 | `src/shared/petTypes/<Type>PetTypeStrategy.ts` | **PascalCase** + `PetTypeStrategy` |
+| 策略注册表 | `src/shared/petTypes/petTypeRegistry.ts` | camelCase；新种类：类 + 资源 + 加入 `ADOPTABLE_STRATEGIES` |
 
 > 未使用 kebab-case 文件命名。
 
