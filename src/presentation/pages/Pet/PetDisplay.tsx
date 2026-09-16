@@ -176,6 +176,7 @@ export default function PetDisplay({
       <motion.button
         onClick={handlePet}
         whileTap={evolving ? undefined : { scale: 0.92 }}
+        aria-label={`抚摸${name}`}
         className="relative rounded-full flex items-center justify-center cursor-pointer overflow-visible"
         style={{ width: hitArea, height: hitArea }}
       >
@@ -256,12 +257,6 @@ export default function PetDisplay({
             </motion.span>
           ))}
         </AnimatePresence>
-
-        {!evolving && (
-          <span className="absolute bottom-3 text-[11px] text-text-sub/60">
-            点击抚摸
-          </span>
-        )}
       </motion.button>
     </div>
   )
