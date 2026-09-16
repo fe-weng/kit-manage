@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — 代码结构
 
-> 最后更新：2026-09-14
+> 最后更新：2026-09-16
 > 维护方式：人工维护，架构变动时同步更新
 
 ## 技术栈
@@ -104,6 +104,16 @@ src/
     ├── constants.ts                  # DEFAULT_CHILD_ID, REWARD_CATEGORIES, ROUTES（10 个路由）
     ├── container.ts                  # DI 容器（实例化 Service 并注入 Repository，含 snapshotRepo）
     ├── toast.ts                      # 全局命令式 Toast API（toast.success/error）
+    ├── petTypes/                     # 宠物种类策略（一种类一策略 + Default 兜底）
+    │   ├── IPetTypeStrategy.ts
+    │   ├── BasePetTypeStrategy.ts
+    │   ├── DefaultPetTypeStrategy.ts
+    │   ├── ChickenPetTypeStrategy.ts
+    │   ├── RabbitPetTypeStrategy.ts
+    │   ├── CatPetTypeStrategy.ts
+    │   ├── DogPetTypeStrategy.ts
+    │   ├── petTypeRegistry.ts        # resolvePetTypeStrategy / getAdoptablePetStrategies
+    │   └── index.ts
     ├── types/                        # 共享类型（如有）
     └── utils/                        # 工具函数（如有）
 ```

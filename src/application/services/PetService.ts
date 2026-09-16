@@ -11,13 +11,11 @@ import {
 import { getStageConfig, getNextStageConfig } from '@/domain/valueObjects/PetStage'
 import type { PointService } from './PointService'
 import { DEFAULT_CHILD_ID } from '@/shared/constants'
+import { ADOPTABLE_PET_TYPES, isAdoptablePetType } from '@/shared/petTypes'
 
 const MAX_PET_NAME_LENGTH = 10
 
-export const ADOPTABLE_PET_TYPES = [
-  { type: 'chicken', label: '小鸡' },
-  { type: 'rabbit', label: '小兔' },
-] as const
+export { ADOPTABLE_PET_TYPES }
 
 export interface PetStatus {
   pet: Pet
@@ -272,7 +270,7 @@ export class PetService {
   }
 
   private assertValidType(type: string): void {
-    if (!ADOPTABLE_PET_TYPES.some((item) => item.type === type)) {
+    if (!isAdoptablePetType(type)) {
       throw new Error('已经领养过这种宠物')
     }
   }

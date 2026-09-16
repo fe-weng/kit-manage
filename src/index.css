@@ -80,6 +80,15 @@
     overflow: hidden;
   }
 
+  /* 装饰图：阻止 iPadOS 长按拖动弹出原图像预览。点击必须放在父节点。 */
+  .no-native-img-gestures {
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+  }
+
   @media (min-width: 768px) {
     #root {
       padding-left: 24px;

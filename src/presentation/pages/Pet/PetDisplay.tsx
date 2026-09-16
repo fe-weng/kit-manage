@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Crown } from '@phosphor-icons/react'
 import { PetStage } from '@/domain/valueObjects/PetStage'
+import { getPetEmoji, resolvePetTypeStrategy } from '@/shared/petTypes'
 import EvolutionFx from './EvolutionFx'
 import {
   EvolutionKind,
@@ -23,28 +24,8 @@ function withBase(path: string): string {
   return `${import.meta.env.BASE_URL}${path}`
 }
 
-const PET_IMAGES: Record<string, Partial<Record<PetStage, string>>> = {
-  chicken: {
-    [PetStage.EGG]: 'pets/chicken/stage-1-egg.png',
-    [PetStage.HATCHED]: 'pets/chicken/stage-2-hatched.png',
-    [PetStage.GROWING]: 'pets/chicken/stage-3-growing.png',
-    [PetStage.MATURE]: 'pets/chicken/stage-4-mature.png',
-    [PetStage.MAX]: 'pets/chicken/stage-5-max.png',
-  },
-  rabbit: {
-    [PetStage.EGG]: 'pets/rabbit/stage-1-egg.png',
-    [PetStage.HATCHED]: 'pets/rabbit/stage-2-hatched.png',
-    [PetStage.GROWING]: 'pets/rabbit/stage-3-growing.png',
-    [PetStage.MATURE]: 'pets/rabbit/stage-4-mature.png',
-    [PetStage.MAX]: 'pets/rabbit/stage-5-max.png',
-  },
-}
-
 export function getPetImage(petType: string, stage: PetStage): string {
-  const typeImages = PET_IMAGES[petType]
-  if (typeImages?.[stage]) return withBase(typeImages[stage]!)
-  if (typeImages?.[PetStage.GROWING]) return withBase(typeImages[PetStage.GROWING]!)
-  return withBase('pets/chicken/stage-3-growing.png')
+  return withBase(resolvePetTypeStrategy(petType).stageImage(stage))
 }
 
 /** 手机端维持原尺寸；平板竖屏走方案 C（满级 400） */
@@ -185,7 +166,7 @@ export default function PetDisplay({
   return (
     <div className="flex flex-col items-center" style={{ gap: '12px' }}>
       <div className="flex items-center" style={{ gap: '8px' }}>
-        <span className="text-[14px]">{petType === 'rabbit' ? '🐰' : '🐣'}</span>
+        <span className="text-[14px]">{getPetEmoji(petType)}</span>
         <h2 className="text-[18px] font-bold text-text-main">{name}</h2>
         {stage === PetStage.MAX && (
           <Crown size={18} weight="fill" className="text-pet-gold" />
@@ -195,6 +176,7 @@ export default function PetDisplay({
       <motion.button
         onClick={handlePet}
         whileTap={evolving ? undefined : { scale: 0.92 }}
+        aria-label={`抚摸${name}`}
         className="relative rounded-full flex items-center justify-center cursor-pointer overflow-visible"
         style={{ width: hitArea, height: hitArea }}
       >
@@ -275,12 +257,6 @@ export default function PetDisplay({
             </motion.span>
           ))}
         </AnimatePresence>
-
-        {!evolving && (
-          <span className="absolute bottom-3 text-[11px] text-text-sub/60">
-            点击抚摸
-          </span>
-        )}
       </motion.button>
     </div>
   )

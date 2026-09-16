@@ -1,4 +1,5 @@
 import { PetStage } from '@/domain/valueObjects/PetStage'
+import { resolvePetTypeStrategy } from '@/shared/petTypes'
 
 export const EvolutionKind = {
   HATCH: 'hatch',
@@ -49,12 +50,5 @@ export const EVOLUTION_TINT: Record<EvolutionKind, string> = {
 }
 
 export function getEvolutionParticles(petType: string, kind: EvolutionKind): string[] {
-  const chicken = petType !== 'rabbit'
-  if (kind === EvolutionKind.HATCH) {
-    return chicken ? ['✨', '💛', '🩷', '⭐'] : ['💜', '✨', '🩷', '⭐']
-  }
-  if (kind === EvolutionKind.LEGEND) {
-    return chicken ? ['✨', '⭐', '🌟', '💫', '💛'] : ['💜', '✨', '🌸', '⭐', '💫']
-  }
-  return chicken ? ['✨', '⭐', '🌟'] : ['💜', '✨', '🌸']
+  return resolvePetTypeStrategy(petType).particlesFor(kind)
 }

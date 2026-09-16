@@ -1,14 +1,10 @@
 import { useState, useRef } from 'react'
 import { Egg, PawPrint } from '@phosphor-icons/react'
+import { getAdoptablePetStrategies } from '@/shared/petTypes'
 
 interface CreatePetFormProps {
   onSubmit: (name: string, type: string) => void | Promise<void>
 }
-
-const PET_TYPES = [
-  { id: 'chicken', label: '小鸡', emoji: '🐣' },
-  { id: 'rabbit', label: '小兔', emoji: '🐰' },
-]
 
 export default function CreatePetForm({ onSubmit }: CreatePetFormProps) {
   const [name, setName] = useState('')
@@ -62,22 +58,22 @@ export default function CreatePetForm({ onSubmit }: CreatePetFormProps) {
           <label className="text-[14px] font-semibold text-text-main block" style={{ marginBottom: '8px' }}>
             选择宠物类型
           </label>
-          <div className="flex" style={{ gap: '12px' }}>
-            {PET_TYPES.map((pt) => (
+          <div className="grid grid-cols-2" style={{ gap: '12px' }}>
+            {getAdoptablePetStrategies().map((strategy) => (
               <button
-                key={pt.id}
+                key={strategy.type}
                 type="button"
-                onClick={() => setType(pt.id)}
-                className={`flex-1 rounded-[14px] flex flex-col items-center transition-all active:scale-95 ${
-                  type === pt.id
+                onClick={() => setType(strategy.type)}
+                className={`rounded-[14px] flex flex-col items-center transition-all active:scale-95 ${
+                  type === strategy.type
                     ? 'bg-accent/10 border-2 border-accent shadow-clay-button'
                     : 'bg-input-bg border-2 border-transparent'
                 }`}
                 style={{ padding: '16px 12px', gap: '8px' }}
               >
-                <span className="text-[36px]">{pt.emoji}</span>
-                <span className={`text-[14px] font-medium ${type === pt.id ? 'text-accent' : 'text-text-sub'}`}>
-                  {pt.label}
+                <span className="text-[36px]">{strategy.emoji}</span>
+                <span className={`text-[14px] font-medium ${type === strategy.type ? 'text-accent' : 'text-text-sub'}`}>
+                  {strategy.label}
                 </span>
               </button>
             ))}
