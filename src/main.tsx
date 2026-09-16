@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
+import { installIpadUndoGestureGuard } from './shared/preventIpadUndoGesture'
 
 async function requestPersistentStorage() {
   if (navigator.storage?.persist) {
@@ -12,6 +13,7 @@ async function requestPersistentStorage() {
   }
 }
 
+installIpadUndoGestureGuard()
 requestPersistentStorage()
 
 createRoot(document.getElementById('root')!).render(
