@@ -12,6 +12,7 @@ export class DefaultPetTypeStrategy extends BasePetTypeStrategy {
   protected readonly hatchParticles = ['✨', '💛', '🩷', '⭐'] as const
   protected readonly legendParticles = ['✨', '⭐', '🌟', '💫', '💛'] as const
   protected readonly defaultParticles = ['✨', '⭐', '🌟'] as const
+  protected readonly foods = ['🌽', '🍪', '🥖', '🥗'] as const
 
   matches(_petType: string): boolean {
     return false
