@@ -3,12 +3,14 @@
 > **日期**：2026-09-14  
 > **用途**：ChatGPT 出图，供「蛋 → 刚孵化」碎壳动画  
 > **接入**：图放进对应路径后，还要在 `src/presentation/pages/Pet/EvolutionFx.tsx` 的 `SHELL_SHARD_IMAGES` 里登记，动画才会用 PNG（不会自动探测文件）。  
-> **进度**：小兔 3 张已接入；小鸡 3 张已接入。  
+> **进度**：小鸡、小兔、小猫、小狗各 3 张均已接入。  
 > **参考图**：先上传现有蛋图，再贴对应 Prompt  
 > - 小鸡：`public/pets/chicken/stage-1-egg.png`  
-> - 小兔：`public/pets/rabbit/stage-1-egg.png`
+> - 小兔：`public/pets/rabbit/stage-1-egg.png`  
+> - 小猫：`public/pets/cat/stage-1-egg.png`  
+> - 小狗：`public/pets/dog/stage-1-egg.png`
 
-每种宠物 **3 片**（左 / 右 / 顶），共 6 张。只要蛋壳碎片，不要鸟巢、草地、花瓣垫、整颗蛋、动物。
+每种宠物 **3 片**（左 / 右 / 顶）。只要蛋壳碎片，不要鸟巢、草地、花瓣垫、云座、整颗蛋、动物。
 
 ---
 
@@ -72,6 +74,58 @@ A RIGHT eggshell shard from that lavender star-and-moon egg. Roughly 1/3 of the 
 
 ```
 A TOP eggshell cap from that lavender egg, including the small purple bow with the gold heart (the bow sits on this cap). Smaller hat-shaped fragment, broken rim facing downward. Stars on the shell. Soft clay thickness.
+```
+
+---
+
+## 小猫 🐱
+
+> **已接入**。路径：`public/pets/cat/evo-shell-{left,right,top}.png`。
+
+花纹：奶油白底 + 金色圆点 + 粉色爱心。顶片只要蛋尖约 20%，不要半个空壳。
+
+**左片** → `public/pets/cat/evo-shell-left.png`
+
+```
+A LEFT eggshell shard from that cream egg with gold polka dots and pink hearts. Roughly 1/3 of the shell, curved like the left side of an oval, broken jagged inner edge on the right. Gold dots and a partial pink heart on the outer surface. Soft clay thickness.
+```
+
+**右片** → `public/pets/cat/evo-shell-right.png`
+
+```
+A RIGHT eggshell shard from that cream egg with gold polka dots and pink hearts. Roughly 1/3 of the shell, curved like the right side of an oval, broken jagged inner edge on the left. Gold dots on the outer surface. Soft clay thickness. Do not copy the left shard; this is a different piece.
+```
+
+**顶片** → `public/pets/cat/evo-shell-top.png`
+
+```
+A tiny pointed TOP APEX only, about the top 20% of that cream-gold polka-dot heart egg. Small shallow lid, lots of empty space around it, broken jagged rim facing downward. Not a half-egg, not a helmet.
+```
+
+---
+
+## 小狗 🐶
+
+> **已接入**。路径：`public/pets/dog/evo-shell-{left,right,top}.png`。
+
+花纹：天蓝底 + 白云 + 金色小星星。顶片只要蛋尖约 20%，不要半个空壳。
+
+**左片** → `public/pets/dog/evo-shell-left.png`
+
+```
+A LEFT eggshell shard from that sky-blue egg with white clouds and stars. Roughly 1/3 of the shell, curved like the left side of an oval, broken jagged inner edge on the right. White clouds and stars on the outer surface. Soft clay thickness.
+```
+
+**右片** → `public/pets/dog/evo-shell-right.png`
+
+```
+A RIGHT eggshell shard from that sky-blue cloud-and-star egg. Roughly 1/3 of the shell, curved like the right side of an oval, broken jagged inner edge on the left. Clouds or stars on the outer surface. Soft clay thickness. Do not copy the left shard.
+```
+
+**顶片** → `public/pets/dog/evo-shell-top.png`
+
+```
+A tiny pointed TOP APEX only, about the top 20% of that sky-blue cloud egg. Small shallow lid, lots of empty space around it, broken jagged rim facing downward. Not a half-egg, not a helmet.
 ```
 
 ---

@@ -45,12 +45,12 @@
 | 展示宠物 | `isDisplayed` / `findDisplayedByChildId` | 首页与宠物页展示对象，用户可切换，需持久化 |
 | 养成宠物 | `findRaisingByChildId` | 当前唯一未满级宠物；满级后为空，可领养下一只 |
 | 宠物图鉴 | `PetCollection` / `getCollection` | 已领养 + 未领养种类列表；后续领养唯一入口 |
-| 宠物种类 | `ADOPTABLE_PET_TYPES` | 小鸡 `chicken`、小兔 `rabbit`，每种限一只 |
+| 宠物种类 | `ADOPTABLE_PET_TYPES` / `PET_CATALOG` | 小鸡 `chicken`、小兔 `rabbit`、小猫 `cat`、小狗 `dog`，每种限一只 |
 | 宠物阶段 | `PetStage` | Value Object：EGG → HATCHED → GROWING → MATURE → MAX |
 | 阶段经验门槛 | `PET_STAGE_CONFIGS.requiredExp` | 累计 EXP：0 / 50 / 200 / **700** / **1500** |
 | 宠物进化 | `evolve` | Pet.evolve()，喂食达标后自动升一档 |
 | 进化演出 | `EvolutionKind` | hatch / glow / ascend / legend，由 prevStage→新 stage 推导 |
-| 壳碎片名册 | `SHELL_SHARD_IMAGES` | 有登记用 PNG；无登记跳过壳片，只播闪光与粒子；小兔、小鸡均已接入 |
+| 壳碎片名册 | `SHELL_SHARD_IMAGES` | 有登记用 PNG；无登记跳过壳片，只播闪光与粒子；小鸡、小兔、小猫、小狗均已接入 |
 | 宠物喂食 | `feed` | PetService.feed()，只喂养成宠；满级不加 EXP |
 | 后续领养 | `adoptPet` / `PET_ADOPTION_COST` | 养成宠满级后花费 100 积分领养下一只，计入宠物消费 |
 | 宠物互动 | `pet` / `petAction` | PetService.pet()，对展示宠增加心情 |
@@ -155,7 +155,7 @@
 - 每只宠物独立持久化（名字、种类、阶段、EXP、心情）；不覆盖旧宠
 - 展示角色落库 `isDisplayed`；养成角色由「唯一未满级宠物」推导
 - 第一只免费创建；后续从图鉴付费领养，同种类不可重复
-- 本期最多两只（小鸡、小兔）；两只都满级即集齐
+- 本期最多四只（小鸡、小兔、小猫、小狗）；四只都满级即集齐
 - 改名只在图鉴；设置页「宠物管理」进入图鉴
 - 规范：[docs/specs/2026-09-14-multi-pet-design-spec.md](../../docs/specs/2026-09-14-multi-pet-design-spec.md)
 
@@ -165,7 +165,7 @@
 - **喂食**：10 积分 = 10 EXP，无冷却；只喂当前养成宠
 - **进化**：达标后自动 `evolve()`，每次升一档；宠物页按段演出，不能跳过、无音效、无庆祝文案
 - **演出 kind**：蛋→孵化 `hatch`（1.8s）/ 孵化→成长 `glow`（2.0s）/ 成长→成熟 `ascend`（2.5s）/ 成熟→满级 `legend`（3.0s）
-- **壳碎片**：`SHELL_SHARD_IMAGES` 名册登记。有图才在闪光遮切时飞出；无图跳过壳片但保留闪光与粒子。小兔、小鸡 left/right/top 均已接入
+- **壳碎片**：`SHELL_SHARD_IMAGES` 名册登记。有图才在闪光遮切时飞出；无图跳过壳片但保留闪光与粒子。小鸡、小兔、小猫、小狗 left/right/top 均已接入
 - **规范**：[进化动画](../../docs/specs/2026-09-14-evolution-animation-spec.md) · [壳图 Prompt](../../docs/specs/2026-09-14-pet-evolution-shard-prompts.md) · [grill-me](../../docs/grill-me-2026-09-14-evolution-animation.md)
 
 ### 打卡历史
