@@ -45,12 +45,12 @@
 | 展示宠物 | `isDisplayed` / `findDisplayedByChildId` | 首页与宠物页展示对象，用户可切换，需持久化 |
 | 养成宠物 | `findRaisingByChildId` | 当前唯一未满级宠物；满级后为空，可领养下一只 |
 | 宠物图鉴 | `PetCollection` / `getCollection` | 已领养 + 未领养种类列表；后续领养唯一入口 |
-| 宠物种类 | `ADOPTABLE_PET_TYPES` / `PET_CATALOG` | 小鸡 `chicken`、小兔 `rabbit`、小猫 `cat`、小狗 `dog`，每种限一只 |
+| 宠物种类 | `IPetTypeStrategy` / `resolvePetTypeStrategy` | 小鸡 `chicken`、小兔 `rabbit`、小猫 `cat`、小狗 `dog`，每种限一只；未知种类走 `DefaultPetTypeStrategy` |
 | 宠物阶段 | `PetStage` | Value Object：EGG → HATCHED → GROWING → MATURE → MAX |
 | 阶段经验门槛 | `PET_STAGE_CONFIGS.requiredExp` | 累计 EXP：0 / 50 / 200 / **700** / **1500** |
 | 宠物进化 | `evolve` | Pet.evolve()，喂食达标后自动升一档 |
 | 进化演出 | `EvolutionKind` | hatch / glow / ascend / legend，由 prevStage→新 stage 推导 |
-| 壳碎片名册 | `SHELL_SHARD_IMAGES` | 有登记用 PNG；无登记跳过壳片，只播闪光与粒子；小鸡、小兔、小猫、小狗均已接入 |
+| 壳碎片 | `IPetTypeStrategy.shellImages()` | 策略返回三片路径则播 PNG；兜底策略返回 null，只播闪光与粒子 |
 | 宠物喂食 | `feed` | PetService.feed()，只喂养成宠；满级不加 EXP |
 | 后续领养 | `adoptPet` / `PET_ADOPTION_COST` | 养成宠满级后花费 100 积分领养下一只，计入宠物消费 |
 | 宠物互动 | `pet` / `petAction` | PetService.pet()，对展示宠增加心情 |
@@ -84,9 +84,9 @@
 | 打卡/完成 | complete, completeTask, toggle, handleToggle |
 | 取消完成 | uncomplete, uncompleteTask |
 | 积分 | point, points, balance, earn, deduct, spend, refund |
-| 宠物 | pet, petAction, feed, evolve, mood, adopt, collection, isDisplayed, raising |
+| 宠物 | pet, petAction, feed, evolve, mood, adopt, collection, isDisplayed, raising, IPetTypeStrategy, petTypeRegistry |
 | 进化/破壳 | evolve, EvolutionKind, hatch, glow, ascend, legend, EvolutionFx, EvolutionOverlay |
-| 蛋壳碎片 | SHELL_SHARD_IMAGES, evo-shell-left, evo-shell-right, evo-shell-top |
+| 蛋壳碎片 | shellImages, evo-shell-left, evo-shell-right, evo-shell-top |
 | 图鉴 | collection, PetCollection, adoptPet, setDisplayed, renamePet |
 | 奖励 | reward, redeem, shop |
 | 券/优惠券 | coupon, coupons, pending, used, returned, markUsed, returnCoupon |
@@ -165,7 +165,7 @@
 - **喂食**：10 积分 = 10 EXP，无冷却；只喂当前养成宠
 - **进化**：达标后自动 `evolve()`，每次升一档；宠物页按段演出，不能跳过、无音效、无庆祝文案
 - **演出 kind**：蛋→孵化 `hatch`（1.8s）/ 孵化→成长 `glow`（2.0s）/ 成长→成熟 `ascend`（2.5s）/ 成熟→满级 `legend`（3.0s）
-- **壳碎片**：`SHELL_SHARD_IMAGES` 名册登记。有图才在闪光遮切时飞出；无图跳过壳片但保留闪光与粒子。小鸡、小兔、小猫、小狗 left/right/top 均已接入
+- **壳碎片**：由该种类策略的 `shellImages()` 提供路径。有图才在闪光遮切时飞出；未知种类走兜底策略，返回 null，只保留闪光与粒子。小鸡、小兔、小猫、小狗均已实现策略。
 - **规范**：[进化动画](../../docs/specs/2026-09-14-evolution-animation-spec.md) · [壳图 Prompt](../../docs/specs/2026-09-14-pet-evolution-shard-prompts.md) · [grill-me](../../docs/grill-me-2026-09-14-evolution-animation.md)
 
 ### 打卡历史

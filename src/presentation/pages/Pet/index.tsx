@@ -4,7 +4,7 @@ import { usePetStore } from '@/presentation/hooks/usePetStore'
 import { usePointStore } from '@/presentation/hooks/usePointStore'
 import { FEED_POINT_COST } from '@/domain/rules/PetGrowthRule'
 import { ROUTES } from '@/shared/constants'
-import { PET_CATALOG } from '@/shared/petCatalog'
+import { ADOPTABLE_PET_TYPES } from '@/shared/petTypes'
 import type { PetStage } from '@/domain/valueObjects/PetStage'
 import CreatePetForm from './CreatePetForm'
 import PetDisplay from './PetDisplay'
@@ -142,7 +142,7 @@ export default function PetPage() {
     >
       <PetToolbar
         adoptedCount={collection?.adoptedCount ?? 1}
-        totalCount={collection?.totalCount ?? PET_CATALOG.length}
+        totalCount={collection?.totalCount ?? ADOPTABLE_PET_TYPES.length}
         canAdoptHint={canAdoptHint}
         balance={balance?.currentBalance ?? 0}
         onOpenCollection={handleOpenCollection}

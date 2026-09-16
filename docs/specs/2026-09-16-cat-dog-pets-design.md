@@ -14,7 +14,7 @@
 
 - 图鉴可领养种类变为 4 种：小鸡、小兔、小猫、小狗。每种仍限一只。
 - 小猫、小狗各有五阶段主图和三片孵化壳碎片，成长与进化演出与现有宠物同一套规则。
-- 种类、中文名、emoji、进化粒子、成熟升段图标集中在一份 `PET_CATALOG`，避免 UI 与 Service 各写一份列表。
+- 种类差异用 `IPetTypeStrategy`（一宠一策略 + `DefaultPetTypeStrategy` 兜底）。新增种类时加策略并登记到 `petTypeRegistry.ts`。
 - 视觉风格对齐现有小鸡/小兔：3D kawaii clay/plush、头大身小、糖果色、大闪亮眼睛、越长大越华丽。
 
 ## 3. 非目标
@@ -32,7 +32,7 @@
 - 每种 `type` 只能有一只。
 - 同时最多一只未满级（养成中）宠物。
 - 展示宠物仍由 `isDisplayed` 决定；养成宠物仍由「唯一未满级」推导。
-- 图鉴 `totalCount` = `PET_CATALOG.length`（4）。已领养小鸡+小兔的用户显示 `2/4`，不再显示「已集齐全部宠物」，直到四只都领养且满级。
+- 图鉴 `totalCount` = 可领养策略数量（4）。已领养小鸡+小兔的用户显示 `2/4`，不再显示「已集齐全部宠物」，直到四只都领养且满级。
 - 目录顺序：`chicken` → `rabbit` → `cat` → `dog`（已有种类在前）。
 
 ## 5. 角色设定
@@ -108,23 +108,21 @@
 
 ## 9. 代码设计
 
-### 9.1 `PET_CATALOG`
+### 9.1 宠物种类策略
 
-新增 `src/shared/petCatalog.ts`，作为种类唯一数据源。`PetService.ADOPTABLE_PET_TYPES` 改为从 catalog 映射 `{ type, label }`，不再手写两行。
+种类差异用策略模式，不再用 if/else 或一份查表。
 
-每条至少包含：
+- 契约：`src/shared/petTypes/IPetTypeStrategy.ts`
+- 基类：`BasePetTypeStrategy`（阶段图路径、壳图路径、别名匹配、粒子按进化段选择）
+- 可领养：`ChickenPetTypeStrategy` / `RabbitPetTypeStrategy` / `CatPetTypeStrategy` / `DogPetTypeStrategy`
+- 兜底：`DefaultPetTypeStrategy`（未知 type 用小鸡成长图，不播壳片，不进图鉴）
+- 注册表：`petTypeRegistry.ts` 的 `ADOPTABLE_STRATEGIES`。**新增宠物：写一个策略类并 push 进该数组。**
 
-| 字段 | 说明 |
-|------|------|
-| `type` | `'chicken' \| 'rabbit' \| 'cat' \| 'dog'` |
-| `label` | 小鸡 / 小兔 / 小猫 / 小狗 |
-| `emoji` | 🐣 / 🐰 / 🐱 / 🐶 |
-| `hatchParticles` | 进化粒子 emoji 列表 |
-| `legendParticles` | 满级粒子 |
-| `defaultParticles` | glow / ascend 粒子 |
-| `ascendIcon` | `'crown' \| 'flower' \| 'bell' \| 'cloud'` |
+`PetService.ADOPTABLE_PET_TYPES`、首养表单、图鉴、`getPetImage`、进化粒子、壳片都通过 `resolvePetTypeStrategy` / `getAdoptablePetStrategies` 取策略，不在调用方按种类分支。
 
-图片路径不写进 catalog 散落字符串，而由约定生成：
+每条策略包含：`type` / `label` / `emoji` / `aliases` / `ascendIcon` / 三段粒子 / `stageImage` / `shellImages`。
+
+图片路径仍按约定：
 
 ```
 pets/${type}/stage-1-egg.png
@@ -135,18 +133,13 @@ pets/${type}/stage-5-max.png
 pets/${type}/evo-shell-left.png | right | top
 ```
 
-`getPetImage` 按该约定取图；未知 type 仍回退到小鸡成长图（与现逻辑相同）。
+### 9.2 调用方不再按种类 if/else
 
-### 9.2 必须改掉的二元分支
-
-这些地方今天把「非兔子」当成小鸡，接入猫狗前必须改成查 catalog：
-
-- `evolutionTransition.getEvolutionParticles`：`petType !== 'rabbit'`
-- `PetDisplay` 名称旁 emoji：`petType === 'rabbit' ? '🐰' : '🐣'`
-- `EvolutionFx` 成熟升段图标：兔子花 / 否则皇冠
-- `EvolutionFx.resolveShellKey`：增加 cat/猫、dog/狗
-- `CreatePetForm` 本地 `PET_TYPES`：改为读 catalog
-- `Pet/index.tsx` 图鉴角标：`totalCount ?? 2` 改为 `?? PET_CATALOG.length` 或与 `getCollection()` 一致
+- `getEvolutionParticles` → `resolvePetTypeStrategy(petType).particlesFor(kind)`
+- `PetDisplay` emoji / 图片 → 策略的 `emoji` / `stageImage`
+- `EvolutionFx` 壳片 → `shellImages()`；成熟升段图标 → `ascendIcon`
+- `CreatePetForm` → `getAdoptablePetStrategies()`
+- `Pet/index.tsx` 图鉴角标 → `ADOPTABLE_PET_TYPES.length`
 
 ### 9.3 首养表单布局
 

@@ -11,7 +11,7 @@ import {
 import { getStageConfig, getNextStageConfig } from '@/domain/valueObjects/PetStage'
 import type { PointService } from './PointService'
 import { DEFAULT_CHILD_ID } from '@/shared/constants'
-import { ADOPTABLE_PET_TYPES, isAdoptablePetType } from '@/shared/petCatalog'
+import { ADOPTABLE_PET_TYPES, isAdoptablePetType } from '@/shared/petTypes'
 
 const MAX_PET_NAME_LENGTH = 10
 

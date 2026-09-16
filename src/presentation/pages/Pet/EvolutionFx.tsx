@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Bell, Cloud, Crown, Flower } from '@phosphor-icons/react'
-import { PET_CATALOG, resolvePetCatalog, type AscendIcon } from '@/shared/petCatalog'
+import type { Icon } from '@phosphor-icons/react'
+import { resolvePetTypeStrategy, type AscendIcon, type ShellSide } from '@/shared/petTypes'
 import {
   EvolutionKind,
   EVOLUTION_DURATION_MS,
@@ -31,7 +32,7 @@ function withBase(path: string): string {
 }
 
 function generateParticles(kind: EvolutionKind, petType: string, sizeScale: number): Particle[] {
-  const emojis = getEvolutionParticles(resolveShellKey(petType), kind)
+  const emojis = getEvolutionParticles(petType, kind)
   const count = kind === EvolutionKind.LEGEND ? 22 : kind === EvolutionKind.HATCH ? 16 : 12
   const spread = kind === EvolutionKind.LEGEND ? 110 : 90
   return Array.from({ length: count }, (_, i) => ({
@@ -44,25 +45,6 @@ function generateParticles(kind: EvolutionKind, petType: string, sizeScale: numb
   }))
 }
 
-const SHELL_SIDES = ['left', 'right', 'top'] as const
-type ShellSide = (typeof SHELL_SIDES)[number]
-
-/** 已到位的孵化壳碎片。未登记的种类不播假壳片。 */
-const SHELL_SHARD_IMAGES: Record<string, Record<ShellSide, string>> = Object.fromEntries(
-  PET_CATALOG.map((entry) => [
-    entry.type,
-    {
-      left: withBase(`pets/${entry.type}/evo-shell-left.png`),
-      right: withBase(`pets/${entry.type}/evo-shell-right.png`),
-      top: withBase(`pets/${entry.type}/evo-shell-top.png`),
-    },
-  ]),
-)
-
-function resolveShellKey(petType: string): string {
-  return resolvePetCatalog(petType)?.type ?? petType.trim().toLowerCase()
-}
-
 const ASCEND_ICON_COLOR: Record<AscendIcon, string> = {
   crown: '#FFD54F',
   flower: '#C4A8E0',
@@ -70,18 +52,27 @@ const ASCEND_ICON_COLOR: Record<AscendIcon, string> = {
   cloud: '#7EC8E3',
 }
 
+const ASCEND_ICON: Record<AscendIcon, Icon> = {
+  crown: Crown,
+  flower: Flower,
+  bell: Bell,
+  cloud: Cloud,
+}
+
 function AscendGlyph({ petType, size }: { petType: string; size: number }) {
-  const icon = resolvePetCatalog(petType)?.ascendIcon ?? 'crown'
-  const color = ASCEND_ICON_COLOR[icon]
-  if (icon === 'flower') return <Flower size={size} weight="fill" color={color} />
-  if (icon === 'bell') return <Bell size={size} weight="fill" color={color} />
-  if (icon === 'cloud') return <Cloud size={size} weight="fill" color={color} />
-  return <Crown size={size} weight="fill" color={color} />
+  const strategy = resolvePetTypeStrategy(petType)
+  const Icon = ASCEND_ICON[strategy.ascendIcon]
+  return <Icon size={size} weight="fill" color={ASCEND_ICON_COLOR[strategy.ascendIcon]} />
 }
 
 function HatchShards({ petType, fromSize }: { petType: string; fromSize: number }) {
-  const art = SHELL_SHARD_IMAGES[resolveShellKey(petType)]
-  if (!art) return null
+  const shardsBySide = resolvePetTypeStrategy(petType).shellImages()
+  if (!shardsBySide) return null
+  const art: Record<ShellSide, string> = {
+    left: withBase(shardsBySide.left),
+    right: withBase(shardsBySide.right),
+    top: withBase(shardsBySide.top),
+  }
 
   const impactDelay = HATCH_TIMELINE_MS.impact / 1000
   const flightDuration = (HATCH_TIMELINE_MS.shardsEnd - HATCH_TIMELINE_MS.impact) / 1000

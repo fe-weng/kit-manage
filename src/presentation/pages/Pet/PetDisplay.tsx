@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Crown } from '@phosphor-icons/react'
 import { PetStage } from '@/domain/valueObjects/PetStage'
-import { getPetEmoji, resolvePetCatalog } from '@/shared/petCatalog'
+import { getPetEmoji, resolvePetTypeStrategy } from '@/shared/petTypes'
 import EvolutionFx from './EvolutionFx'
 import {
   EvolutionKind,
@@ -24,19 +24,8 @@ function withBase(path: string): string {
   return `${import.meta.env.BASE_URL}${path}`
 }
 
-const STAGE_FILES: Record<PetStage, string> = {
-  [PetStage.EGG]: 'stage-1-egg.png',
-  [PetStage.HATCHED]: 'stage-2-hatched.png',
-  [PetStage.GROWING]: 'stage-3-growing.png',
-  [PetStage.MATURE]: 'stage-4-mature.png',
-  [PetStage.MAX]: 'stage-5-max.png',
-}
-
 export function getPetImage(petType: string, stage: PetStage): string {
-  const catalog = resolvePetCatalog(petType)
-  const file = STAGE_FILES[stage]
-  if (catalog && file) return withBase(`pets/${catalog.type}/${file}`)
-  return withBase('pets/chicken/stage-3-growing.png')
+  return withBase(resolvePetTypeStrategy(petType).stageImage(stage))
 }
 
 /** 手机端维持原尺寸；平板竖屏走方案 C（满级 400） */
