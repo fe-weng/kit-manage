@@ -29,6 +29,7 @@ export default function CollectionCard({
             src={getPetImage(item.type, PetStage.EGG)}
             alt={`${item.typeLabel}蛋`}
             draggable={false}
+            className="no-native-img-gestures"
             style={{
               width: '96px',
               height: '96px',
@@ -69,6 +70,7 @@ export default function CollectionCard({
           src={getPetImage(item.pet.type, item.pet.stage)}
           alt={item.pet.name}
           draggable={false}
+          className="no-native-img-gestures"
           style={{ width: '96px', height: '96px', objectFit: 'contain' }}
         />
       </div>

@@ -50,6 +50,7 @@ export default function PetMiniCard({
           <img
             src={getPetImage(petType, stage)}
             alt={petName}
+            className="no-native-img-gestures"
             style={{ width: '44px', height: '44px', objectFit: 'contain' }}
             draggable={false}
           />

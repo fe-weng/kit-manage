@@ -52,6 +52,7 @@ export default function RaisingShortcutCard({
           <img
             src={getPetImage(petType, stage)}
             alt=""
+            className="no-native-img-gestures"
             style={{ width: '40px', height: '40px', objectFit: 'contain' }}
             draggable={false}
           />
