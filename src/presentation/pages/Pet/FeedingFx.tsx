@@ -8,7 +8,7 @@ interface FeedingFxProps {
   food: string
 }
 
-const FOOD_BADGE_SIZE = 44
+const FOOD_BADGE_SIZE = 76
 const T = FEEDING_TIMELINE_MS
 const COOKIE_DURATION_S = T.cookieGone / 1000
 const PARTICLE_DURATION_S = (T.duration - T.particleStart) / 1000
@@ -22,27 +22,23 @@ export default function FeedingFx({ start, mouth, food }: FeedingFxProps) {
   const last = arc.length - 1
   const scales = arc.map((_, i) => {
     const t = i / last
-    if (t < 0.18) return 0.25 + (t / 0.18) * 0.75
-    if (t > 0.78) return 1 - ((t - 0.78) / 0.22) * 0.85
-    return 1
+    if (t < 0.14) return 0.72 + (t / 0.14) * 0.38
+    if (t > 0.86) return 1.1 - ((t - 0.86) / 0.14) * 0.7
+    return 1.1
   })
   const opacities = arc.map((_, i) => {
     const t = i / last
-    if (t < 0.12) return t / 0.12
-    if (t > 0.82) return 1 - (t - 0.82) / 0.18
+    if (t < 0.08) return t / 0.08
+    if (t > 0.88) return 1 - (t - 0.88) / 0.12
     return 1
   })
-  const rotates = arc.map((point, i) => {
-    const prev = arc[Math.max(0, i - 1)] ?? point
-    const next = arc[Math.min(last, i + 1)] ?? point
-    return Math.atan2(next.y - prev.y, next.x - prev.x) * (180 / Math.PI) + i * 12
-  })
+  const rotates = arc.map((_, i) => Math.sin((i / last) * Math.PI * 2) * 16)
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-visible z-10" aria-hidden="true">
       <motion.div
         className="absolute top-0 left-0"
-        initial={{ x: start.x, y: start.y, scale: 0.2, opacity: 0, rotate: 0 }}
+        initial={{ x: start.x, y: start.y, scale: 0.72, opacity: 0, rotate: 0 }}
         animate={{
           x: xs,
           y: ys,
@@ -55,7 +51,7 @@ export default function FeedingFx({ start, mouth, food }: FeedingFxProps) {
       >
         <div
           className="flex items-center justify-center rounded-full bg-white shadow-clay"
-          style={{ width: FOOD_BADGE_SIZE, height: FOOD_BADGE_SIZE, fontSize: '26px', lineHeight: 1 }}
+          style={{ width: FOOD_BADGE_SIZE, height: FOOD_BADGE_SIZE, fontSize: '48px', lineHeight: 1 }}
         >
           {food}
         </div>
