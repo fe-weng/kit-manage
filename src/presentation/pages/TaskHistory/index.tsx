@@ -28,12 +28,12 @@ export default function TaskHistoryPage() {
 
   const [monthPickerOpen, setMonthPickerOpen] = useState(false)
 
-  const { fetchMonth, ensureTodaySnapshot, snapshots, logs, dateStatusMap, loading } =
+  const { fetchMonth, snapshots, logs, dateStatusMap, loading } =
     useTaskHistoryStore()
 
   useEffect(() => {
-    ensureTodaySnapshot().then(() => fetchMonth(year, month))
-  }, [year, month, ensureTodaySnapshot, fetchMonth])
+    fetchMonth(year, month)
+  }, [year, month, fetchMonth])
 
   const handleMonthChange = useCallback((y: number, m: number) => {
     setYear(y)

@@ -3,41 +3,102 @@ import { Task } from '@/domain/models/Task'
 import { TaskLog } from '@/domain/models/TaskLog'
 import { TaskType } from '@/domain/valueObjects/TaskType'
 import { DailyTaskSnapshot } from '@/domain/models/DailyTaskSnapshot'
-import { isTaskCompleted, isOneTimeTaskVisible, getTodayCompletedCount, getTodayEarnedPoints } from '@/domain/rules/TaskResetRule'
-import { getTodayStart, getWeekStart, getTodayDateStr, getMonthRange, parseDateStrToLocal } from '@/domain/rules/DateUtils'
+import { isTaskCompleted, isOneTimeTaskVisible, isOneTimeTaskVisibleOnDate, getTodayCompletedCount, getTodayEarnedPoints } from '@/domain/rules/TaskResetRule'
+import { getTodayStart, getWeekStart, getTodayDateStr, getMonthRange, parseDateStrToLocal, getDayRange, eachDateInclusive, formatDateStr } from '@/domain/rules/DateUtils'
 import type { ISnapshotRepository } from '@/domain/repositories/ISnapshotRepository'
 import type { PointService } from './PointService'
 import { DEFAULT_CHILD_ID } from '@/shared/constants'
 
 export class TaskService {
+  private ensureInFlight: Promise<void> | null = null
+
   constructor(
     private taskRepo: ITaskRepository,
     private pointService: PointService,
     private snapshotRepo?: ISnapshotRepository
   ) {}
 
-  async ensureTodaySnapshot(): Promise<DailyTaskSnapshot> {
-    if (!this.snapshotRepo) throw new Error('snapshotRepo not injected')
-    const today = getTodayDateStr()
-    const existing = await this.snapshotRepo.findByDate(DEFAULT_CHILD_ID, today)
-    if (existing) return existing
+  /** 打开 App / 从后台回到前台时调用：补齐上线日至今天的缺失快照，并同步今日快照 */
+  async ensureSnapshotsUpToToday(): Promise<void> {
+    if (!this.snapshotRepo) return
+    if (this.ensureInFlight) return this.ensureInFlight
+    this.ensureInFlight = this.runEnsureSnapshotsUpToToday().finally(() => {
+      this.ensureInFlight = null
+    })
+    return this.ensureInFlight
+  }
 
+  async ensureTodaySnapshot(): Promise<DailyTaskSnapshot | null> {
+    await this.ensureSnapshotsUpToToday()
+    if (!this.snapshotRepo) return null
+    return this.snapshotRepo.findByDate(DEFAULT_CHILD_ID, getTodayDateStr())
+  }
+
+  private async runEnsureSnapshotsUpToToday(): Promise<void> {
+    if (!this.snapshotRepo) return
+
+    const allTasks = await this.taskRepo.findByChildId(DEFAULT_CHILD_ID)
+    const logs = await this.taskRepo.findLogsByChildId(DEFAULT_CHILD_ID)
+    const today = getTodayDateStr()
+
+    await this.syncTodaySnapshot(
+      allTasks.filter((t) => t.isActive),
+      logs,
+    )
+
+    if (allTasks.length === 0) return
+
+    const goLive = formatDateStr(
+      new Date(Math.min(...allTasks.map((t) => t.createdAt))),
+    )
+    if (goLive > today) return
+
+    const existing = await this.snapshotRepo.findByDateRange(DEFAULT_CHILD_ID, goLive, today)
+    const existingDates = new Set(existing.map((s) => s.date))
+
+    for (const dateStr of eachDateInclusive(goLive, today)) {
+      if (dateStr === today || existingDates.has(dateStr)) continue
+      const { taskIds, negativeTaskIds } = this.collectSnapshotTaskIds(
+        dateStr,
+        allTasks,
+        logs,
+        false,
+      )
+      const snapshot = DailyTaskSnapshot.create({
+        childId: DEFAULT_CHILD_ID,
+        date: dateStr,
+        taskIds,
+        negativeTaskIds,
+      })
+      await this.snapshotRepo.save(snapshot)
+    }
+  }
+
+  /** 任务增删改后重建今日快照（历史快照冻结，不改） */
+  private async syncTodaySnapshotFromDb(): Promise<void> {
+    if (!this.snapshotRepo) return
     const tasks = await this.taskRepo.findActive(DEFAULT_CHILD_ID)
     const logs = await this.taskRepo.findLogsByChildId(DEFAULT_CHILD_ID)
+    await this.syncTodaySnapshot(tasks, logs)
+  }
 
-    const taskIds: string[] = []
-    const negativeTaskIds: string[] = []
-
-    for (const task of tasks) {
-      if (task.type === TaskType.NEGATIVE) {
-        negativeTaskIds.push(task.id)
-      } else if (task.type === TaskType.ONE_TIME) {
-        if (isOneTimeTaskVisible(task.id, logs)) taskIds.push(task.id)
-      } else {
-        taskIds.push(task.id)
-      }
+  private async syncTodaySnapshot(activeTasks: Task[], logs: TaskLog[]): Promise<void> {
+    if (!this.snapshotRepo) return
+    const today = getTodayDateStr()
+    const { taskIds, negativeTaskIds } = this.collectSnapshotTaskIds(
+      today,
+      activeTasks,
+      logs,
+      true,
+    )
+    const existing = await this.snapshotRepo.findByDate(DEFAULT_CHILD_ID, today)
+    if (existing) {
+      existing.taskIds = taskIds
+      existing.negativeTaskIds = negativeTaskIds
+      existing.updatedAt = Date.now()
+      await this.snapshotRepo.save(existing)
+      return
     }
-
     const snapshot = DailyTaskSnapshot.create({
       childId: DEFAULT_CHILD_ID,
       date: today,
@@ -45,21 +106,38 @@ export class TaskService {
       negativeTaskIds,
     })
     await this.snapshotRepo.save(snapshot)
-    return snapshot
   }
 
-  async updateTodaySnapshot(action: 'add' | 'remove', task: Task): Promise<void> {
-    if (!this.snapshotRepo) return
-    const today = getTodayDateStr()
-    const snapshot = await this.snapshotRepo.findByDate(DEFAULT_CHILD_ID, today)
-    if (!snapshot) return
+  private collectSnapshotTaskIds(
+    dateStr: string,
+    tasks: Task[],
+    logs: TaskLog[],
+    isToday: boolean,
+  ): { taskIds: string[]; negativeTaskIds: string[] } {
+    const { start: dayStart, end: dayEnd } = getDayRange(dateStr)
+    const taskIds: string[] = []
+    const negativeTaskIds: string[] = []
 
-    if (task.type === TaskType.NEGATIVE) {
-      action === 'add' ? snapshot.addNegativeTask(task.id) : snapshot.removeNegativeTask(task.id)
-    } else {
-      action === 'add' ? snapshot.addTask(task.id) : snapshot.removeTask(task.id)
+    for (const task of tasks) {
+      if (task.createdAt >= dayEnd) continue
+      if (!isToday && !task.isActive) {
+        const hasLog = logs.some(
+          (l) => l.taskId === task.id && l.completedAt >= dayStart && l.completedAt < dayEnd,
+        )
+        if (!hasLog) continue
+      }
+      if (isToday && !task.isActive) continue
+
+      if (task.type === TaskType.NEGATIVE) {
+        negativeTaskIds.push(task.id)
+      } else if (task.type === TaskType.ONE_TIME) {
+        if (isOneTimeTaskVisibleOnDate(task.id, logs, dateStr)) taskIds.push(task.id)
+      } else {
+        taskIds.push(task.id)
+      }
     }
-    await this.snapshotRepo.save(snapshot)
+
+    return { taskIds, negativeTaskIds }
   }
 
   async getMonthSnapshots(year: number, month: number): Promise<DailyTaskSnapshot[]> {
@@ -91,7 +169,7 @@ export class TaskService {
       ...params,
     })
     await this.taskRepo.save(task)
-    await this.updateTodaySnapshot('add', task)
+    await this.syncTodaySnapshotFromDb()
     return task
   }
 
@@ -103,6 +181,7 @@ export class TaskService {
     if (!task) return null
     task.update(params)
     await this.taskRepo.save(task)
+    await this.syncTodaySnapshotFromDb()
     return task
   }
 
@@ -111,7 +190,7 @@ export class TaskService {
     if (!task) return
     task.deactivate()
     await this.taskRepo.save(task)
-    await this.updateTodaySnapshot('remove', task)
+    await this.syncTodaySnapshotFromDb()
   }
 
   async completeTask(taskId: string): Promise<TaskLog | null> {

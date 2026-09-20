@@ -1,7 +1,10 @@
 import { Outlet } from 'react-router-dom'
 import TabBar from './TabBar'
+import { useSnapshotLifecycle } from '@/presentation/hooks/useSnapshotLifecycle'
 
 export default function AppLayout() {
+  useSnapshotLifecycle()
+
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-bg">
       <main

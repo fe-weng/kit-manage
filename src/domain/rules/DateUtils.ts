@@ -38,6 +38,27 @@ export function getDayRange(dateStr: string): { start: number; end: number } {
   return { start, end: start + 86400000 }
 }
 
+/** 日期字符串加减天数（按本地日历，避开 DST 用 setDate） */
+export function addDaysToDateStr(dateStr: string, days: number): string {
+  const parts = dateStr.split('-').map(Number)
+  const date = new Date(parts[0]!, parts[1]! - 1, parts[2]!)
+  date.setDate(date.getDate() + days)
+  return formatDateStr(date)
+}
+
+/** 闭区间内的每一天 YYYY-MM-DD（含起止） */
+export function eachDateInclusive(start: string, end: string): string[] {
+  if (start > end) return []
+  const dates: string[] = []
+  let current = start
+  while (current <= end) {
+    dates.push(current)
+    current = addDaysToDateStr(current, 1)
+    if (dates.length > 4000) break
+  }
+  return dates
+}
+
 /** 获取本周一 00:00:00 的时间戳 */
 export function getWeekStart(): number {
   const now = new Date()
