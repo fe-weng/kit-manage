@@ -19,9 +19,11 @@ interface TaskHistoryStore {
   allTasks: Task[]
   loading: boolean
   dateStatusMap: Record<string, DateStatus>
+  lastYear: number | null
+  lastMonth: number | null
 
   fetchMonth: (year: number, month: number) => Promise<void>
-  ensureTodaySnapshot: () => Promise<void>
+  refreshIfLoaded: () => Promise<void>
 }
 
 function computeDateStatusMap(
@@ -71,29 +73,34 @@ function computeDateStatusMap(
   return map
 }
 
-export const useTaskHistoryStore = create<TaskHistoryStore>((set) => ({
+export const useTaskHistoryStore = create<TaskHistoryStore>((set, get) => ({
   snapshots: [],
   logs: [],
   allTasks: [],
   loading: false,
   dateStatusMap: {},
+  lastYear: null,
+  lastMonth: null,
 
   fetchMonth: async (year: number, month: number) => {
     set({ loading: true })
     try {
+      await taskService.ensureSnapshotsUpToToday()
       const [snapshots, logs, allTasks] = await Promise.all([
         taskService.getMonthSnapshots(year, month),
         taskService.getMonthLogs(year, month),
         taskService.getAllTasks(),
       ])
       const dateStatusMap = computeDateStatusMap(snapshots, logs)
-      set({ snapshots, logs, allTasks, dateStatusMap })
+      set({ snapshots, logs, allTasks, dateStatusMap, lastYear: year, lastMonth: month })
     } finally {
       set({ loading: false })
     }
   },
 
-  ensureTodaySnapshot: async () => {
-    await taskService.ensureTodaySnapshot()
+  refreshIfLoaded: async () => {
+    const { lastYear, lastMonth } = get()
+    if (lastYear === null || lastMonth === null) return
+    await get().fetchMonth(lastYear, lastMonth)
   },
 }))
