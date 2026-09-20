@@ -1,5 +1,6 @@
 import { useMemo, useRef, useEffect } from 'react'
 import { useTaskHistoryStore } from '@/presentation/hooks/useTaskHistoryStore'
+import { TaskType } from '@/domain/valueObjects/TaskType'
 
 interface TaskViewProps {
   selectedTaskId: string | null
@@ -16,7 +17,7 @@ export default function TaskView({ selectedTaskId, onSelectTask, taskDayStatus }
     for (const snap of snapshots) {
       for (const id of snap.taskIds) taskIdSet.add(id)
     }
-    return allTasks.filter((t) => taskIdSet.has(t.id))
+    return allTasks.filter((t) => taskIdSet.has(t.id) && t.type !== TaskType.ONE_TIME)
   }, [snapshots, allTasks])
 
   const negativeTasks = useMemo(() => {
@@ -34,8 +35,11 @@ export default function TaskView({ selectedTaskId, onSelectTask, taskDayStatus }
 
   useEffect(() => {
     const first = allSelectableTasks[0]
+    const selectedStillVisible = allSelectableTasks.some((t) => t.id === selectedTaskId)
     if (!selectedTaskId && first) {
       onSelectTask(first.id)
+    } else if (selectedTaskId && !selectedStillVisible) {
+      onSelectTask(first ? first.id : null)
     }
   }, [allSelectableTasks, selectedTaskId, onSelectTask])
 
