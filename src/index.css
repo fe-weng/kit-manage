@@ -128,21 +128,25 @@
     --rdp-accent-background-color: rgba(255, 155, 176, 0.12);
     --rdp-day-height: 44px;
     --rdp-day-width: 44px;
+    display: block;
     width: 100%;
     max-width: 100%;
     font-family: inherit;
   }
 
-  .rdp-kid .rdp-months {
-    width: 100%;
-  }
-
-  .rdp-kid .rdp-month {
+  .rdp-kid .rdp-months,
+  .rdp-kid .rdp-month,
+  .rdp-kid .rdp-month_grid {
     width: 100%;
   }
 
   .rdp-kid .rdp-month_grid {
-    width: 100%;
+    table-layout: fixed;
+  }
+
+  .rdp-kid .rdp-weekday,
+  .rdp-kid .rdp-day {
+    width: 14.2857%;
   }
 
   .rdp-kid .rdp-month_caption {
@@ -186,6 +190,17 @@
 
   .rdp-custom-day:active {
     background-color: rgba(255, 155, 176, 0.16);
+  }
+
+  @media (min-width: 768px) {
+    .rdp-kid {
+      --rdp-day-height: 52px;
+    }
+
+    .rdp-custom-day {
+      width: 40px;
+      height: 40px;
+    }
   }
 
   .rdp-today-ring {
