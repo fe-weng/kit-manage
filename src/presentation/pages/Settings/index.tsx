@@ -121,7 +121,7 @@ export default function SettingsPage() {
         <SettingsRow
           icon={<Microphone size={18} weight="bold" />}
           label="语音实验"
-          hint="iPad 主屏听写 / 麦克风 / 朗读验证"
+          hint="跟着屏幕测，导出结果即可"
           onTap={() => navigate(ROUTES.LAB_SPEECH)}
         />
       </SettingsSection>

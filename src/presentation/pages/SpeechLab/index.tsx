@@ -13,8 +13,9 @@ import { collectCapability, pickRecorderMime, type CapabilitySnapshot } from './
 import { EN_TRIAL_OPTIONS, ZH_TRIAL_OPTIONS, matchClosedSet, type MatchDecision } from './closedSetMatch'
 import { cancelSpeech, speakDemo } from './tts'
 import { WebSpeechController, type SpeechLang } from './webSpeech'
+import TestFlow from './TestFlow'
 
-type LabTab = 'env' | 'speech' | 'mic' | 'tts' | 'match'
+type LabTab = 'flow' | 'env' | 'speech' | 'mic' | 'tts' | 'match'
 
 interface LabLogEntry {
   id: number
@@ -24,6 +25,7 @@ interface LabLogEntry {
 }
 
 const TABS: { id: LabTab; label: string }[] = [
+  { id: 'flow', label: '流程' },
   { id: 'env', label: '环境' },
   { id: 'speech', label: '听写 A' },
   { id: 'mic', label: '麦克风' },
@@ -50,7 +52,7 @@ function boolLabel(value: boolean): string {
 
 export default function SpeechLabPage() {
   const navigate = useNavigate()
-  const [tab, setTab] = useState<LabTab>('env')
+  const [tab, setTab] = useState<LabTab>('flow')
   const [cap, setCap] = useState<CapabilitySnapshot>(() => collectCapability())
   const [logs, setLogs] = useState<LabLogEntry[]>([])
   const logIdRef = useRef(0)
@@ -400,7 +402,7 @@ export default function SpeechLabPage() {
                 borderRadius: 12,
                 background: active ? 'var(--color-accent)' : 'transparent',
                 color: active ? '#FFFFFF' : 'var(--color-text-sub)',
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: 600,
               }}
             >
@@ -410,6 +412,7 @@ export default function SpeechLabPage() {
         })}
       </div>
 
+      {tab !== 'flow' && (
       <div className="flex" style={{ gap: 8 }}>
         {(['zh-CN', 'en-US'] as const).map((item) => {
           const active = lang === item
@@ -440,6 +443,9 @@ export default function SpeechLabPage() {
           )
         })}
       </div>
+      )}
+
+      {tab === 'flow' && <TestFlow onLog={appendLog} />}
 
       {tab === 'env' && (
         <section className="bg-card rounded-clay shadow-clay" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
