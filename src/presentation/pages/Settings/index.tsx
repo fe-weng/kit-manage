@@ -6,6 +6,7 @@ import {
   Trash,
   Info,
   PawPrint,
+  Microphone,
 } from '@phosphor-icons/react'
 import { backupService } from '@/shared/container'
 import ConfirmDialog from './ConfirmDialog'
@@ -116,7 +117,15 @@ export default function SettingsPage() {
         style={{ display: 'none' }}
       />
 
-      {/* Section: About */}
+      <SettingsSection title="实验">
+        <SettingsRow
+          icon={<Microphone size={18} weight="bold" />}
+          label="语音实验"
+          hint="iPad 主屏听写 / 麦克风 / 朗读验证"
+          onTap={() => navigate(ROUTES.LAB_SPEECH)}
+        />
+      </SettingsSection>
+
       <SettingsSection title="关于">
         <SettingsRow
           icon={<Info size={18} weight="bold" />}

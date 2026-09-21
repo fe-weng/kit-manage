@@ -16,4 +16,5 @@ export const ROUTES = {
   REDEEM_HISTORY: '/shop/history',
   TASK_HISTORY: '/tasks/history',
   SETTINGS: '/settings',
+  LAB_SPEECH: '/lab/speech',
 } as const

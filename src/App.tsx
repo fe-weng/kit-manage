@@ -14,6 +14,7 @@ const MyCouponsPage = lazy(() => import('./presentation/pages/MyCoupons'))
 const RedeemHistoryPage = lazy(() => import('./presentation/pages/RedeemHistory'))
 const TaskHistoryPage = lazy(() => import('./presentation/pages/TaskHistory'))
 const SettingsPage = lazy(() => import('./presentation/pages/Settings'))
+const SpeechLabPage = lazy(() => import('./presentation/pages/SpeechLab'))
 
 const prefetchPages = [
   () => import('./presentation/pages/Home'),
@@ -59,6 +60,7 @@ function App() {
             <Route path={ROUTES.MY_COUPONS} element={<MyCouponsPage />} />
             <Route path={ROUTES.REDEEM_HISTORY} element={<RedeemHistoryPage />} />
             <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
+            <Route path={ROUTES.LAB_SPEECH} element={<SpeechLabPage />} />
           </Route>
         </Routes>
       </Suspense>
