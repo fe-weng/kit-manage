@@ -130,7 +130,8 @@ export default function SettingsPage() {
         <SettingsRow
           icon={<Info size={18} weight="bold" />}
           label="版本"
-          value="v1.0.0 MVP"
+          value="v1.0.0-beta"
+          hint="语音实验测试包"
         />
         <SettingsRow
           icon={<Info size={18} weight="bold" />}
