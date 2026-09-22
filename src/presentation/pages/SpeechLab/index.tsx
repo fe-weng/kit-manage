@@ -17,6 +17,9 @@ import TestFlow from './TestFlow'
 
 type LabTab = 'flow' | 'env' | 'speech' | 'mic' | 'tts' | 'match'
 
+const MAX_LISTEN_MS = 8000
+const STABLE_INTERIM_MS = 600
+
 interface LabLogEntry {
   id: number
   at: string
@@ -159,8 +162,13 @@ export default function SpeechLabPage() {
       onSpeechStart: () => {
         appendLog('speech', 'onspeechstart')
       },
-      onInterim: (text) => {
+      onSpeechEnd: () => {
+        appendLog('speech', 'onspeechend')
+      },
+      onInterim: (result) => {
+        const text = result.alternatives[0]?.transcript ?? ''
         setInterim(text)
+        appendLog('speech', `interim ${result.elapsedMs}ms ${JSON.stringify(text)}`)
       },
       onFinal: (result) => {
         const texts = result.alternatives.map((a) => a.transcript)
@@ -175,19 +183,31 @@ export default function SpeechLabPage() {
       },
       onError: (code, raw) => {
         appendLog('speech', `error code=${code} raw=${raw}`)
-        toast.error(`听写失败：${code}`)
+        if (code !== 'aborted') {
+          toast.error(`听写失败：${code}`)
+        }
       },
-      onEnd: (hadFinal) => {
+      onEnd: ({ hadFinal, lastInterim }) => {
         clearAutoStop()
         setListening(false)
-        appendLog('speech', `onend hadFinal=${String(hadFinal)}`)
+        if (!hadFinal && lastInterim !== null) {
+          const texts = lastInterim.alternatives.map((item) => item.transcript)
+          setFinalText(texts[0] ?? '')
+          setAlternatives(texts)
+          setInterim('')
+          appendLog(
+            'speech',
+            `interim-fallback ${lastInterim.elapsedMs}ms alts=${texts.map((text) => JSON.stringify(text)).join(' | ')}`,
+          )
+        }
+        appendLog('speech', `onend hadFinal=${String(hadFinal)} hadInterim=${String(lastInterim !== null)}`)
       },
     })
 
     clearAutoStop()
     autoStopRef.current = window.setTimeout(() => {
       speechRef.current.stop()
-    }, 4000)
+    }, MAX_LISTEN_MS)
   }, [appendLog, clearAutoStop, lang, recording, stopMicTracks])
 
   const stopListen = useCallback(() => {
@@ -280,8 +300,35 @@ export default function SpeechLabPage() {
   const handleMatchListen = useCallback(() => {
     setMatchDecision(null)
     cancelSpeech()
+    clearAutoStop()
     setInterim('')
     appendLog('match', `闭集听写 lang=${lang}`)
+    let settled = false
+    let stableOptionId: string | null = null
+    let latestInterim: string[] = []
+    let stableTimer: number | null = null
+
+    const clearStableTimer = () => {
+      if (stableTimer !== null) {
+        window.clearTimeout(stableTimer)
+        stableTimer = null
+      }
+    }
+
+    const finish = (texts: string[], source: 'final' | 'interim-stable' | 'interim-fallback' | 'none') => {
+      if (settled) return
+      settled = true
+      clearStableTimer()
+      setFinalText(texts[0] ?? '')
+      setAlternatives(texts)
+      setInterim('')
+      applyMatchFromTranscripts(texts)
+      appendLog('match', `accepted source=${source} text=${JSON.stringify(texts[0] ?? '')}`)
+      if (source === 'interim-stable') {
+        speechRef.current.stop()
+      }
+    }
+
     speechRef.current.start({
       lang,
       onStart: () => {
@@ -290,31 +337,55 @@ export default function SpeechLabPage() {
       onSpeechStart: () => {
         appendLog('match', 'onspeechstart')
       },
-      onInterim: (text) => {
+      onSpeechEnd: () => {
+        appendLog('match', 'onspeechend')
+      },
+      onInterim: (result) => {
+        const texts = result.alternatives.map((item) => item.transcript)
+        const text = texts[0] ?? ''
         setInterim(text)
+        latestInterim = texts
+        const options = lang === 'zh-CN' ? ZH_TRIAL_OPTIONS : EN_TRIAL_OPTIONS
+        const decision = matchClosedSet(texts, options)
+        const nextOptionId = decision.kind === 'hit' ? decision.option?.id ?? null : null
+        if (nextOptionId === null) {
+          stableOptionId = null
+          clearStableTimer()
+          return
+        }
+        if (stableOptionId === nextOptionId && stableTimer !== null) return
+
+        stableOptionId = nextOptionId
+        clearStableTimer()
+        stableTimer = window.setTimeout(() => {
+          if (settled || stableOptionId !== nextOptionId) return
+          finish(latestInterim, 'interim-stable')
+        }, STABLE_INTERIM_MS)
       },
       onFinal: (result) => {
         const texts = result.alternatives.map((a) => a.transcript)
-        setFinalText(texts[0] ?? '')
-        setAlternatives(texts)
-        applyMatchFromTranscripts(texts)
+        finish(texts, 'final')
       },
       onError: (code, raw) => {
         appendLog('match', `error code=${code} raw=${raw}`)
-        toast.error(`听写失败：${code}`)
+        if (code !== 'aborted' && latestInterim.length === 0) {
+          finish([], 'none')
+          toast.error(`听写失败：${code}`)
+        }
       },
-      onEnd: (hadFinal) => {
+      onEnd: ({ hadFinal, lastInterim }) => {
         clearAutoStop()
+        clearStableTimer()
         setListening(false)
-        if (!hadFinal) {
-          applyMatchFromTranscripts([])
+        if (!settled && !hadFinal) {
+          const texts = lastInterim?.alternatives.map((item) => item.transcript) ?? latestInterim
+          finish(texts, texts.length > 0 ? 'interim-fallback' : 'none')
         }
       },
     })
-    clearAutoStop()
     autoStopRef.current = window.setTimeout(() => {
       speechRef.current.stop()
-    }, 4000)
+    }, MAX_LISTEN_MS)
   }, [appendLog, applyMatchFromTranscripts, clearAutoStop, lang])
 
   const handleCopyLog = useCallback(async () => {

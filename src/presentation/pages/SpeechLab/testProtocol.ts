@@ -2,13 +2,15 @@ import type { CapabilitySnapshot } from './capability'
 import type { SpeechLang } from './webSpeech'
 import type { MatchDecision } from './closedSetMatch'
 
-export const SPEECH_LAB_EXPORT_VERSION = 1
+export const SPEECH_LAB_EXPORT_VERSION = 2
 export const SPEECH_LAB_STORAGE_KEY = 'kid-manage-speech-lab-run'
 
 export const ZH_FLOW_WORDS = ['苹果', '香蕉', '西瓜'] as const
 export const EN_FLOW_WORDS = ['apple', 'banana', 'window'] as const
 export const ZH_TRIALS_PER_WORD = 3
 export const EN_TRIALS_PER_WORD = 2
+
+export type RecognitionSource = 'final' | 'interim-stable' | 'interim-fallback' | 'none'
 
 export interface SpeechTrialRecord {
   lang: SpeechLang
@@ -21,8 +23,11 @@ export interface SpeechTrialRecord {
   elapsedMs: number
   hadFinal: boolean
   hadOnStart: boolean
+  resultSource: RecognitionSource
+  matchedPrompt: boolean
   error: string | null
   alternatives: { transcript: string; confidence: number }[]
+  lastInterimAlternatives: { transcript: string; confidence: number }[]
 }
 
 export interface MicRecord {
@@ -46,6 +51,7 @@ export interface TtsRecord {
 
 export interface MatchRecord {
   source: 'tap' | 'speech'
+  recognitionSource: RecognitionSource | 'tap'
   prompt: string
   skipped: boolean
   recognized: string[]
@@ -153,6 +159,13 @@ function summarize(run: TestRun) {
   const en = run.speechTrials.filter((t) => t.lang === 'en-US' && !t.skipped)
   const zhFinal = zh.filter((t) => t.hadFinal).length
   const enFinal = en.filter((t) => t.hadFinal).length
+  const zhUsable = zh.filter((t) => t.resultSource !== 'none').length
+  const enUsable = en.filter((t) => t.resultSource !== 'none').length
+  const zhMatched = zh.filter((t) => t.matchedPrompt).length
+  const enMatched = en.filter((t) => t.matchedPrompt).length
+  const interimFallbacks = run.speechTrials.filter(
+    (t) => t.resultSource === 'interim-fallback' || t.resultSource === 'interim-stable',
+  ).length
   const errors = [...new Set(run.speechTrials.map((t) => t.error).filter((e) => e !== null))]
   const matchTap = run.matchTrials.filter((m) => m.source === 'tap' && !m.skipped)
   const matchSpeech = run.matchTrials.filter((m) => m.source === 'speech' && !m.skipped)
@@ -164,6 +177,11 @@ function summarize(run: TestRun) {
     speechCtor: run.capability?.speechRecognitionCtor ?? 'none',
     speechZhFinal: rate(zhFinal, zh.length),
     speechEnFinal: rate(enFinal, en.length),
+    speechZhUsable: rate(zhUsable, zh.length),
+    speechEnUsable: rate(enUsable, en.length),
+    speechZhMatched: rate(zhMatched, zh.length),
+    speechEnMatched: rate(enMatched, en.length),
+    interimFallbacks,
     speechHadOnStart: run.speechTrials.some((t) => t.hadOnStart),
     speechErrors: errors,
     micPlaybackHeard: run.mic?.playbackHeard ?? null,
@@ -255,6 +273,7 @@ export function upsertSpeechTrial(run: TestRun, record: SpeechTrialRecord): Test
 
 export function toMatchRecord(
   source: MatchRecord['source'],
+  recognitionSource: MatchRecord['recognitionSource'],
   prompt: string,
   recognized: string[],
   decision: MatchDecision,
@@ -262,6 +281,7 @@ export function toMatchRecord(
 ): MatchRecord {
   return {
     source,
+    recognitionSource,
     prompt,
     skipped,
     recognized,

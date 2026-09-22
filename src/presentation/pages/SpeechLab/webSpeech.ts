@@ -5,9 +5,14 @@ export interface SpeechAlternative {
   confidence: number
 }
 
-export interface SpeechFinalResult {
+export interface SpeechRecognitionResult {
   alternatives: SpeechAlternative[]
   elapsedMs: number
+}
+
+export interface SpeechEndResult {
+  hadFinal: boolean
+  lastInterim: SpeechRecognitionResult | null
 }
 
 export type SpeechErrorCode =
@@ -35,6 +40,7 @@ interface SpeechRecognitionLike extends EventTarget {
   onerror: ((this: SpeechRecognitionLike, ev: SpeechErrorLike) => void) | null
   onresult: ((this: SpeechRecognitionLike, ev: SpeechResultLike) => void) | null
   onspeechstart: ((this: SpeechRecognitionLike, ev: Event) => void) | null
+  onspeechend: ((this: SpeechRecognitionLike, ev: Event) => void) | null
 }
 
 interface SpeechErrorLike extends Event {
@@ -91,10 +97,11 @@ interface StartOptions {
   lang: SpeechLang
   onStart: () => void
   onSpeechStart: () => void
-  onInterim: (text: string) => void
-  onFinal: (result: SpeechFinalResult) => void
+  onSpeechEnd?: () => void
+  onInterim: (result: SpeechRecognitionResult) => void
+  onFinal: (result: SpeechRecognitionResult) => void
   onError: (code: SpeechErrorCode, raw: string) => void
-  onEnd: (hadFinal: boolean) => void
+  onEnd: (result: SpeechEndResult) => void
 }
 
 export class WebSpeechController {
@@ -117,6 +124,7 @@ export class WebSpeechController {
     rec.maxAlternatives = 5
 
     let hadFinal = false
+    let lastInterim: SpeechRecognitionResult | null = null
     this.startedAt = performance.now()
 
     rec.onstart = () => {
@@ -125,6 +133,10 @@ export class WebSpeechController {
 
     rec.onspeechstart = () => {
       options.onSpeechStart()
+    }
+
+    rec.onspeechend = () => {
+      options.onSpeechEnd?.()
     }
 
     rec.onresult = (ev) => {
@@ -140,15 +152,16 @@ export class WebSpeechController {
         })
       }
 
-      const top = alternatives[0]?.transcript ?? ''
+      const result = {
+        alternatives,
+        elapsedMs: Math.round(performance.now() - this.startedAt),
+      }
       if (last.isFinal) {
         hadFinal = true
-        options.onFinal({
-          alternatives,
-          elapsedMs: Math.round(performance.now() - this.startedAt),
-        })
+        options.onFinal(result)
       } else {
-        options.onInterim(top)
+        lastInterim = result
+        options.onInterim(result)
       }
     }
 
@@ -160,7 +173,7 @@ export class WebSpeechController {
       if (this.rec === rec) {
         this.rec = null
       }
-      options.onEnd(hadFinal)
+      options.onEnd({ hadFinal, lastInterim })
     }
 
     this.rec = rec

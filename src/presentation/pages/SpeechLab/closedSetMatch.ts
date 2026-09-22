@@ -109,7 +109,7 @@ export function scoreOption(recognized: string, option: MatchOption): number {
   let best = 0
   for (const c of candidates) {
     if (c.length === 0) continue
-    if (n === c || n.includes(c) || c.includes(n)) {
+    if (n === c || n.includes(c)) {
       best = Math.max(best, 1)
       continue
     }
@@ -134,24 +134,26 @@ export function matchClosedSet(transcripts: string[], options: MatchOption[]): M
     }
   }
 
-  let bestOption: MatchOption | null = null
-  let bestScore = 0
-  let bestFrom = ''
-  let secondScore = 0
-
-  for (const t of texts) {
-    for (const opt of options) {
-      const s = scoreOption(t, opt)
-      if (s > bestScore) {
-        secondScore = bestScore
-        bestScore = s
-        bestOption = opt
-        bestFrom = t
-      } else if (s > secondScore) {
-        secondScore = s
+  const ranked = options
+    .map((option) => {
+      let score = 0
+      let from = ''
+      for (const text of texts) {
+        const current = scoreOption(text, option)
+        if (current > score) {
+          score = current
+          from = text
+        }
       }
-    }
-  }
+      return { option, score, from }
+    })
+    .sort((a, b) => b.score - a.score)
+
+  const best = ranked[0]
+  const bestOption = best?.option ?? null
+  const bestScore = best?.score ?? 0
+  const bestFrom = best?.from ?? ''
+  const secondScore = ranked[1]?.score ?? 0
 
   if (bestOption === null || bestScore < THRESHOLD) {
     return {
