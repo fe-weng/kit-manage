@@ -3,7 +3,14 @@ import type { ReactNode } from 'react'
 import { Export, ShareNetwork, Copy, Microphone, SpeakerHigh, Stop } from '@phosphor-icons/react'
 import { toast } from '@/shared/toast'
 import { collectCapability, pickRecorderMime } from './capability'
-import { ZH_TRIAL_OPTIONS, levenshtein, matchClosedSet, normalizeSpeech } from './closedSetMatch'
+import {
+  ZH_TRIAL_OPTIONS,
+  getMatchAcceptance,
+  levenshtein,
+  matchClosedSet,
+  normalizeSpeech,
+  type MatchEvidence,
+} from './closedSetMatch'
 import { cancelSpeech, speakDemo } from './tts'
 import { WebSpeechController, type SpeechRecognitionResult } from './webSpeech'
 import {
@@ -19,12 +26,12 @@ import {
   toMatchRecord,
   upsertSpeechTrial,
   type FlowPhase,
+  type MatchUtterance,
   type RecognitionSource,
   type TestRun,
 } from './testProtocol'
 
 const MAX_LISTEN_MS = 8000
-const STABLE_INTERIM_MS = 600
 
 interface TestFlowProps {
   onLog: (channel: string, message: string) => void
@@ -70,7 +77,10 @@ export default function TestFlow({ onLog }: TestFlowProps) {
     (item) => item.lang === phase.lang && item.prompt === phase.prompt && item.trial === phase.trial,
   )
   const currentMatchDone = phase.id === 'matchSpeech' && run.matchTrials.some(
-    (item) => item.source === 'speech' && item.prompt === phase.prompt,
+    (item) =>
+      item.source === 'speech' &&
+      item.prompt === phase.prompt &&
+      item.trial === phase.trial,
   )
 
   const updateRun = useCallback((updater: (prev: TestRun) => TestRun) => {
@@ -126,7 +136,14 @@ export default function TestFlow({ onLog }: TestFlowProps) {
     }
   }, [])
 
-  const startSpeechTrial = useCallback((lang: 'zh-CN' | 'en-US', prompt: string, trial: number, of: number, forMatch: boolean) => {
+  const startSpeechTrial = useCallback((
+    lang: 'zh-CN' | 'en-US',
+    prompt: string,
+    trial: number,
+    of: number,
+    forMatch: boolean,
+    utterance: MatchUtterance | null = null,
+  ) => {
     if (processingRef.current) return
     processingRef.current = true
     cancelSpeech()
@@ -136,12 +153,17 @@ export default function TestFlow({ onLog }: TestFlowProps) {
     setLastResultSource('none')
     const startedAt = new Date().toISOString()
     let hadOnStart = false
+    let startEventMs: number | null = null
+    let speechStartMs: number | null = null
+    let firstInterimMs: number | null = null
+    let interimCount = 0
     let settled = false
     let lastError: string | null = null
     let lastInterim: SpeechRecognitionResult | null = null
     let latestMatchResult: SpeechRecognitionResult | null = null
     let stableOptionId: string | null = null
     let stableTimer: number | null = null
+    let stableDelayMs: number | null = null
     const startedMs = performance.now()
     onLog('flow', `听写 ${lang} prompt=${prompt} ${trial}/${of}`)
 
@@ -149,6 +171,7 @@ export default function TestFlow({ onLog }: TestFlowProps) {
       if (stableTimer !== null) {
         window.clearTimeout(stableTimer)
         stableTimer = null
+        stableDelayMs = null
       }
     }
 
@@ -181,6 +204,11 @@ export default function TestFlow({ onLog }: TestFlowProps) {
         error,
         alternatives,
         lastInterimAlternatives: lastInterim?.alternatives ?? [],
+        startEventMs,
+        speechStartMs,
+        firstInterimMs,
+        decisionMs: Math.round(performance.now() - startedMs),
+        interimCount,
       }))
       onLog(
         'flow',
@@ -192,21 +220,50 @@ export default function TestFlow({ onLog }: TestFlowProps) {
       result: SpeechRecognitionResult | null,
       source: RecognitionSource,
       error: string | null,
+      evidenceOverride: MatchEvidence | null = null,
     ) => {
       if (settled) return
       settled = true
       clearStableTimer()
       const texts = result?.alternatives.map((item) => item.transcript) ?? []
       const decision = matchClosedSet(texts, ZH_TRIAL_OPTIONS)
+      const evidence =
+        evidenceOverride ??
+        (decision.kind === 'hit' && decision.option !== null
+          ? getMatchAcceptance(texts, decision.option).evidence
+          : null)
       setLastSpeechText(texts[0] ?? '')
       setLastResultSource(source)
       setInterim('')
       updateRun((prev) => ({
         ...prev,
         matchTrials: [
-          ...prev.matchTrials.filter((item) => !(item.source === 'speech' && item.prompt === prompt)),
+          ...prev.matchTrials.filter(
+            (item) =>
+              !(
+                item.source === 'speech' &&
+                item.prompt === prompt &&
+                item.trial === trial
+              ),
+          ),
           {
-            ...toMatchRecord('speech', source, prompt, texts, decision, false),
+            ...toMatchRecord({
+              source: 'speech',
+              recognitionSource: source,
+              prompt,
+              trial,
+              of,
+              utterance,
+              recognized: texts,
+              decision,
+              skipped: false,
+              matchEvidence: evidence,
+              startEventMs,
+              speechStartMs,
+              firstInterimMs,
+              decisionMs: Math.round(performance.now() - startedMs),
+              interimCount,
+            }),
             reason: error ?? decision.reason,
           },
         ],
@@ -224,9 +281,11 @@ export default function TestFlow({ onLog }: TestFlowProps) {
       lang,
       onStart: () => {
         hadOnStart = true
+        startEventMs = Math.round(performance.now() - startedMs)
         setListening(true)
       },
       onSpeechStart: () => {
+        speechStartMs = Math.round(performance.now() - startedMs)
         onLog('flow', 'onspeechstart')
       },
       onSpeechEnd: () => {
@@ -234,6 +293,8 @@ export default function TestFlow({ onLog }: TestFlowProps) {
       },
       onInterim: (result) => {
         lastInterim = result
+        interimCount += 1
+        firstInterimMs ??= result.elapsedMs
         const text = result.alternatives[0]?.transcript ?? ''
         setInterim(text)
         onLog('flow', `interim ${result.elapsedMs}ms ${JSON.stringify(text)}`)
@@ -245,19 +306,35 @@ export default function TestFlow({ onLog }: TestFlowProps) {
           ZH_TRIAL_OPTIONS,
         )
         const nextOptionId = decision.kind === 'hit' ? decision.option?.id ?? null : null
-        if (nextOptionId === null) {
+        const matchedOption = decision.option
+        if (nextOptionId === null || matchedOption === null) {
           stableOptionId = null
           clearStableTimer()
           return
         }
-        if (stableOptionId === nextOptionId && stableTimer !== null) return
+        const acceptance = getMatchAcceptance(
+          result.alternatives.map((item) => item.transcript),
+          matchedOption,
+        )
+        if (
+          stableOptionId === nextOptionId &&
+          stableTimer !== null &&
+          stableDelayMs !== null &&
+          acceptance.stabilityMs >= stableDelayMs
+        ) return
+
+        if (acceptance.stabilityMs === 0) {
+          finishMatch(result, 'interim-stable', null, acceptance.evidence)
+          return
+        }
 
         stableOptionId = nextOptionId
         clearStableTimer()
+        stableDelayMs = acceptance.stabilityMs
         stableTimer = window.setTimeout(() => {
           if (settled || stableOptionId !== nextOptionId || latestMatchResult === null) return
-          finishMatch(latestMatchResult, 'interim-stable', null)
-        }, STABLE_INTERIM_MS)
+          finishMatch(latestMatchResult, 'interim-stable', null, acceptance.evidence)
+        }, acceptance.stabilityMs)
       },
       onFinal: (result) => {
         if (forMatch) {
@@ -319,6 +396,11 @@ export default function TestFlow({ onLog }: TestFlowProps) {
         error: null,
         alternatives: [],
         lastInterimAlternatives: [],
+        startEventMs: null,
+        speechStartMs: null,
+        firstInterimMs: null,
+        decisionMs: 0,
+        interimCount: 0,
       }),
       stepIndex: Math.min(prev.stepIndex + 1, FLOW_PHASES.length - 1),
     }))
@@ -455,7 +537,7 @@ export default function TestFlow({ onLog }: TestFlowProps) {
   return (
     <section className="bg-card rounded-clay shadow-clay" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div className="flex items-center justify-between">
-        <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>测试流程 v2</h2>
+        <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>测试流程 v3</h2>
         <span style={{ fontSize: 12, color: 'var(--color-text-sub)' }}>
           {progress}/{FLOW_PHASES.length}
         </span>
@@ -474,7 +556,7 @@ export default function TestFlow({ onLog }: TestFlowProps) {
       {phase.id === 'intro' && (
         <>
           <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5 }}>
-            跟着屏幕做就行，不必翻文档。大约 8–10 分钟。新版会记录 final 和正在听结果，并在 final 缺失时使用最后一次有效文字。
+            跟着屏幕做就行，不必翻文档。大约 10 分钟。新版会分别测试单读、重复读，并记录首个识别结果和最终决策延迟。
           </p>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-sub)' }}>
             请用主屏图标打开的 App 来测。中途可离开，进度会保留。
@@ -675,7 +757,23 @@ export default function TestFlow({ onLog }: TestFlowProps) {
                       ...prev,
                       matchTrials: [
                         ...prev.matchTrials.filter((m) => !(m.source === 'tap' && m.prompt === opt.display)),
-                        toMatchRecord('tap', 'tap', opt.display, [opt.display], decision, false),
+                        toMatchRecord({
+                          source: 'tap',
+                          recognitionSource: 'tap',
+                          prompt: opt.display,
+                          trial: 1,
+                          of: 1,
+                          utterance: null,
+                          recognized: [opt.display],
+                          decision,
+                          skipped: false,
+                          matchEvidence: 'exact',
+                          startEventMs: null,
+                          speechStartMs: null,
+                          firstInterimMs: null,
+                          decisionMs: 0,
+                          interimCount: 0,
+                        }),
                       ],
                     }))
                     setTapped((prev) => (prev.includes(opt.display) ? prev : [...prev, opt.display]))
@@ -703,9 +801,15 @@ export default function TestFlow({ onLog }: TestFlowProps) {
 
       {phase.id === 'matchSpeech' && (
         <>
-          <p style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>闭集听写</p>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-sub)' }}>读出这个词，看会不会选中它。</p>
-          <p style={{ margin: 0, fontSize: 40, fontWeight: 800, textAlign: 'center' }}>{phase.prompt}</p>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>
+            游戏选择延迟 · 第 {phase.trial}/{phase.of} 次
+          </p>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-sub)' }}>
+            {phase.utterance === 'single' ? '只读一次这个词。' : '连续读两次，不要停顿。'}
+          </p>
+          <p style={{ margin: 0, fontSize: 40, fontWeight: 800, textAlign: 'center' }}>
+            {phase.utterance === 'single' ? phase.prompt : `${phase.prompt} ${phase.prompt}`}
+          </p>
           <PrimaryButton
             danger={listening}
             onClick={() => {
@@ -713,14 +817,14 @@ export default function TestFlow({ onLog }: TestFlowProps) {
                 speechRef.current.stop()
                 return
               }
-              startSpeechTrial('zh-CN', phase.prompt, 1, 1, true)
+              startSpeechTrial('zh-CN', phase.prompt, phase.trial, phase.of, true, phase.utterance)
             }}
           >
             {listening ? <Stop size={18} weight="bold" /> : <Microphone size={18} weight="bold" />}
             {listening ? '停止' : '读这个词'}
           </PrimaryButton>
           <ResultLine label="正在听" value={interim || '—'} />
-          <MatchSummary run={run} prompt={phase.prompt} />
+          <MatchSummary run={run} prompt={phase.prompt} trial={phase.trial} />
           <PrimaryButton onClick={goNext} disabled={listening || !currentMatchDone}>
             {currentMatchDone ? '下一题' : '完成本次识别后继续'}
           </PrimaryButton>
@@ -730,8 +834,31 @@ export default function TestFlow({ onLog }: TestFlowProps) {
               updateRun((prev) => ({
                 ...prev,
                 matchTrials: [
-                  ...prev.matchTrials.filter((m) => !(m.source === 'speech' && m.prompt === phase.prompt)),
-                  toMatchRecord('speech', 'none', phase.prompt, [], decision, true),
+                  ...prev.matchTrials.filter(
+                    (m) =>
+                      !(
+                        m.source === 'speech' &&
+                        m.prompt === phase.prompt &&
+                        m.trial === phase.trial
+                      ),
+                  ),
+                  toMatchRecord({
+                    source: 'speech',
+                    recognitionSource: 'none',
+                    prompt: phase.prompt,
+                    trial: phase.trial,
+                    of: phase.of,
+                    utterance: phase.utterance,
+                    recognized: [],
+                    decision,
+                    skipped: true,
+                    matchEvidence: null,
+                    startEventMs: null,
+                    speechStartMs: null,
+                    firstInterimMs: null,
+                    decisionMs: 0,
+                    interimCount: 0,
+                  }),
                 ],
                 stepIndex: Math.min(prev.stepIndex + 1, FLOW_PHASES.length - 1),
               }))
@@ -836,8 +963,10 @@ function resultSourceLabel(source: RecognitionSource): string {
   }
 }
 
-function MatchSummary({ run, prompt }: { run: TestRun; prompt: string }) {
-  const rec = [...run.matchTrials].reverse().find((m) => m.source === 'speech' && m.prompt === prompt)
+function MatchSummary({ run, prompt, trial }: { run: TestRun; prompt: string; trial: number }) {
+  const rec = [...run.matchTrials]
+    .reverse()
+    .find((m) => m.source === 'speech' && m.prompt === prompt && m.trial === trial)
   if (rec === undefined) return null
   return (
     <div>
@@ -846,6 +975,7 @@ function MatchSummary({ run, prompt }: { run: TestRun; prompt: string }) {
       </p>
       <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-text-sub)' }}>
         来源：{rec.recognitionSource === 'tap' ? '点选' : resultSourceLabel(rec.recognitionSource)}
+        {rec.matchEvidence === null ? '' : ` · ${rec.matchEvidence} · ${rec.decisionMs}ms`}
       </p>
     </div>
   )

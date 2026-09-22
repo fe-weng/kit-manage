@@ -10,7 +10,13 @@ import {
 import { toast } from '@/shared/toast'
 import { ROUTES } from '@/shared/constants'
 import { collectCapability, pickRecorderMime, type CapabilitySnapshot } from './capability'
-import { EN_TRIAL_OPTIONS, ZH_TRIAL_OPTIONS, matchClosedSet, type MatchDecision } from './closedSetMatch'
+import {
+  EN_TRIAL_OPTIONS,
+  ZH_TRIAL_OPTIONS,
+  getMatchAcceptance,
+  matchClosedSet,
+  type MatchDecision,
+} from './closedSetMatch'
 import { cancelSpeech, speakDemo } from './tts'
 import { WebSpeechController, type SpeechLang } from './webSpeech'
 import TestFlow from './TestFlow'
@@ -18,7 +24,6 @@ import TestFlow from './TestFlow'
 type LabTab = 'flow' | 'env' | 'speech' | 'mic' | 'tts' | 'match'
 
 const MAX_LISTEN_MS = 8000
-const STABLE_INTERIM_MS = 600
 
 interface LabLogEntry {
   id: number
@@ -307,11 +312,14 @@ export default function SpeechLabPage() {
     let stableOptionId: string | null = null
     let latestInterim: string[] = []
     let stableTimer: number | null = null
+    let stableDelayMs: number | null = null
+    const startedMs = performance.now()
 
     const clearStableTimer = () => {
       if (stableTimer !== null) {
         window.clearTimeout(stableTimer)
         stableTimer = null
+        stableDelayMs = null
       }
     }
 
@@ -323,7 +331,16 @@ export default function SpeechLabPage() {
       setAlternatives(texts)
       setInterim('')
       applyMatchFromTranscripts(texts)
-      appendLog('match', `accepted source=${source} text=${JSON.stringify(texts[0] ?? '')}`)
+      const options = lang === 'zh-CN' ? ZH_TRIAL_OPTIONS : EN_TRIAL_OPTIONS
+      const decision = matchClosedSet(texts, options)
+      const evidence =
+        decision.kind === 'hit' && decision.option !== null
+          ? getMatchAcceptance(texts, decision.option).evidence
+          : '-'
+      appendLog(
+        'match',
+        `accepted source=${source} evidence=${evidence} decision=${Math.round(performance.now() - startedMs)}ms text=${JSON.stringify(texts[0] ?? '')}`,
+      )
       if (source === 'interim-stable') {
         speechRef.current.stop()
       }
@@ -348,19 +365,32 @@ export default function SpeechLabPage() {
         const options = lang === 'zh-CN' ? ZH_TRIAL_OPTIONS : EN_TRIAL_OPTIONS
         const decision = matchClosedSet(texts, options)
         const nextOptionId = decision.kind === 'hit' ? decision.option?.id ?? null : null
-        if (nextOptionId === null) {
+        const matchedOption = decision.option
+        if (nextOptionId === null || matchedOption === null) {
           stableOptionId = null
           clearStableTimer()
           return
         }
-        if (stableOptionId === nextOptionId && stableTimer !== null) return
+        const acceptance = getMatchAcceptance(texts, matchedOption)
+        if (
+          stableOptionId === nextOptionId &&
+          stableTimer !== null &&
+          stableDelayMs !== null &&
+          acceptance.stabilityMs >= stableDelayMs
+        ) return
+
+        if (acceptance.stabilityMs === 0) {
+          finish(texts, 'interim-stable')
+          return
+        }
 
         stableOptionId = nextOptionId
         clearStableTimer()
+        stableDelayMs = acceptance.stabilityMs
         stableTimer = window.setTimeout(() => {
           if (settled || stableOptionId !== nextOptionId) return
           finish(latestInterim, 'interim-stable')
-        }, STABLE_INTERIM_MS)
+        }, acceptance.stabilityMs)
       },
       onFinal: (result) => {
         const texts = result.alternatives.map((a) => a.transcript)

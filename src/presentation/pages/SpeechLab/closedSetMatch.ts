@@ -16,8 +16,17 @@ export interface MatchDecision {
   from: string
 }
 
+export type MatchEvidence = 'exact' | 'contains' | 'fuzzy'
+
+export interface MatchAcceptance {
+  evidence: MatchEvidence
+  stabilityMs: number
+}
+
 const THRESHOLD = 0.72
 const MARGIN = 0.12
+const CONTAINS_STABILITY_MS = 250
+const FUZZY_STABILITY_MS = 600
 
 export const ZH_TRIAL_OPTIONS: MatchOption[] = [
   {
@@ -68,6 +77,28 @@ export function normalizeSpeech(text: string): string {
     .replace(/[\s.,!?;:'"()[\]{}，。！？；：、""''·\-]/g, '')
 }
 
+function normalizedCandidates(option: MatchOption): string[] {
+  return [option.display, option.phonetic, ...option.aliases]
+    .map(normalizeSpeech)
+    .filter((item) => item.length > 0)
+}
+
+export function getMatchAcceptance(
+  transcripts: string[],
+  option: MatchOption,
+): MatchAcceptance {
+  const texts = transcripts.map(normalizeSpeech).filter((item) => item.length > 0)
+  const candidates = normalizedCandidates(option)
+
+  if (texts.some((text) => candidates.some((candidate) => text === candidate))) {
+    return { evidence: 'exact', stabilityMs: 0 }
+  }
+  if (texts.some((text) => candidates.some((candidate) => text.includes(candidate)))) {
+    return { evidence: 'contains', stabilityMs: CONTAINS_STABILITY_MS }
+  }
+  return { evidence: 'fuzzy', stabilityMs: FUZZY_STABILITY_MS }
+}
+
 export function levenshtein(a: string, b: string): number {
   const m = a.length
   const n = b.length
@@ -105,7 +136,7 @@ export function scoreOption(recognized: string, option: MatchOption): number {
   const n = normalizeSpeech(recognized)
   if (n.length === 0) return 0
 
-  const candidates = [option.display, option.phonetic, ...option.aliases].map(normalizeSpeech)
+  const candidates = normalizedCandidates(option)
   let best = 0
   for (const c of candidates) {
     if (c.length === 0) continue

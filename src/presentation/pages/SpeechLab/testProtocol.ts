@@ -1,18 +1,27 @@
 import type { CapabilitySnapshot } from './capability'
 import type { SpeechLang } from './webSpeech'
-import type { MatchDecision } from './closedSetMatch'
+import type { MatchDecision, MatchEvidence } from './closedSetMatch'
 
-export const SPEECH_LAB_EXPORT_VERSION = 2
+export const SPEECH_LAB_EXPORT_VERSION = 3
 export const SPEECH_LAB_STORAGE_KEY = 'kid-manage-speech-lab-run'
 
 export const ZH_FLOW_WORDS = ['苹果', '香蕉', '西瓜'] as const
 export const EN_FLOW_WORDS = ['apple', 'banana', 'window'] as const
 export const ZH_TRIALS_PER_WORD = 3
 export const EN_TRIALS_PER_WORD = 2
+export const MATCH_TRIALS_PER_WORD = 2
 
 export type RecognitionSource = 'final' | 'interim-stable' | 'interim-fallback' | 'none'
 
-export interface SpeechTrialRecord {
+export interface RecognitionMetrics {
+  startEventMs: number | null
+  speechStartMs: number | null
+  firstInterimMs: number | null
+  decisionMs: number
+  interimCount: number
+}
+
+export interface SpeechTrialRecord extends RecognitionMetrics {
   lang: SpeechLang
   prompt: string
   trial: number
@@ -49,16 +58,22 @@ export interface TtsRecord {
   heard: boolean | null
 }
 
-export interface MatchRecord {
+export type MatchUtterance = 'single' | 'repeat'
+
+export interface MatchRecord extends RecognitionMetrics {
   source: 'tap' | 'speech'
   recognitionSource: RecognitionSource | 'tap'
   prompt: string
+  trial: number
+  of: number
+  utterance: MatchUtterance | null
   skipped: boolean
   recognized: string[]
   kind: string
   reason: string
   picked: string | null
   score: number
+  matchEvidence: MatchEvidence | null
 }
 
 export type FlowPhase =
@@ -68,7 +83,13 @@ export type FlowPhase =
   | { id: 'mic' }
   | { id: 'tts'; lang: SpeechLang; text: string }
   | { id: 'matchTap' }
-  | { id: 'matchSpeech'; prompt: string }
+  | {
+      id: 'matchSpeech'
+      prompt: string
+      trial: number
+      of: number
+      utterance: 'single' | 'repeat'
+    }
   | { id: 'done' }
 
 export interface TestRun {
@@ -103,7 +124,20 @@ export function buildFlowPhases(): FlowPhase[] {
   phases.push({ id: 'tts', lang: 'en-US', text: 'apple' })
   phases.push({ id: 'matchTap' })
   for (const word of ZH_FLOW_WORDS) {
-    phases.push({ id: 'matchSpeech', prompt: word })
+    phases.push({
+      id: 'matchSpeech',
+      prompt: word,
+      trial: 1,
+      of: MATCH_TRIALS_PER_WORD,
+      utterance: 'single',
+    })
+    phases.push({
+      id: 'matchSpeech',
+      prompt: word,
+      trial: 2,
+      of: MATCH_TRIALS_PER_WORD,
+      utterance: 'repeat',
+    })
   }
   phases.push({ id: 'done' })
   return phases
@@ -154,6 +188,30 @@ function rate(ok: number, total: number): string {
   return `${ok}/${total}`
 }
 
+function percentile(values: number[], p: number): number | null {
+  if (values.length === 0) return null
+  const sorted = [...values].sort((a, b) => a - b)
+  const index = Math.max(0, Math.ceil(p * sorted.length) - 1)
+  return sorted[index] ?? null
+}
+
+function summarizeLatency(records: RecognitionMetrics[]) {
+  const firstInterim = records
+    .map((item) => item.firstInterimMs)
+    .filter((value): value is number => value !== null)
+  const decisions = records.map((item) => item.decisionMs).filter((value) => value > 0)
+  return {
+    samples: records.length,
+    firstInterimSamples: firstInterim.length,
+    firstInterimP50Ms: percentile(firstInterim, 0.5),
+    firstInterimP95Ms: percentile(firstInterim, 0.95),
+    decisionSamples: decisions.length,
+    decisionP50Ms: percentile(decisions, 0.5),
+    decisionP95Ms: percentile(decisions, 0.95),
+    decisionUnder1s: rate(decisions.filter((value) => value <= 1000).length, decisions.length),
+  }
+}
+
 function summarize(run: TestRun) {
   const zh = run.speechTrials.filter((t) => t.lang === 'zh-CN' && !t.skipped)
   const en = run.speechTrials.filter((t) => t.lang === 'en-US' && !t.skipped)
@@ -169,6 +227,9 @@ function summarize(run: TestRun) {
   const errors = [...new Set(run.speechTrials.map((t) => t.error).filter((e) => e !== null))]
   const matchTap = run.matchTrials.filter((m) => m.source === 'tap' && !m.skipped)
   const matchSpeech = run.matchTrials.filter((m) => m.source === 'speech' && !m.skipped)
+  const matchSpeechHits = matchSpeech.filter((m) => m.kind === 'hit')
+  const matchSingleHits = matchSpeechHits.filter((m) => m.utterance === 'single')
+  const matchRepeatHits = matchSpeechHits.filter((m) => m.utterance === 'repeat')
 
   return {
     standalone:
@@ -184,11 +245,28 @@ function summarize(run: TestRun) {
     interimFallbacks,
     speechHadOnStart: run.speechTrials.some((t) => t.hadOnStart),
     speechErrors: errors,
+    speechLatency: summarizeLatency([...zh, ...en]),
     micPlaybackHeard: run.mic?.playbackHeard ?? null,
     micError: run.mic?.error ?? null,
     ttsHeard: run.tts.map((t) => ({ lang: t.lang, heard: t.heard, speakOk: t.speakOk })),
     matchTapHits: rate(matchTap.filter((m) => m.kind === 'hit').length, matchTap.length),
-    matchSpeechHits: rate(matchSpeech.filter((m) => m.kind === 'hit').length, matchSpeech.length),
+    matchSpeechHits: rate(matchSpeechHits.length, matchSpeech.length),
+    matchSpeechSingleHits: rate(
+      matchSingleHits.length,
+      matchSpeech.filter((m) => m.utterance === 'single').length,
+    ),
+    matchSpeechRepeatHits: rate(
+      matchRepeatHits.length,
+      matchSpeech.filter((m) => m.utterance === 'repeat').length,
+    ),
+    matchSpeechLatency: summarizeLatency(matchSpeechHits),
+    matchSpeechSingleLatency: summarizeLatency(matchSingleHits),
+    matchSpeechRepeatLatency: summarizeLatency(matchRepeatHits),
+    matchEvidence: {
+      exact: matchSpeechHits.filter((item) => item.matchEvidence === 'exact').length,
+      contains: matchSpeechHits.filter((item) => item.matchEvidence === 'contains').length,
+      fuzzy: matchSpeechHits.filter((item) => item.matchEvidence === 'fuzzy').length,
+    },
     stepIndex: run.stepIndex,
     totalSteps: FLOW_PHASES.length,
   }
@@ -271,23 +349,38 @@ export function upsertSpeechTrial(run: TestRun, record: SpeechTrialRecord): Test
   }
 }
 
-export function toMatchRecord(
-  source: MatchRecord['source'],
-  recognitionSource: MatchRecord['recognitionSource'],
-  prompt: string,
-  recognized: string[],
-  decision: MatchDecision,
-  skipped: boolean,
-): MatchRecord {
+interface MatchRecordInput extends RecognitionMetrics {
+  source: MatchRecord['source']
+  recognitionSource: MatchRecord['recognitionSource']
+  prompt: string
+  trial: number
+  of: number
+  utterance: MatchUtterance | null
+  recognized: string[]
+  decision: MatchDecision
+  skipped: boolean
+  matchEvidence: MatchEvidence | null
+}
+
+export function toMatchRecord(input: MatchRecordInput): MatchRecord {
   return {
-    source,
-    recognitionSource,
-    prompt,
-    skipped,
-    recognized,
-    kind: decision.kind,
-    reason: decision.reason,
-    picked: decision.option?.display ?? null,
-    score: decision.score,
+    source: input.source,
+    recognitionSource: input.recognitionSource,
+    prompt: input.prompt,
+    trial: input.trial,
+    of: input.of,
+    utterance: input.utterance,
+    skipped: input.skipped,
+    recognized: input.recognized,
+    kind: input.decision.kind,
+    reason: input.decision.reason,
+    picked: input.decision.option?.display ?? null,
+    score: input.decision.score,
+    matchEvidence: input.matchEvidence,
+    startEventMs: input.startEventMs,
+    speechStartMs: input.speechStartMs,
+    firstInterimMs: input.firstInterimMs,
+    decisionMs: input.decisionMs,
+    interimCount: input.interimCount,
   }
 }
