@@ -31,6 +31,8 @@ export interface PetRecord {
   moodUpdatedAt: number
   createdAt: number
   isDisplayed: number // Dexie 不支持 boolean 索引，用 0/1
+  /** 未写入的旧记录在读出时视为 default，不为此升版本或加索引 */
+  outfitSetId?: string
 }
 
 export interface RewardRecord {

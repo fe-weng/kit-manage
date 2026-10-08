@@ -1,7 +1,8 @@
 import type { IPetRepository } from '@/domain/repositories/IPetRepository'
 import { Pet } from '@/domain/models/Pet'
 import { PetStage } from '@/domain/valueObjects/PetStage'
-import type { KidManageDB, PetRecord } from '../DexieDatabase'
+import type { KidManageDB } from '../DexieDatabase'
+import { petFromRecord, petToRecord } from './petRecord'
 
 export class DexiePetRepository implements IPetRepository {
   constructor(private db: KidManageDB) {}
@@ -11,7 +12,7 @@ export class DexiePetRepository implements IPetRepository {
       .where('[childId+isDisplayed]')
       .equals([childId, 1])
       .first()
-    return record ? this.toDomain(record) : null
+    return record ? petFromRecord(record) : null
   }
 
   async findRaisingByChildId(childId: string): Promise<Pet | null> {
@@ -20,17 +21,17 @@ export class DexiePetRepository implements IPetRepository {
       .equals(childId)
       .and((pet) => pet.stage < PetStage.MAX)
       .first()
-    return record ? this.toDomain(record) : null
+    return record ? petFromRecord(record) : null
   }
 
   async findAllByChildId(childId: string): Promise<Pet[]> {
     const records = await this.db.pets.where('childId').equals(childId).toArray()
-    return records.map((record) => this.toDomain(record))
+    return records.map((record) => petFromRecord(record))
   }
 
   async findById(id: string): Promise<Pet | null> {
     const record = await this.db.pets.get(id)
-    return record ? this.toDomain(record) : null
+    return record ? petFromRecord(record) : null
   }
 
   async existsByChildIdAndType(childId: string, type: string): Promise<boolean> {
@@ -58,40 +59,10 @@ export class DexiePetRepository implements IPetRepository {
   }
 
   async save(pet: Pet): Promise<void> {
-    await this.db.pets.put(this.toPersistence(pet))
+    await this.db.pets.put(petToRecord(pet))
   }
 
   async delete(id: string): Promise<void> {
     await this.db.pets.delete(id)
-  }
-
-  private toDomain(record: PetRecord): Pet {
-    return new Pet({
-      id: record.id,
-      childId: record.childId,
-      name: record.name,
-      type: record.type,
-      stage: record.stage as PetStage,
-      exp: record.exp,
-      mood: record.mood,
-      moodUpdatedAt: record.moodUpdatedAt,
-      createdAt: record.createdAt,
-      isDisplayed: record.isDisplayed === 1,
-    })
-  }
-
-  private toPersistence(pet: Pet): PetRecord {
-    return {
-      id: pet.id,
-      childId: pet.childId,
-      name: pet.name,
-      type: pet.type,
-      stage: pet.stage,
-      exp: pet.exp,
-      mood: pet.mood,
-      moodUpdatedAt: pet.moodUpdatedAt,
-      createdAt: pet.createdAt,
-      isDisplayed: pet.isDisplayed ? 1 : 0,
-    }
   }
 }

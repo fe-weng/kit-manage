@@ -15,6 +15,8 @@ const MOOD_GOOD = 60
 const MOOD_NORMAL = 40
 const MOOD_SAD = 20
 
+export const DEFAULT_OUTFIT_SET_ID = 'default'
+
 interface PetProps {
   id: string
   childId: string
@@ -27,6 +29,8 @@ interface PetProps {
   createdAt: number
   /** 缺省视为展示宠物，兼容尚未写入该字段的旧记录 */
   isDisplayed?: boolean
+  /** 缺省或空串视为 default，兼容尚未写入该字段的旧记录 */
+  outfitSetId?: string
 }
 
 export class Pet {
@@ -40,6 +44,7 @@ export class Pet {
   moodUpdatedAt: number
   readonly createdAt: number
   isDisplayed: boolean
+  outfitSetId: string
 
   constructor(props: PetProps) {
     this.id = props.id
@@ -52,6 +57,10 @@ export class Pet {
     this.moodUpdatedAt = props.moodUpdatedAt
     this.createdAt = props.createdAt
     this.isDisplayed = props.isDisplayed ?? true
+    this.outfitSetId =
+      props.outfitSetId === undefined || props.outfitSetId === ''
+        ? DEFAULT_OUTFIT_SET_ID
+        : props.outfitSetId
   }
 
   static create(params: { id: string; childId: string; name: string; type: string }): Pet {
@@ -143,6 +152,7 @@ export class Pet {
       moodUpdatedAt: this.moodUpdatedAt,
       createdAt: this.createdAt,
       isDisplayed: this.isDisplayed,
+      outfitSetId: this.outfitSetId,
     }
   }
 }
