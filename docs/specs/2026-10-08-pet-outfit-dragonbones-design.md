@@ -1,7 +1,7 @@
 # 宠物装扮（DragonBones）设计规范
 
 > **日期**：2026-10-08  
-> **状态**：待评审  
+> **状态**：已确认，实施计划见 [2026-10-08-pet-outfit-dragonbones-implementation-plan.md](./2026-10-08-pet-outfit-dragonbones-implementation-plan.md)  
 > **关联**：[多宠物养成设计规范](./2026-09-14-multi-pet-design-spec.md) · [进化动画设计规范](./2026-09-14-evolution-animation-spec.md)
 
 ## 1. 背景
