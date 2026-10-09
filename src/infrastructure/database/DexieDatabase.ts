@@ -83,6 +83,15 @@ export interface DailyTaskSnapshotRecord {
   updatedAt: number
 }
 
+export interface OutfitLogRecord {
+  id: string
+  childId: string
+  outfitSetId: string
+  outfitName: string
+  pointsCost: number
+  redeemedAt: number
+}
+
 export class KidManageDB extends Dexie {
   tasks!: Table<TaskRecord>
   taskLogs!: Table<TaskLogRecord>
@@ -92,6 +101,7 @@ export class KidManageDB extends Dexie {
   pointBalances!: Table<PointBalanceRecord>
   categories!: Table<CategoryRecord>
   dailySnapshots!: Table<DailyTaskSnapshotRecord>
+  outfitLogs!: Table<OutfitLogRecord>
 
   constructor() {
     super('kid-manage')
@@ -132,6 +142,9 @@ export class KidManageDB extends Dexie {
       return tx.table('pets').toCollection().modify((pet: Partial<PetRecord>) => {
         if (pet.isDisplayed === undefined) pet.isDisplayed = 1
       })
+    })
+    this.version(8).stores({
+      outfitLogs: 'id, childId, outfitSetId, redeemedAt, [childId+outfitSetId], [childId+redeemedAt]',
     })
   }
 }
