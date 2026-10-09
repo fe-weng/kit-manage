@@ -12,6 +12,7 @@ import { getStageConfig, getNextStageConfig } from '@/domain/valueObjects/PetSta
 import type { PointService } from './PointService'
 import { DEFAULT_CHILD_ID } from '@/shared/constants'
 import { ADOPTABLE_PET_TYPES, isAdoptablePetType } from '@/shared/petTypes'
+import type { AsyncMutex } from '@/shared/asyncMutex'
 
 const MAX_PET_NAME_LENGTH = 10
 
@@ -50,11 +51,10 @@ export type AdoptionCheckResult =
   | { allowed: false; message: string }
 
 export class PetService {
-  private mutationLocked = false
-
   constructor(
     private petRepo: IPetRepository,
     private pointService: PointService,
+    private mutex: AsyncMutex,
   ) {}
 
   async getPet(): Promise<Pet | null> {
@@ -167,6 +167,14 @@ export class PetService {
   }
 
   async feed(): Promise<{ success: boolean; evolved: boolean; pet: Pet | null }> {
+    return this.withMutationLock(async () => this.feedUnlocked(), () => ({
+      success: false,
+      evolved: false,
+      pet: null,
+    }))
+  }
+
+  private async feedUnlocked(): Promise<{ success: boolean; evolved: boolean; pet: Pet | null }> {
     const pet = await this.petRepo.findRaisingByChildId(DEFAULT_CHILD_ID)
     if (!pet || !pet.canContinueRaising()) {
       return { success: false, evolved: false, pet: pet ?? null }
@@ -214,7 +222,12 @@ export class PetService {
   }
 
   async setDisplayed(petId: string): Promise<void> {
-    await this.petRepo.switchDisplayed(DEFAULT_CHILD_ID, petId)
+    await this.withMutationLock(
+      () => this.petRepo.switchDisplayed(DEFAULT_CHILD_ID, petId),
+      () => {
+        throw new Error('操作进行中')
+      },
+    )
   }
 
   private async getAdoptionBlocker(type: string): Promise<string | null> {
@@ -275,15 +288,16 @@ export class PetService {
     }
   }
 
-  private async withMutationLock<T>(fn: () => Promise<T>): Promise<T> {
-    if (this.mutationLocked) {
+  private async withMutationLock<T>(fn: () => Promise<T>, onBusy?: () => T): Promise<T> {
+    const release = this.mutex.tryAcquire()
+    if (release === null) {
+      if (onBusy !== undefined) return onBusy()
       throw new Error('请先把正在养成的宠物养到满级')
     }
-    this.mutationLocked = true
     try {
       return await fn()
     } finally {
-      this.mutationLocked = false
+      release()
     }
   }
 }

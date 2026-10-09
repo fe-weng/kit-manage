@@ -4,12 +4,15 @@ import { DexiePetRepository } from '@/infrastructure/database/repositories/Dexie
 import { DexieRewardRepository } from '@/infrastructure/database/repositories/DexieRewardRepository'
 import { DexiePointRepository } from '@/infrastructure/database/repositories/DexiePointRepository'
 import { DexieSnapshotRepository } from '@/infrastructure/database/repositories/DexieSnapshotRepository'
+import { DexieOutfitLogRepository } from '@/infrastructure/database/repositories/DexieOutfitLogRepository'
 import { PointService } from '@/application/services/PointService'
 import { TaskService } from '@/application/services/TaskService'
 import { PetService } from '@/application/services/PetService'
+import { OutfitService } from '@/application/services/OutfitService'
 import { RewardService } from '@/application/services/RewardService'
 import { BackupService } from '@/application/services/BackupService'
 import { JsonBackupAdapter } from '@/infrastructure/storage/JsonBackupAdapter'
+import { AsyncMutex } from '@/shared/asyncMutex'
 
 // Infrastructure: Database
 const db = new KidManageDB()
@@ -20,11 +23,14 @@ const petRepo = new DexiePetRepository(db)
 const rewardRepo = new DexieRewardRepository(db)
 const pointRepo = new DexiePointRepository(db)
 const snapshotRepo = new DexieSnapshotRepository(db)
+const outfitLogRepo = new DexieOutfitLogRepository(db)
 const backupAdapter = new JsonBackupAdapter(db)
+const mutationMutex = new AsyncMutex()
 
 // Application: Services (injected with Repository interfaces)
 export const pointService = new PointService(pointRepo)
 export const taskService = new TaskService(taskRepo, pointService, snapshotRepo)
-export const petService = new PetService(petRepo, pointService)
+export const petService = new PetService(petRepo, pointService, mutationMutex)
+export const outfitService = new OutfitService(petRepo, outfitLogRepo, pointService, mutationMutex)
 export const rewardService = new RewardService(rewardRepo, pointService)
 export const backupService = new BackupService(backupAdapter)
