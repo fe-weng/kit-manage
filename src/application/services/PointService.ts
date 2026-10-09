@@ -50,4 +50,10 @@ export class PointService {
     balance.refundReward(amount)
     await this.pointRepo.save(balance)
   }
+
+  async reversePetSpend(amount: number): Promise<void> {
+    const balance = await this.getBalance()
+    balance.reversePetSpend(amount)
+    await this.pointRepo.save(balance)
+  }
 }

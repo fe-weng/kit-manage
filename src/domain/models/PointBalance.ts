@@ -61,6 +61,12 @@ export class PointBalance {
     this.totalSpentOnReward -= amount
   }
 
+  reversePetSpend(amount: number): void {
+    if (amount <= 0) throw new Error('回滚积分必须为正数')
+    if (amount > this.totalSpentOnPet) throw new Error('回滚积分不能超过宠物消费总额')
+    this.totalSpentOnPet -= amount
+  }
+
   canAfford(amount: number): boolean {
     return this.currentBalance >= amount
   }
