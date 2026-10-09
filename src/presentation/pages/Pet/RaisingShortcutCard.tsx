@@ -1,10 +1,11 @@
 import type { PetStage } from '@/domain/valueObjects/PetStage'
-import { getPetImage } from './PetDisplay'
+import PetAvatar from '@/presentation/pet/PetAvatar'
 import { CaretRight } from '@phosphor-icons/react'
 
 interface RaisingShortcutCardProps {
   petName: string
   petType: string
+  outfitSetId: string
   stageName: string
   stage: PetStage
   moodEmoji: string
@@ -16,6 +17,7 @@ interface RaisingShortcutCardProps {
 export default function RaisingShortcutCard({
   petName,
   petType,
+  outfitSetId,
   stageName,
   stage,
   moodEmoji,
@@ -49,12 +51,14 @@ export default function RaisingShortcutCard({
             backgroundColor: '#FFF8F0',
           }}
         >
-          <img
-            src={getPetImage(petType, stage)}
+          <PetAvatar
+            type={petType}
+            stage={stage}
+            outfitSetId={outfitSetId}
+            motion="paused"
             alt=""
             className="no-native-img-gestures"
-            style={{ width: '40px', height: '40px', objectFit: 'contain' }}
-            draggable={false}
+            style={{ width: '40px', height: '40px', objectFit: 'contain', pointerEvents: 'none' }}
           />
         </div>
 

@@ -1,7 +1,8 @@
 import { PET_ADOPTION_COST } from '@/domain/rules/PetGrowthRule'
 import { PetStage } from '@/domain/valueObjects/PetStage'
 import type { PetCollectionItem } from '@/application/services/PetService'
-import { getPetImage } from '@/presentation/pages/Pet/PetDisplay'
+import PetAvatar from '@/presentation/pet/PetAvatar'
+import { getPetImage } from '@/presentation/pet/petImage'
 
 interface CollectionCardProps {
   item: PetCollectionItem
@@ -66,12 +67,14 @@ export default function CollectionCard({
       style={{ padding: '18px 16px', gap: '12px' }}
     >
       <div className="flex items-center justify-center" style={{ height: '120px' }}>
-        <img
-          src={getPetImage(item.pet.type, item.pet.stage)}
+        <PetAvatar
+          type={item.pet.type}
+          stage={item.pet.stage}
+          outfitSetId={item.pet.outfitSetId}
+          motion="paused"
           alt={item.pet.name}
-          draggable={false}
           className="no-native-img-gestures"
-          style={{ width: '96px', height: '96px', objectFit: 'contain' }}
+          style={{ width: '96px', height: '96px', objectFit: 'contain', pointerEvents: 'none' }}
         />
       </div>
       <div className="text-center" style={{ gap: '4px' }}>

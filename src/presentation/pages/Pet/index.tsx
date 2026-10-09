@@ -94,9 +94,11 @@ export default function PetPage() {
   }, [eating, pendingEvolution])
 
   const pettingRef = useRef(false)
+  const [petGesture, setPetGesture] = useState(0)
   const handlePet = useCallback(async () => {
     if (pettingRef.current) return
     pettingRef.current = true
+    setPetGesture((n) => n + 1)
     try {
       await petAction()
     } finally {
@@ -191,7 +193,9 @@ export default function PetPage() {
         stage={displayStage}
         name={pet.name}
         petType={pet.type}
+        outfitSetId={pet.outfitSetId}
         onPet={handlePet}
+        petGesture={petGesture}
         evolving={evolved}
         eating={eating}
         prevStage={prevStageRef.current}
@@ -213,6 +217,7 @@ export default function PetPage() {
         <RaisingShortcutCard
           petName={raisingStatus.pet.name}
           petType={raisingStatus.pet.type}
+          outfitSetId={raisingStatus.pet.outfitSetId}
           stageName={raisingStatus.stageName}
           stage={raisingStatus.pet.stage}
           moodEmoji={raisingStatus.pet.getMoodEmoji()}

@@ -102,6 +102,7 @@ export default function HomePage() {
         <PetMiniCard
           petName={status.pet.name}
           petType={status.pet.type}
+          outfitSetId={status.pet.outfitSetId}
           stageName={status.stageName}
           stage={status.pet.stage}
           moodEmoji={status.pet.getMoodEmoji()}

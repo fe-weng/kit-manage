@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { PetStage } from '@/domain/valueObjects/PetStage'
 import { resolveOutfitSetId } from '@/domain/outfits/outfitCatalog'
-import { getPetImage } from '@/presentation/pages/Pet/PetDisplay'
+import { getPetImage } from './petImage'
 import { toast } from '@/shared/toast'
 import { hasSpeciesBodyPacks } from './armatureManifest'
 import { PetCharacterPlayer } from './PetCharacterPlayer'
@@ -13,6 +13,7 @@ interface PetAvatarProps {
   stage: PetStage
   outfitSetId?: string
   motion?: PetMotion
+  motionNonce?: number
   className?: string
   style?: CSSProperties
   alt?: string
@@ -27,6 +28,7 @@ export default function PetAvatar({
   stage,
   outfitSetId,
   motion = 'paused',
+  motionNonce = 0,
   className,
   style,
   alt = '',
@@ -75,7 +77,7 @@ export default function PetAvatar({
 
   useEffect(() => {
     playerRef.current?.setMotion(motion)
-  }, [motion])
+  }, [motion, motionNonce])
 
   if (!useSkeleton || failed) {
     return (

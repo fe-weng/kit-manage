@@ -3,7 +3,10 @@ import type { Ref } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Crown } from '@phosphor-icons/react'
 import { PetStage } from '@/domain/valueObjects/PetStage'
-import { getPetEmoji, resolvePetTypeStrategy } from '@/shared/petTypes'
+import { getPetEmoji } from '@/shared/petTypes'
+import PetAvatar from '@/presentation/pet/PetAvatar'
+import type { PetMotion } from '@/presentation/pet/PetAvatar'
+import { hasSpeciesBodyPacks } from '@/presentation/pet/armatureManifest'
 import EvolutionFx from './EvolutionFx'
 import {
   EvolutionKind,
@@ -18,11 +21,15 @@ import {
   FEEDING_NOD_TIMES,
 } from './feedingTransition'
 
+const PET_GESTURE_MS = 1200
+
 interface PetDisplayProps {
   stage: PetStage
   name: string
   petType: string
+  outfitSetId: string
   onPet: () => void
+  petGesture?: number
   evolving?: boolean
   eating?: boolean
   prevStage?: PetStage
@@ -30,12 +37,15 @@ interface PetDisplayProps {
   hitAreaRef?: Ref<HTMLDivElement>
 }
 
-function withBase(path: string): string {
-  return `${import.meta.env.BASE_URL}${path}`
+function usesSkeleton(petType: string, stage: PetStage): boolean {
+  return stage !== PetStage.EGG && hasSpeciesBodyPacks(petType)
 }
 
-export function getPetImage(petType: string, stage: PetStage): string {
-  return withBase(resolvePetTypeStrategy(petType).stageImage(stage))
+function displayMotion(skeleton: boolean, eating: boolean, petting: boolean): PetMotion {
+  if (!skeleton) return 'paused'
+  if (eating) return 'eat'
+  if (petting) return 'pet'
+  return 'idle'
 }
 
 /** 手机端维持原尺寸；平板竖屏走方案 C（满级 400） */
@@ -126,8 +136,8 @@ function newImageTransition(kind: EvolutionKindType | null) {
   return { duration: 0.55, ease: 'easeOut' as const }
 }
 
-function petBodyAnimate(evolving: boolean, eating: boolean, sizeScale: number) {
-  if (evolving) return { y: 0, rotateX: 0 }
+function petBodyAnimate(evolving: boolean, eating: boolean, sizeScale: number, skeleton: boolean) {
+  if (evolving || skeleton) return { y: 0, rotateX: 0 }
   if (eating) {
     return {
       y: 0,
@@ -137,8 +147,8 @@ function petBodyAnimate(evolving: boolean, eating: boolean, sizeScale: number) {
   return { y: [0, -6 * sizeScale, 0], rotateX: 0 }
 }
 
-function petBodyTransition(evolving: boolean, eating: boolean) {
-  if (evolving) return { duration: 0.3 }
+function petBodyTransition(evolving: boolean, eating: boolean, skeleton: boolean) {
+  if (evolving || skeleton) return { duration: 0.3 }
   if (eating) {
     return {
       y: { duration: 0.25, ease: 'easeOut' as const },
@@ -156,7 +166,9 @@ export default function PetDisplay({
   stage,
   name,
   petType,
+  outfitSetId,
   onPet,
+  petGesture = 0,
   evolving = false,
   eating = false,
   prevStage,
@@ -164,6 +176,7 @@ export default function PetDisplay({
   hitAreaRef,
 }: PetDisplayProps) {
   const [hearts, setHearts] = useState<number[]>([])
+  const [petting, setPetting] = useState(false)
   const [revealed, setRevealed] = useState(false)
   const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
   const isTablet = useIsTablet()
@@ -195,11 +208,27 @@ export default function PetDisplay({
     const timer = setTimeout(() => {
       setHearts((prev) => prev.filter((h) => h !== id))
       timersRef.current.delete(timer)
-    }, 1200)
+    }, PET_GESTURE_MS)
     timersRef.current.add(timer)
   }
 
+  useEffect(() => {
+    if (petGesture === 0) return
+    setPetting(true)
+    const timer = setTimeout(() => setPetting(false), PET_GESTURE_MS)
+    return () => clearTimeout(timer)
+  }, [petGesture])
+
   const showOldImage = evolving && prevStage != null && prevStage !== stage && !revealed
+  const shownStage = showOldImage && prevStage !== null && prevStage !== undefined ? prevStage : stage
+  const skeleton = usesSkeleton(petType, shownStage)
+  const avatarMotion = displayMotion(skeleton, eating, petting)
+  const avatarStyle = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain' as const,
+    pointerEvents: 'none' as const,
+  }
 
   return (
     <div className="flex flex-col items-center" style={{ gap: '12px' }}>
@@ -226,8 +255,8 @@ export default function PetDisplay({
         <motion.div
           key={evolving ? 'evolving' : 'pet-body'}
           className="relative flex items-center justify-center"
-          animate={petBodyAnimate(evolving, eating, sizeScale)}
-          transition={petBodyTransition(evolving, eating)}
+          animate={petBodyAnimate(evolving, eating, sizeScale, skeleton)}
+          transition={petBodyTransition(evolving, eating, skeleton)}
           style={{
             width: imageSize,
             height: imageSize,
@@ -236,11 +265,9 @@ export default function PetDisplay({
           }}
         >
           <AnimatePresence mode={kind === EvolutionKind.HATCH ? 'sync' : 'wait'}>
-            {showOldImage ? (
-              <motion.img
+            {showOldImage && prevStage !== null && prevStage !== undefined ? (
+              <motion.div
                 key={`old-${prevStage}`}
-                src={getPetImage(petType, prevStage)}
-                alt={name}
                 initial={{ opacity: 1, scale: 1, rotate: 0 }}
                 animate={oldImageAnimate(kind)}
                 exit={{
@@ -255,16 +282,21 @@ export default function PetDisplay({
                   position: 'absolute',
                   width: oldImageSize,
                   height: oldImageSize,
-                  objectFit: 'contain',
-                  pointerEvents: 'none',
                 }}
-                draggable={false}
-              />
+              >
+                <PetAvatar
+                  type={petType}
+                  stage={prevStage}
+                  outfitSetId={outfitSetId}
+                  motion={avatarMotion}
+                  motionNonce={petGesture}
+                  alt={name}
+                  style={avatarStyle}
+                />
+              </motion.div>
             ) : (
-              <motion.img
+              <motion.div
                 key={`new-${stage}`}
-                src={getPetImage(petType, stage)}
-                alt={name}
                 initial={newImageInitial(kind, evolving)}
                 animate={newImageAnimate(kind, evolving)}
                 transition={newImageTransition(kind)}
@@ -272,11 +304,18 @@ export default function PetDisplay({
                   position: 'absolute',
                   width: imageSize,
                   height: imageSize,
-                  objectFit: 'contain',
-                  pointerEvents: 'none',
                 }}
-                draggable={false}
-              />
+              >
+                <PetAvatar
+                  type={petType}
+                  stage={stage}
+                  outfitSetId={outfitSetId}
+                  motion={avatarMotion}
+                  motionNonce={petGesture}
+                  alt={name}
+                  style={avatarStyle}
+                />
+              </motion.div>
             )}
           </AnimatePresence>
         </motion.div>

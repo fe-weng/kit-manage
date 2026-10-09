@@ -1,9 +1,10 @@
 import type { PetStage } from '@/domain/valueObjects/PetStage'
-import { getPetImage } from '@/presentation/pages/Pet/PetDisplay'
+import PetAvatar from '@/presentation/pet/PetAvatar'
 
 interface PetMiniCardProps {
   petName: string
   petType: string
+  outfitSetId: string
   stageName: string
   stage: PetStage
   moodEmoji: string
@@ -14,6 +15,7 @@ interface PetMiniCardProps {
 export default function PetMiniCard({
   petName,
   petType,
+  outfitSetId,
   stageName,
   stage,
   moodEmoji,
@@ -47,12 +49,14 @@ export default function PetMiniCard({
             overflow: 'hidden',
           }}
         >
-          <img
-            src={getPetImage(petType, stage)}
+          <PetAvatar
+            type={petType}
+            stage={stage}
+            outfitSetId={outfitSetId}
+            motion="paused"
             alt={petName}
             className="no-native-img-gestures"
-            style={{ width: '44px', height: '44px', objectFit: 'contain' }}
-            draggable={false}
+            style={{ width: '44px', height: '44px', objectFit: 'contain', pointerEvents: 'none' }}
           />
         </div>
 
