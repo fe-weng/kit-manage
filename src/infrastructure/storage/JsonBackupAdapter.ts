@@ -1,11 +1,12 @@
-import type { KidManageDB, TaskRecord, TaskLogRecord, PetRecord, RewardRecord, RewardLogRecord, PointBalanceRecord, CategoryRecord, DailyTaskSnapshotRecord } from '../database/DexieDatabase'
+import type { KidManageDB, TaskRecord, TaskLogRecord, PetRecord, RewardRecord, RewardLogRecord, PointBalanceRecord, CategoryRecord, DailyTaskSnapshotRecord, OutfitLogRecord } from '../database/DexieDatabase'
 import type { IBackupAdapter, BackupData } from '@/domain/repositories/IBackupAdapter'
+import { normalizeOutfitLogs, normalizeOutfitSetId } from './backupNormalize'
 
 export class JsonBackupAdapter implements IBackupAdapter {
   constructor(private db: KidManageDB) {}
 
   async exportAll(): Promise<BackupData> {
-    const [tasks, taskLogs, pets, rewards, rewardLogs, pointBalances, categories, dailySnapshots] =
+    const [tasks, taskLogs, pets, rewards, rewardLogs, pointBalances, categories, dailySnapshots, outfitLogs] =
       await Promise.all([
         this.db.tasks.toArray(),
         this.db.taskLogs.toArray(),
@@ -15,6 +16,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
         this.db.pointBalances.toArray(),
         this.db.categories.toArray(),
         this.db.dailySnapshots.toArray(),
+        this.db.outfitLogs.toArray(),
       ])
 
     return {
@@ -28,6 +30,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
       pointBalances,
       categories,
       dailySnapshots,
+      outfitLogs,
     }
   }
 
@@ -45,6 +48,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
         this.db.pointBalances,
         this.db.categories,
         this.db.dailySnapshots,
+        this.db.outfitLogs,
       ],
       async () => {
         await Promise.all([
@@ -56,6 +60,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
           this.db.pointBalances.clear(),
           this.db.categories.clear(),
           this.db.dailySnapshots.clear(),
+          this.db.outfitLogs.clear(),
         ])
 
         const bulkOps = [
@@ -66,6 +71,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
           this.db.rewardLogs.bulkAdd(data.rewardLogs as RewardLogRecord[]),
           this.db.pointBalances.bulkAdd(data.pointBalances as PointBalanceRecord[]),
           this.db.categories.bulkAdd(data.categories as CategoryRecord[]),
+          this.db.outfitLogs.bulkAdd((data.outfitLogs ?? []) as OutfitLogRecord[]),
         ]
         if (data.dailySnapshots?.length) {
           bulkOps.push(this.db.dailySnapshots.bulkAdd(data.dailySnapshots as DailyTaskSnapshotRecord[]))
@@ -105,6 +111,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
       this.db.pointBalances.clear(),
       this.db.categories.clear(),
       this.db.dailySnapshots.clear(),
+      this.db.outfitLogs.clear(),
     ])
   }
 
@@ -129,6 +136,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
     if (data.dailySnapshots && !Array.isArray(data.dailySnapshots)) {
       throw new Error('备份数据 dailySnapshots 格式错误')
     }
+    data.outfitLogs = normalizeOutfitLogs(data.outfitLogs)
   }
 
   /** 旧备份缺 isDisplayed 时补齐；同一 childId 只保留一只展示宠物。养成资格仍由 stage 判定。 */
@@ -151,6 +159,7 @@ export class JsonBackupAdapter implements IBackupAdapter {
         normalized.push({
           ...pet,
           isDisplayed: index === displayIndex ? 1 : 0,
+          outfitSetId: normalizeOutfitSetId(pet.outfitSetId),
         })
       })
     }

@@ -10,6 +10,8 @@ export interface BackupData {
   pointBalances: unknown[]
   categories: unknown[]
   dailySnapshots?: unknown[]
+  /** 装扮兑换记录；旧备份可能缺失，导入时当作空数组 */
+  outfitLogs?: unknown[]
 }
 
 export interface IBackupAdapter {
