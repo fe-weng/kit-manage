@@ -9,6 +9,8 @@ import { PointService } from '@/application/services/PointService'
 import { TaskService } from '@/application/services/TaskService'
 import { PetService } from '@/application/services/PetService'
 import { OutfitService } from '@/application/services/OutfitService'
+import { OUTFIT_CATALOG } from '@/domain/outfits/outfitCatalog'
+import { PET_ASSET_FILES } from '@/presentation/pet/petAssetManifest'
 import { RewardService } from '@/application/services/RewardService'
 import { BackupService } from '@/application/services/BackupService'
 import { JsonBackupAdapter } from '@/infrastructure/storage/JsonBackupAdapter'
@@ -31,6 +33,13 @@ const mutationMutex = new AsyncMutex()
 export const pointService = new PointService(pointRepo)
 export const taskService = new TaskService(taskRepo, pointService, snapshotRepo)
 export const petService = new PetService(petRepo, pointService, mutationMutex)
-export const outfitService = new OutfitService(petRepo, outfitLogRepo, pointService, mutationMutex)
+export const outfitService = new OutfitService(
+  petRepo,
+  outfitLogRepo,
+  pointService,
+  mutationMutex,
+  OUTFIT_CATALOG,
+  PET_ASSET_FILES,
+)
 export const rewardService = new RewardService(rewardRepo, pointService)
 export const backupService = new BackupService(backupAdapter)

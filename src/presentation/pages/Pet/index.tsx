@@ -118,6 +118,10 @@ export default function PetPage() {
     navigate(ROUTES.PET_COLLECTION)
   }, [navigate])
 
+  const handleOpenOutfits = useCallback(() => {
+    navigate(ROUTES.PET_OUTFITS)
+  }, [navigate])
+
   const handleSwitchToRaising = useCallback(async () => {
     if (!raisingStatus || switchingRef.current) return
     switchingRef.current = true
@@ -187,6 +191,7 @@ export default function PetPage() {
         canAdoptHint={canAdoptHint}
         balance={balance?.currentBalance ?? 0}
         onOpenCollection={handleOpenCollection}
+        onOpenOutfits={handleOpenOutfits}
       />
 
       <PetDisplay

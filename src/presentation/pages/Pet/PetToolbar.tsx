@@ -1,4 +1,4 @@
-import { BookOpen } from '@phosphor-icons/react'
+import { BookOpen, TShirt } from '@phosphor-icons/react'
 
 interface PetToolbarProps {
   adoptedCount: number
@@ -6,6 +6,7 @@ interface PetToolbarProps {
   canAdoptHint: boolean
   balance: number
   onOpenCollection: () => void
+  onOpenOutfits: () => void
 }
 
 export default function PetToolbar({
@@ -14,34 +15,47 @@ export default function PetToolbar({
   canAdoptHint,
   balance,
   onOpenCollection,
+  onOpenOutfits,
 }: PetToolbarProps) {
   return (
     <div className="flex items-center justify-between w-full" style={{ gap: '12px' }}>
-      <button
-        type="button"
-        onClick={onOpenCollection}
-        className="flex items-center bg-card rounded-full shadow-clay-button active:scale-[0.98] transition-transform"
-        style={{ padding: '8px 14px', gap: '8px', minHeight: '44px', border: 'none' }}
-        aria-label={`宠物图鉴 ${adoptedCount}/${totalCount}${canAdoptHint ? '，可领养' : ''}`}
-      >
-        <BookOpen size={18} weight="duotone" className="text-accent" />
-        <span className="text-[14px] font-bold text-text-main">
-          宠物图鉴 {adoptedCount}/{totalCount}
-        </span>
-        {canAdoptHint && (
-          <span
-            className="text-[11px] font-bold"
-            style={{
-              color: '#FFFFFF',
-              backgroundColor: '#FFB74D',
-              borderRadius: '999px',
-              padding: '2px 8px',
-            }}
-          >
-            可领养
+      <div className="flex items-center" style={{ gap: '8px', minWidth: 0 }}>
+        <button
+          type="button"
+          onClick={onOpenCollection}
+          className="flex items-center bg-card rounded-full shadow-clay-button active:scale-[0.98] transition-transform"
+          style={{ padding: '8px 14px', gap: '8px', minHeight: '44px', border: 'none' }}
+          aria-label={`宠物图鉴 ${adoptedCount}/${totalCount}${canAdoptHint ? '，可领养' : ''}`}
+        >
+          <BookOpen size={18} weight="duotone" className="text-accent" />
+          <span className="text-[14px] font-bold text-text-main">
+            宠物图鉴 {adoptedCount}/{totalCount}
           </span>
-        )}
-      </button>
+          {canAdoptHint && (
+            <span
+              className="text-[11px] font-bold"
+              style={{
+                color: '#FFFFFF',
+                backgroundColor: '#FFB74D',
+                borderRadius: '999px',
+                padding: '2px 8px',
+              }}
+            >
+              可领养
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={onOpenOutfits}
+          className="flex items-center bg-card rounded-full shadow-clay-button active:scale-[0.98] transition-transform shrink-0"
+          style={{ padding: '8px 14px', gap: '8px', minHeight: '44px', border: 'none' }}
+          aria-label="装扮"
+        >
+          <TShirt size={18} weight="duotone" className="text-accent" />
+          <span className="text-[14px] font-bold text-text-main">装扮</span>
+        </button>
+      </div>
 
       <div
         className="flex items-center bg-card rounded-full shadow-clay-button shrink-0"

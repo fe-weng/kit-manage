@@ -9,6 +9,8 @@ const TaskCheckinPage = lazy(() => import('./presentation/pages/TaskCheckin'))
 const TaskManagePage = lazy(() => import('./presentation/pages/TaskManage'))
 const PetPage = lazy(() => import('./presentation/pages/Pet'))
 const PetCollectionPage = lazy(() => import('./presentation/pages/PetCollection'))
+const PetOutfitsPage = lazy(() => import('./presentation/pages/PetOutfits'))
+const PetOutfitHistoryPage = lazy(() => import('./presentation/pages/PetOutfitHistory'))
 const ShopPage = lazy(() => import('./presentation/pages/Shop'))
 const MyCouponsPage = lazy(() => import('./presentation/pages/MyCoupons'))
 const RedeemHistoryPage = lazy(() => import('./presentation/pages/RedeemHistory'))
@@ -21,6 +23,8 @@ const prefetchPages = [
   () => import('./presentation/pages/TaskManage'),
   () => import('./presentation/pages/Pet'),
   () => import('./presentation/pages/PetCollection'),
+  () => import('./presentation/pages/PetOutfits'),
+  () => import('./presentation/pages/PetOutfitHistory'),
   () => import('./presentation/pages/Shop'),
   () => import('./presentation/pages/MyCoupons'),
   () => import('./presentation/pages/RedeemHistory'),
@@ -55,6 +59,8 @@ function App() {
             <Route path={ROUTES.TASK_HISTORY} element={<TaskHistoryPage />} />
             <Route path={ROUTES.PET} element={<PetPage />} />
             <Route path={ROUTES.PET_COLLECTION} element={<PetCollectionPage />} />
+            <Route path={ROUTES.PET_OUTFITS} element={<PetOutfitsPage />} />
+            <Route path={ROUTES.PET_OUTFIT_HISTORY} element={<PetOutfitHistoryPage />} />
             <Route path={ROUTES.SHOP} element={<ShopPage />} />
             <Route path={ROUTES.MY_COUPONS} element={<MyCouponsPage />} />
             <Route path={ROUTES.REDEEM_HISTORY} element={<RedeemHistoryPage />} />
