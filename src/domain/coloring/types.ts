@@ -1,7 +1,8 @@
 export const BUILTIN_TEMPLATE_ID = 'builtin-bird'
 
-/** public/ 下的文件名，含中文和间隔号，不要改名。 */
-export const BUILTIN_SVG_FILE = '宠物填色线稿 · iPad 竖屏 1024×1366 · 可换装.svg'
+/** public/pets/draw-assets/ 下的文件名，含中文和间隔号，不要改名。 */
+export const BUILTIN_SVG_FILE =
+  'pets/draw-assets/宠物填色线稿 · iPad 竖屏 1024×1366 · 可换装.svg'
 
 export const BUILTIN_WIDTH = 1024
 export const BUILTIN_HEIGHT = 1366

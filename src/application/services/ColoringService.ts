@@ -19,7 +19,14 @@ export class ColoringService {
 
   async ensureBuiltinTemplate(): Promise<ColoringTemplate> {
     const existing = await this.repo.getTemplate(BUILTIN_TEMPLATE_ID)
-    if (existing) return existing
+    if (existing) {
+      if (existing.publicPath !== BUILTIN_SVG_FILE) {
+        const updated: ColoringTemplate = { ...existing, publicPath: BUILTIN_SVG_FILE }
+        await this.repo.putTemplate(updated)
+        return updated
+      }
+      return existing
+    }
     const template: ColoringTemplate = {
       id: BUILTIN_TEMPLATE_ID,
       kind: 'builtin',

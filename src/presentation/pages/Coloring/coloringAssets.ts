@@ -5,7 +5,11 @@ export function coloringAssetUrl(publicPath: string): string {
   if (publicPath.length === 0) return ''
   const base = import.meta.env.BASE_URL
   const prefix = base.endsWith('/') ? base : `${base}/`
-  return `${prefix}${encodeURIComponent(publicPath)}`
+  const encoded = publicPath
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/')
+  return `${prefix}${encoded}`
 }
 
 export function useBlobUrl(blob: Blob | null | undefined): string | null {
