@@ -4,6 +4,7 @@ import {
   CheckCircle,
   PawPrint,
   Gift,
+  PaintBrush,
   GearSix,
 } from '@phosphor-icons/react'
 import { ROUTES } from '@/shared/constants'
@@ -20,6 +21,7 @@ const tabs: TabItem[] = [
   { path: ROUTES.TASKS, matchPaths: [ROUTES.TASKS, ROUTES.TASKS_MANAGE], label: '任务', icon: CheckCircle },
   { path: ROUTES.PET, matchPaths: [ROUTES.PET, ROUTES.PET_COLLECTION], label: '宠物', icon: PawPrint },
   { path: ROUTES.SHOP, matchPaths: [ROUTES.SHOP], label: '商城', icon: Gift },
+  { path: ROUTES.COLORING, matchPaths: [ROUTES.COLORING], label: '涂色', icon: PaintBrush },
   { path: ROUTES.SETTINGS, matchPaths: [ROUTES.SETTINGS], label: '设置', icon: GearSix },
 ]
 
@@ -32,7 +34,7 @@ export default function TabBar() {
       className="w-full shrink-0 z-50"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="mx-4 mb-2 bg-white rounded-clay shadow-clay flex items-center justify-around h-[68px] px-2">
+      <div className="mx-3 mb-2 bg-white rounded-clay shadow-clay flex items-center justify-around h-[68px] px-1">
         {tabs.map((tab) => {
           const isActive = tab.matchPaths.some((p) => location.pathname.startsWith(p))
           const Icon = tab.icon
@@ -40,10 +42,10 @@ export default function TabBar() {
             <button
               key={tab.path}
               onClick={() => navigate(tab.path)}
-              className="flex flex-col items-center justify-center gap-1 min-w-[56px] py-2 transition-colors"
+              className="flex flex-1 min-w-0 flex-col items-center justify-center gap-1 py-2 transition-colors"
             >
               <Icon
-                size={24}
+                size={22}
                 weight={isActive ? 'fill' : 'regular'}
                 className={isActive ? 'text-primary' : 'text-text-sub'}
               />

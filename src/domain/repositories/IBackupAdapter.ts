@@ -10,6 +10,11 @@ export interface BackupData {
   pointBalances: unknown[]
   categories: unknown[]
   dailySnapshots?: unknown[]
+  /** 涂色线稿、接着涂、半成品、成品。旧备份可以没有。编号缓存不进入备份。 */
+  coloringTemplates?: unknown[]
+  coloringResumes?: unknown[]
+  coloringDrafts?: unknown[]
+  coloringFinished?: unknown[]
 }
 
 export interface IBackupAdapter {
