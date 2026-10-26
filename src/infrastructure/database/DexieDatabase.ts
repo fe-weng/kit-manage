@@ -1,4 +1,11 @@
 import Dexie, { type Table } from 'dexie'
+import type {
+  ColoringDraft,
+  ColoringFinished,
+  ColoringLabelCache,
+  ColoringResume,
+  ColoringTemplate,
+} from '@/domain/coloring/types'
 
 export interface TaskRecord {
   id: string
@@ -90,6 +97,11 @@ export class KidManageDB extends Dexie {
   pointBalances!: Table<PointBalanceRecord>
   categories!: Table<CategoryRecord>
   dailySnapshots!: Table<DailyTaskSnapshotRecord>
+  coloringTemplates!: Table<ColoringTemplate>
+  coloringResumes!: Table<ColoringResume>
+  coloringDrafts!: Table<ColoringDraft>
+  coloringFinished!: Table<ColoringFinished>
+  coloringLabelCaches!: Table<ColoringLabelCache>
 
   constructor() {
     super('kid-manage')
@@ -130,6 +142,13 @@ export class KidManageDB extends Dexie {
       return tx.table('pets').toCollection().modify((pet: Partial<PetRecord>) => {
         if (pet.isDisplayed === undefined) pet.isDisplayed = 1
       })
+    })
+    this.version(8).stores({
+      coloringTemplates: 'id, kind',
+      coloringResumes: 'templateId',
+      coloringDrafts: 'id, templateId, updatedAt',
+      coloringFinished: 'id, templateId, createdAt',
+      coloringLabelCaches: 'templateId',
     })
   }
 }

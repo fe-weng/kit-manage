@@ -14,6 +14,11 @@ const MyCouponsPage = lazy(() => import('./presentation/pages/MyCoupons'))
 const RedeemHistoryPage = lazy(() => import('./presentation/pages/RedeemHistory'))
 const TaskHistoryPage = lazy(() => import('./presentation/pages/TaskHistory'))
 const SettingsPage = lazy(() => import('./presentation/pages/Settings'))
+const ColoringAlbumPage = lazy(() => import('./presentation/pages/Coloring/AlbumPage'))
+const ColoringPaintPage = lazy(() => import('./presentation/pages/Coloring/PaintPage'))
+const ColoringDraftListPage = lazy(() => import('./presentation/pages/Coloring/DraftListPage'))
+const ColoringFinishedListPage = lazy(() => import('./presentation/pages/Coloring/FinishedListPage'))
+const ColoringFinishedViewPage = lazy(() => import('./presentation/pages/Coloring/FinishedViewPage'))
 
 const prefetchPages = [
   () => import('./presentation/pages/Home'),
@@ -26,6 +31,11 @@ const prefetchPages = [
   () => import('./presentation/pages/RedeemHistory'),
   () => import('./presentation/pages/TaskHistory'),
   () => import('./presentation/pages/Settings'),
+  () => import('./presentation/pages/Coloring/AlbumPage'),
+  () => import('./presentation/pages/Coloring/PaintPage'),
+  () => import('./presentation/pages/Coloring/DraftListPage'),
+  () => import('./presentation/pages/Coloring/FinishedListPage'),
+  () => import('./presentation/pages/Coloring/FinishedViewPage'),
 ]
 
 function App() {
@@ -59,6 +69,12 @@ function App() {
             <Route path={ROUTES.MY_COUPONS} element={<MyCouponsPage />} />
             <Route path={ROUTES.REDEEM_HISTORY} element={<RedeemHistoryPage />} />
             <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
+            <Route path={ROUTES.COLORING} element={<ColoringAlbumPage />} />
+            <Route path={ROUTES.COLORING_PAINT} element={<ColoringPaintPage />} />
+            <Route path={ROUTES.COLORING_DRAFTS} element={<ColoringDraftListPage />} />
+            <Route path={ROUTES.COLORING_DRAFT} element={<ColoringPaintPage />} />
+            <Route path={ROUTES.COLORING_FINISHED} element={<ColoringFinishedListPage />} />
+            <Route path={ROUTES.COLORING_FINISHED_VIEW} element={<ColoringFinishedViewPage />} />
           </Route>
         </Routes>
       </Suspense>

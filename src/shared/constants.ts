@@ -16,4 +16,22 @@ export const ROUTES = {
   REDEEM_HISTORY: '/shop/history',
   TASK_HISTORY: '/tasks/history',
   SETTINGS: '/settings',
+  COLORING: '/coloring',
+  COLORING_PAINT: '/coloring/paint/:templateId',
+  COLORING_DRAFTS: '/coloring/drafts',
+  COLORING_DRAFT: '/coloring/drafts/:draftId',
+  COLORING_FINISHED: '/coloring/finished',
+  COLORING_FINISHED_VIEW: '/coloring/finished/:finishedId',
 } as const
+
+export function coloringPaintPath(templateId: string): string {
+  return `/coloring/paint/${encodeURIComponent(templateId)}`
+}
+
+export function coloringDraftPath(draftId: string): string {
+  return `/coloring/drafts/${encodeURIComponent(draftId)}`
+}
+
+export function coloringFinishedPath(finishedId: string): string {
+  return `/coloring/finished/${encodeURIComponent(finishedId)}`
+}

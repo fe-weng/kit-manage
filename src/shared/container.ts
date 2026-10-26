@@ -4,11 +4,13 @@ import { DexiePetRepository } from '@/infrastructure/database/repositories/Dexie
 import { DexieRewardRepository } from '@/infrastructure/database/repositories/DexieRewardRepository'
 import { DexiePointRepository } from '@/infrastructure/database/repositories/DexiePointRepository'
 import { DexieSnapshotRepository } from '@/infrastructure/database/repositories/DexieSnapshotRepository'
+import { DexieColoringRepository } from '@/infrastructure/database/repositories/DexieColoringRepository'
 import { PointService } from '@/application/services/PointService'
 import { TaskService } from '@/application/services/TaskService'
 import { PetService } from '@/application/services/PetService'
 import { RewardService } from '@/application/services/RewardService'
 import { BackupService } from '@/application/services/BackupService'
+import { ColoringService } from '@/application/services/ColoringService'
 import { JsonBackupAdapter } from '@/infrastructure/storage/JsonBackupAdapter'
 
 // Infrastructure: Database
@@ -20,6 +22,7 @@ const petRepo = new DexiePetRepository(db)
 const rewardRepo = new DexieRewardRepository(db)
 const pointRepo = new DexiePointRepository(db)
 const snapshotRepo = new DexieSnapshotRepository(db)
+const coloringRepo = new DexieColoringRepository(db)
 const backupAdapter = new JsonBackupAdapter(db)
 
 // Application: Services (injected with Repository interfaces)
@@ -28,3 +31,4 @@ export const taskService = new TaskService(taskRepo, pointService, snapshotRepo)
 export const petService = new PetService(petRepo, pointService)
 export const rewardService = new RewardService(rewardRepo, pointService)
 export const backupService = new BackupService(backupAdapter)
+export const coloringService = new ColoringService(coloringRepo)
