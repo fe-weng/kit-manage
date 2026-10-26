@@ -9,6 +9,14 @@ import { toast } from '@/shared/toast'
 import ColorBar from './ColorBar'
 import CustomColorSheet from './CustomColorSheet'
 import PaintStage from './PaintStage'
+import StrokeSizeControls, {
+  BRUSH_SIZE_DEFAULT,
+  BRUSH_SIZE_MAX,
+  BRUSH_SIZE_MIN,
+  ERASER_SIZE_DEFAULT,
+  ERASER_SIZE_MAX,
+  ERASER_SIZE_MIN,
+} from './StrokeSizeControls'
 import { useTemplateLineUrl } from './coloringAssets'
 import { readStoredCustomColor } from './customColor'
 import { PaintSession, rasterizeLineArt, type RegionLabels, type StrokeTool } from './paintSession'
@@ -23,6 +31,9 @@ import {
 type PaintTool = StrokeTool | 'fill'
 type FillState = 'checking' | 'computing' | 'ready' | 'failed'
 
+const BRUSH_SIZE_STORAGE_KEY = 'coloring.brushSize'
+const ERASER_SIZE_STORAGE_KEY = 'coloring.eraserSize'
+
 interface PaintModel {
   template: ColoringTemplate
   draftId: string | null
@@ -31,12 +42,41 @@ interface PaintModel {
   recoveryKey: string
 }
 
+function normalizeStrokeSize(value: number, min: number, max: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback
+  return Math.min(max, Math.max(min, Math.round(value)))
+}
+
+function readStoredStrokeSize(key: string, min: number, max: number, fallback: number): number {
+  try {
+    const stored = window.localStorage.getItem(key)
+    if (stored === null || stored.trim() === '') return fallback
+    return normalizeStrokeSize(Number(stored), min, max, fallback)
+  } catch {
+    return fallback
+  }
+}
+
+function writeStoredStrokeSize(key: string, value: number): void {
+  try {
+    window.localStorage.setItem(key, String(value))
+  } catch {
+    // The current page still uses the selected size when storage is unavailable.
+  }
+}
+
 export default function PaintPage() {
   const navigate = useNavigate()
   const { templateId, draftId } = useParams()
   const [model, setModel] = useState<PaintModel | null>(null)
   const [loadError, setLoadError] = useState('')
   const [tool, setTool] = useState<PaintTool>('brush')
+  const [brushSize, setBrushSize] = useState(() => (
+    readStoredStrokeSize(BRUSH_SIZE_STORAGE_KEY, BRUSH_SIZE_MIN, BRUSH_SIZE_MAX, BRUSH_SIZE_DEFAULT)
+  ))
+  const [eraserSize, setEraserSize] = useState(() => (
+    readStoredStrokeSize(ERASER_SIZE_STORAGE_KEY, ERASER_SIZE_MIN, ERASER_SIZE_MAX, ERASER_SIZE_DEFAULT)
+  ))
   const [penColor, setPenColor] = useState('#ff8a8a')
   const [customColor, setCustomColor] = useState(() => readStoredCustomColor() ?? '#e84393')
   const [usingCustom, setUsingCustom] = useState(false)
@@ -407,6 +447,8 @@ export default function PaintPage() {
           initialDirty={model.initialDirty}
           tool={tool}
           color={penColor}
+          brushSize={brushSize}
+          eraserSize={eraserSize}
           labels={labels}
           fillEnabled={fillState === 'ready'}
           onSession={(session) => {
@@ -452,6 +494,20 @@ export default function PaintPage() {
             icon={<Eraser size={18} weight="bold" />}
           />
         </div>
+        <StrokeSizeControls
+          brushSize={brushSize}
+          eraserSize={eraserSize}
+          onBrushSizeChange={(size) => {
+            const next = normalizeStrokeSize(size, BRUSH_SIZE_MIN, BRUSH_SIZE_MAX, BRUSH_SIZE_DEFAULT)
+            setBrushSize(next)
+            writeStoredStrokeSize(BRUSH_SIZE_STORAGE_KEY, next)
+          }}
+          onEraserSizeChange={(size) => {
+            const next = normalizeStrokeSize(size, ERASER_SIZE_MIN, ERASER_SIZE_MAX, ERASER_SIZE_DEFAULT)
+            setEraserSize(next)
+            writeStoredStrokeSize(ERASER_SIZE_STORAGE_KEY, next)
+          }}
+        />
         {fillState === 'computing' && (
           <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-sub)' }}>正在准备填色，可以先用手涂</p>
         )}

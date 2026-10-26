@@ -14,6 +14,8 @@ interface PaintStageProps {
   initialDirty: boolean
   tool: StrokeTool | 'fill'
   color: string
+  brushSize: number
+  eraserSize: number
   labels: RegionLabels | null
   fillEnabled: boolean
   onSession: (session: PaintSession | null) => void
@@ -43,6 +45,8 @@ export default function PaintStage({
   initialDirty,
   tool,
   color,
+  brushSize,
+  eraserSize,
   labels,
   fillEnabled,
   onSession,
@@ -57,6 +61,8 @@ export default function PaintStage({
   const initialBlobRef = useRef(initialBlob)
   const toolRef = useRef(tool)
   const colorRef = useRef(color)
+  const brushSizeRef = useRef(brushSize)
+  const eraserSizeRef = useRef(eraserSize)
   const labelsRef = useRef(labels)
   const fillEnabledRef = useRef(fillEnabled)
   const onSessionRef = useRef(onSession)
@@ -78,6 +84,8 @@ export default function PaintStage({
 
   toolRef.current = tool
   colorRef.current = color
+  brushSizeRef.current = brushSize
+  eraserSizeRef.current = eraserSize
   labelsRef.current = labels
   fillEnabledRef.current = fillEnabled
   onSessionRef.current = onSession
@@ -256,7 +264,8 @@ export default function PaintStage({
       return
     }
     const wasDirty = session.isDirty
-    session.beginStroke(point.x, point.y, currentTool, colorRef.current)
+    const diameter = currentTool === 'eraser' ? eraserSizeRef.current : brushSizeRef.current
+    session.beginStroke(point.x, point.y, currentTool, colorRef.current, diameter)
     if (event.pointerType === 'touch') {
       tentativeTouchPointerRef.current = event.pointerId
       tentativeTouchWasDirtyRef.current = wasDirty

@@ -1,5 +1,3 @@
-const BRUSH_RADIUS = 14
-const ERASER_RADIUS = 18
 const MAX_UNDO = 20
 
 export type StrokeTool = 'brush' | 'eraser'
@@ -61,7 +59,7 @@ export class PaintSession {
   private locked = true
   private lastX = 0
   private lastY = 0
-  private strokeRadius = BRUSH_RADIUS
+  private strokeRadius = 0.5
   private strokeMode: StrokeTool = 'brush'
   private strokeColor = '#000000'
   private dirty = false
@@ -120,13 +118,13 @@ export class PaintSession {
     this.emitHistory()
   }
 
-  beginStroke(x: number, y: number, tool: StrokeTool, color: string): void {
-    if (this.locked || this.drawing) return
+  beginStroke(x: number, y: number, tool: StrokeTool, color: string, diameter: number): void {
+    if (this.locked || this.drawing || !Number.isFinite(diameter) || diameter <= 0) return
     this.pushUndo()
     this.drawing = true
     this.strokeMode = tool
     this.strokeColor = color
-    this.strokeRadius = tool === 'eraser' ? ERASER_RADIUS : BRUSH_RADIUS
+    this.strokeRadius = diameter / 2
     this.lastX = x
     this.lastY = y
     this.paintDot(x, y)
