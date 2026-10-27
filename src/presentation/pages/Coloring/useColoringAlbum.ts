@@ -9,7 +9,7 @@ export function useColoringAlbum() {
   const [loading, setLoading] = useState(true)
 
   const reload = useCallback(async () => {
-    await coloringService.ensureBuiltinTemplate()
+    await coloringService.ensureBuiltinTemplates()
     const [list, ids] = await Promise.all([
       coloringService.listTemplates(),
       coloringService.listResumeTemplateIds(),

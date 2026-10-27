@@ -5,44 +5,50 @@ import {
 } from '@/domain/coloring/labelRegions'
 import { scaleImageToMaxEdge } from '@/domain/coloring/scaleImage'
 import {
-  BUILTIN_HEIGHT,
-  BUILTIN_SVG_FILE,
-  BUILTIN_TEMPLATE_ID,
-  BUILTIN_WIDTH,
-  type ColoringDraft,
-  type ColoringFinished,
-  type ColoringTemplate,
+  BUILTIN_COLORING_TEMPLATES,
+  builtinColoringPublicPath,
+  builtinColoringSortIndex,
+} from '@/domain/coloring/builtinTemplates'
+import type {
+  ColoringDraft,
+  ColoringFinished,
+  ColoringTemplate,
 } from '@/domain/coloring/types'
 
 export class ColoringService {
   constructor(private repo: IColoringRepository) {}
 
-  async ensureBuiltinTemplate(): Promise<ColoringTemplate> {
-    const existing = await this.repo.getTemplate(BUILTIN_TEMPLATE_ID)
-    if (existing) {
-      if (existing.publicPath !== BUILTIN_SVG_FILE) {
-        const updated: ColoringTemplate = { ...existing, publicPath: BUILTIN_SVG_FILE }
-        await this.repo.putTemplate(updated)
-        return updated
+  async ensureBuiltinTemplates(): Promise<void> {
+    for (const def of BUILTIN_COLORING_TEMPLATES) {
+      const publicPath = builtinColoringPublicPath(def.fileName)
+      const existing = await this.repo.getTemplate(def.id)
+      const desired: ColoringTemplate = {
+        id: def.id,
+        kind: 'builtin',
+        publicPath,
+        width: def.width,
+        height: def.height,
+        createdAt: existing?.createdAt ?? Date.now(),
       }
-      return existing
+      if (
+        !existing
+        || existing.publicPath !== desired.publicPath
+        || existing.width !== desired.width
+        || existing.height !== desired.height
+      ) {
+        await this.repo.putTemplate(desired)
+      }
     }
-    const template: ColoringTemplate = {
-      id: BUILTIN_TEMPLATE_ID,
-      kind: 'builtin',
-      publicPath: BUILTIN_SVG_FILE,
-      width: BUILTIN_WIDTH,
-      height: BUILTIN_HEIGHT,
-      createdAt: Date.now(),
-    }
-    await this.repo.putTemplate(template)
-    return template
   }
 
   async listTemplates(): Promise<ColoringTemplate[]> {
     const templates = await this.repo.listTemplates()
     return templates.sort((a, b) => {
       if (a.kind !== b.kind) return a.kind === 'builtin' ? -1 : 1
+      if (a.kind === 'builtin' && b.kind === 'builtin') {
+        const order = builtinColoringSortIndex(a.id) - builtinColoringSortIndex(b.id)
+        if (order !== 0) return order
+      }
       return a.createdAt - b.createdAt
     })
   }

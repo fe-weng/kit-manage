@@ -167,7 +167,7 @@ export default function PaintPage() {
 
     void (async () => {
       try {
-        await coloringService.ensureBuiltinTemplate()
+        await coloringService.ensureBuiltinTemplates()
         if (draftId) {
           const draft = await coloringService.getDraft(draftId)
           if (cancelled) return
