@@ -32,8 +32,6 @@ export default function AlbumPage() {
     }
   }
 
-  let importedCount = 0
-
   return (
     <div
       className="flex flex-col"
@@ -61,22 +59,15 @@ export default function AlbumPage() {
         <p style={{ margin: 0, color: 'var(--color-text-sub)' }}>正在打开画册…</p>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3" style={{ gap: '12px' }}>
-          {templates.map((template) => {
-            if (template.kind === 'imported') importedCount += 1
-            const title = template.kind === 'builtin'
-              ? '小鸟'
-              : (importedCount > 1 ? `我的图片 ${importedCount}` : '我的图片')
-            return (
+          {templates.map((template) => (
               <AlbumCard
                 key={template.id}
                 template={template}
-                title={title}
                 hasResume={resumeIds.includes(template.id)}
                 onOpen={() => navigate(coloringPaintPath(template.id))}
                 onDelete={template.kind === 'imported' ? () => setPendingDelete(template) : undefined}
               />
-            )
-          })}
+          ))}
         </div>
       )}
       <ConfirmDialog
@@ -126,13 +117,11 @@ function AlbumAction({
 
 function AlbumCard({
   template,
-  title,
   hasResume,
   onOpen,
   onDelete,
 }: {
   template: ColoringTemplate
-  title: string
   hasResume: boolean
   onOpen: () => void
   onDelete?: () => void
@@ -157,7 +146,7 @@ function AlbumCard({
           {lineUrl ? (
             <img
               src={lineUrl}
-              alt={title}
+              alt=""
               draggable={false}
               className="no-native-img-gestures"
               style={{ display: 'block', width: '100%', height: 'auto', aspectRatio: `${template.width} / ${template.height}`, objectFit: 'cover', background: '#fff' }}
@@ -165,9 +154,6 @@ function AlbumCard({
           ) : (
             <span className="block" style={{ aspectRatio: `${template.width} / ${template.height}`, background: '#fff' }} />
           )}
-        </span>
-        <span className="block" style={{ padding: '8px 10px 10px', fontSize: '14px', fontWeight: 700 }}>
-          {title}
         </span>
       </button>
       {hasResume && (
@@ -190,7 +176,7 @@ function AlbumCard({
       {onDelete && (
         <button
           type="button"
-          aria-label={`删除${title}`}
+          aria-label="删除图片"
           onClick={onDelete}
           style={{
             position: 'absolute',
