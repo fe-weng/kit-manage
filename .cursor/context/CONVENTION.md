@@ -1,6 +1,6 @@
 # CONVENTION.md — 编码约定
 
-> 最后更新：2026-09-16
+> 最后更新：2026-10-30
 > 维护方式：人工维护
 
 ## 文件组织约定
@@ -8,13 +8,15 @@
 | 类型 | 位置 | 命名风格 |
 |------|------|---------|
 | 页面目录 | `src/presentation/pages/<PageName>/` | **PascalCase** 目录 |
-| 页面入口 | `<PageName>/index.tsx` | `index.tsx` |
+| 页面入口 | `<PageName>/index.tsx` | `index.tsx`。涂色页例外：路由直接指向 `AlbumPage.tsx`、`PaintPage.tsx` 等，没有 `index.tsx` |
 | 页面子组件 | `<PageName>/XxxComponent.tsx` | **PascalCase** |
-| 页面辅助模块 | `<PageName>/xxxHelper.ts` | **camelCase**（如 `evolutionTransition.ts`） |
+| 页面辅助模块 | `<PageName>/xxxHelper.ts` | **camelCase**（如 `evolutionTransition.ts`、`paintSession.ts`） |
+| 页面内 hook | `<PageName>/useXxx.ts` | 仅该页使用时放页面目录（如 `useColoringAlbum.ts`），不放 `presentation/hooks` |
 | 布局组件 | `src/presentation/layouts/` | **PascalCase** |
 | Zustand Store | `src/presentation/hooks/use<Name>Store.ts` | `use` 前缀 + **camelCase** |
 | Domain Model | `src/domain/models/<Name>.ts` | **PascalCase** |
 | Domain Rule | `src/domain/rules/<Name>Rule.ts` | **PascalCase** + `Rule` 后缀 |
+| 涂色领域 | `src/domain/coloring/` | 无 class 模型；类型、分块、色板、缩放按职责分文件 |
 | Value Object | `src/domain/valueObjects/<Name>.ts` | **PascalCase** |
 | Repository 接口 | `src/domain/repositories/I<Name>Repository.ts` | `I` 前缀 + **PascalCase** |
 | Repository 实现 | `src/infrastructure/database/repositories/Dexie<Name>Repository.ts` | `Dexie` 前缀 |
@@ -38,7 +40,8 @@
 | React 状态 | camelCase | `loading`, `editVisible` |
 | 事件处理 | `handle` 前缀 | `handleToggle`, `handleSave`, `handleRedeemClick` |
 | 常量 | UPPER_SNAKE_CASE | `DEFAULT_CHILD_ID`, `REWARD_CATEGORIES`, `ROUTES` |
-| Domain Model 常量 | UPPER_SNAKE_CASE | `INITIAL_MOOD`, `FEED_POINT_COST`, `PET_ADOPTION_COST` |
+| Domain Model 常量 | UPPER_SNAKE_CASE | `INITIAL_MOOD`, `FEED_POINT_COST`, `PET_ADOPTION_COST`, `MAX_IMPORT_EDGE` |
+| 本机偏好键 | `域.名称` | `coloring.customColor`、`coloring.brushSize`、`coloring.eraserSize`；不进备份 |
 
 ### 类型 / 接口
 

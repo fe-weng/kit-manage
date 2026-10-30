@@ -12,6 +12,7 @@ import ConfirmDialog from './ConfirmDialog'
 import SettingsSection from './SettingsSection'
 import SettingsRow from './SettingsRow'
 import { toast } from '@/shared/toast'
+import { APP_VERSION } from '@/shared/appVersion'
 import { ROUTES } from '@/shared/constants'
 
 export default function SettingsPage() {
@@ -121,7 +122,7 @@ export default function SettingsPage() {
         <SettingsRow
           icon={<Info size={18} weight="bold" />}
           label="版本"
-          value="v1.0.0 MVP"
+          value={APP_VERSION}
         />
         <SettingsRow
           icon={<Info size={18} weight="bold" />}

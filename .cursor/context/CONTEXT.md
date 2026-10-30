@@ -1,11 +1,11 @@
 # CONTEXT.md — 业务知识
 
-> 最后更新：2026-09-16
+> 最后更新：2026-10-30
 > 维护方式：人工维护，业务变动时同步更新
 
 ## 项目概述
 
-**Kid Manage** 是一款面向 5 岁儿童的行为管理 PWA 应用。核心闭环：**任务打卡 → 赚积分 → 养宠物 + 兑换奖励**。
+**Kid Manage** 是一款面向 5 岁儿童的行为管理 PWA 应用。核心闭环：**任务打卡 → 赚积分 → 养宠物 + 兑换奖励**。另有独立的涂色画册，不消耗积分。
 
 路由前缀：`/`（单页应用，无嵌套前缀）
 
@@ -24,6 +24,7 @@
 | 我的券 | 已兑换券的查看、核销、退还 | `/shop/coupons` |
 | 兑换历史 | 全部兑换记录（含已使用、已退还） | `/shop/history` |
 | 设置 | 数据备份/恢复/重置、入口进入宠物图鉴 | `/settings` |
+| 涂色 | 内置线稿与导入图片的填色、半成品、成品 | `/coloring`、`/coloring/paint/:templateId`、`/coloring/drafts`、`/coloring/finished` |
 
 ---
 
@@ -64,13 +65,21 @@
 | 奖励分类 | `Category` | Domain class（含 create/toJSON），持久化到 categories 表 |
 | 预设分类 | `REWARD_CATEGORIES` | ['娱乐', '美食', '玩具', '特权', '其他'] |
 | 儿童 ID | `DEFAULT_CHILD_ID` | 固定 'default'，单用户设计 |
-| 数据备份 | `BackupService` | 导出/导入/重置 IndexedDB 数据（含 categories 表） |
+| 数据备份 | `BackupService` | 导出/导入/重置 IndexedDB。含分类和涂色四类数据，不含分区缓存 |
 | 任务完成判定 | `TaskResetRule` | 按类型判断是否已完成（日/周/一次性） |
 | 宠物成长规则 | `PetGrowthRule` | 进化条件、经验计算 |
 | 心情衰减 | `Pet.applyMoodDecay()` | 心情自然衰减（-1/h），写穿持久化 |
 | 积分显示 | `formatPoints` | +5 / -3 格式化 |
 | 日期工具 | `DateUtils` | getTodayStart/getWeekStart/parseDateStrToLocal/getDayRange/getMonthRange |
 | 全局 Toast | `toast` | 命令式调用 toast.success/error，全局单例 |
+| 涂色线稿 | `ColoringTemplate` | `builtin` 只记 public 路径；`imported` 保存缩小后的位图 |
+| 内置线稿 | `BUILTIN_COLORING_TEMPLATES` | `public/pets/draw-assets/`，画板 1024×1366 |
+| 导入图片 | `importImage` / `MAX_IMPORT_EDGE` | 浏览器能解码即用，长边不超过 1600；不按扩展名拒绝 |
+| 接着涂 | `ColoringResume` / `saveResume` | 每张线稿最多一份颜色层 |
+| 半成品 | `ColoringDraft` | 可继续涂；从半成品再存草稿会新建一条 |
+| 成品 | `ColoringFinished` | 线稿与颜色合成后的图片，只能查看 |
+| 分块 / 点块填充 | `labelRegions` / `REGION_LABEL_VERSION` | 亮度低于 110 的像素是墙，浅色连通区域是一块；与线稿格式无关 |
+| 分区缓存 | `ColoringLabelCache` / `LABEL_CACHE_REGION_LIMIT` | 按线稿 id、宽高、算法版本缓存；区域数达到 65536 不写入；不进备份 |
 
 ---
 
@@ -103,6 +112,13 @@
 | 历史/快照 | history, snapshot, dailySnapshot, dateStatus, monthLogs |
 | 日历 | calendar, MonthCalendar, dayPicker, getCellStatus |
 | 提示/通知 | toast, success, error, GlobalToast |
+| 涂色/填色 | coloring, paint, fill, PaintBucket, labelRegions |
+| 线稿 | template, lineArt, builtin, imported, draw-assets |
+| 分块/分区 | label, region, wall, RegionLabels, coloringLabelCaches |
+| 接着涂 | resume, saveResume, coloringResumes |
+| 半成品/草稿 | draft, coloringDrafts, archiveResumeAsDraft |
+| 成品 | finished, coloringFinished, saveFinished |
+| 导入图片 | importImage, scaleImage, MAX_IMPORT_EDGE |
 
 ---
 
@@ -170,6 +186,14 @@
 
 ### 打卡历史
 
-- **快照机制**：每日首次访问打卡页自动生成 `DailyTaskSnapshot`，任务增删自动同步
+- **快照机制**：`AppLayout` 挂载 `useSnapshotLifecycle`。冷启动，以及从后台回到前台且已跨天时，调用 `taskService.ensureSnapshotsUpToToday()`，补齐到今日的 `DailyTaskSnapshot`。任务增删仍同步当日快照。
 - **查看方式**：月历视图，支持按日期和按任务两种维度
 - **月统计**：任务完成率 / 全勤天数 / 总积分
+
+### 涂色
+
+- **入口**：底栏「涂色」进入画册。内置 SVG 与导入图放在一起。内置线稿不能删除。
+- **画面**：白纸、透明颜色层、线稿层（正片叠底）。内置线稿放大仍用矢量；导入图用缩小后的位图当线稿。
+- **分块**：打开涂色页时把线稿栅格化，再按亮度连通分块。SVG 和手动上传的 PNG、JPEG 等走同一套算法。深色线是墙，浅色封闭区域可点选填充。线外空白会合成一整块背景。编号失败时关闭填色，手涂和橡皮仍可用。
+- **三种保存**：接着涂（每张线稿一份）、半成品、成品。成品是合成图，不能再涂。成品查看页可下载这张原始 PNG，不重新采样；能系统分享时走分享，否则浏览器下载。编号缓存只留在本机 IndexedDB，备份、恢复、重置都不保留它；恢复后第一次打开会重算。
+- **本机偏好**：自由色 `coloring.customColor`、笔粗细 `coloring.brushSize`、橡皮粗细 `coloring.eraserSize` 存在 localStorage，不进备份。

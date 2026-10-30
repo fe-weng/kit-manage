@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from '@phosphor-icons/react'
 import type { ColoringFinished } from '@/domain/coloring/types'
@@ -7,6 +7,7 @@ import { coloringService } from '@/shared/container'
 import { ROUTES } from '@/shared/constants'
 import { toast } from '@/shared/toast'
 import { useBlobUrl } from './coloringAssets'
+import { shareOrDownloadFinishedImage } from './downloadFinishedImage'
 
 export default function FinishedViewPage() {
   const navigate = useNavigate()
@@ -14,6 +15,8 @@ export default function FinishedViewPage() {
   const [item, setItem] = useState<ColoringFinished | null>(null)
   const [missing, setMissing] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const downloadingRef = useRef(false)
   const url = useBlobUrl(item?.imageBlob ?? null)
 
   useEffect(() => {
@@ -38,6 +41,27 @@ export default function FinishedViewPage() {
       cancelled = true
     }
   }, [finishedId, navigate])
+
+  const handleDownload = async () => {
+    if (!item || downloadingRef.current) return
+    if (item.imageBlob.size === 0) {
+      toast.error('这张图片无法下载')
+      return
+    }
+    downloadingRef.current = true
+    setDownloading(true)
+    try {
+      const result = await shareOrDownloadFinishedImage(item.imageBlob, item.createdAt)
+      if (result === 'downloaded') toast.success('图片已下载')
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      console.error('[Coloring] 下载成品失败:', err)
+      toast.error('下载失败')
+    } finally {
+      downloadingRef.current = false
+      setDownloading(false)
+    }
+  }
 
   const handleDelete = async () => {
     if (!item) return
@@ -99,6 +123,25 @@ export default function FinishedViewPage() {
           className="no-native-img-gestures"
           style={{ width: '100%', height: 'auto', background: '#fff', borderRadius: '16px' }}
         />
+      )}
+      {item && (
+        <button
+          type="button"
+          disabled={downloading}
+          onClick={() => { void handleDownload() }}
+          style={{
+            minHeight: '44px',
+            border: 'none',
+            borderRadius: '14px',
+            background: '#FF9BB0',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: '15px',
+            opacity: downloading ? 0.6 : 1,
+          }}
+        >
+          下载图片
+        </button>
       )}
       <ConfirmDialog
         visible={confirming}
