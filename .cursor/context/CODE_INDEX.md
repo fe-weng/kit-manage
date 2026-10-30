@@ -1,8 +1,8 @@
 # CODE_INDEX.md — 代码索引
 
 > 自动生成，请勿手动编辑
-> 生成时间：2026-09-16
-> 生成方式：project-context-generator Skill
+> 生成时间：2026-10-30
+> 生成方式：project-context-generator Skill（适配 App.tsx + presentation/pages）
 
 ---
 
@@ -61,11 +61,13 @@
 - `CreatePetForm` → `src/presentation/pages/Pet/CreatePetForm.tsx`
 - `EvolutionFx` → `src/presentation/pages/Pet/EvolutionFx.tsx`
 - `EvolutionOverlay` → `src/presentation/pages/Pet/EvolutionOverlay.tsx`
+- `FeedingFx` → `src/presentation/pages/Pet/FeedingFx.tsx`
 - `PetDisplay` → `src/presentation/pages/Pet/PetDisplay.tsx`
 - `PetToolbar` → `src/presentation/pages/Pet/PetToolbar.tsx`
 - `RaisingShortcutCard` → `src/presentation/pages/Pet/RaisingShortcutCard.tsx`
 - `StatusPanel` → `src/presentation/pages/Pet/StatusPanel.tsx`
-- `evolutionTransition.ts` → `src/presentation/pages/Pet/evolutionTransition.ts`
+- `evolutionTransition` → `src/presentation/pages/Pet/evolutionTransition.ts`
+- `feedingTransition` → `src/presentation/pages/Pet/feedingTransition.ts`
 
 ---
 
@@ -119,11 +121,37 @@
 
 ---
 
-## Hooks（Zustand Store）
+## Coloring（涂色）
+
+### Pages
+- `/coloring` → `src/presentation/pages/Coloring/AlbumPage.tsx`
+- `/coloring/paint/:templateId` → `src/presentation/pages/Coloring/PaintPage.tsx`
+- `/coloring/drafts` → `src/presentation/pages/Coloring/DraftListPage.tsx`
+- `/coloring/drafts/:draftId` → `src/presentation/pages/Coloring/PaintPage.tsx`
+- `/coloring/finished` → `src/presentation/pages/Coloring/FinishedListPage.tsx`
+- `/coloring/finished/:finishedId` → `src/presentation/pages/Coloring/FinishedViewPage.tsx`
+
+### Components
+- `ColorBar` → `src/presentation/pages/Coloring/ColorBar.tsx`
+- `CustomColorSheet` → `src/presentation/pages/Coloring/CustomColorSheet.tsx`
+- `PaintStage` → `src/presentation/pages/Coloring/PaintStage.tsx`
+- `StackedPreview` → `src/presentation/pages/Coloring/StackedPreview.tsx`
+- `StrokeSizeControls` → `src/presentation/pages/Coloring/StrokeSizeControls.tsx`
+- `coloringAssets` → `src/presentation/pages/Coloring/coloringAssets.ts`
+- `customColor` → `src/presentation/pages/Coloring/customColor.ts`
+- `downloadFinishedImage` → `src/presentation/pages/Coloring/downloadFinishedImage.ts`
+- `paintRecovery` → `src/presentation/pages/Coloring/paintRecovery.ts`
+- `paintSession` → `src/presentation/pages/Coloring/paintSession.ts`
+- `useColoringAlbum` → `src/presentation/pages/Coloring/useColoringAlbum.ts`
+
+---
+
+## Hooks
 
 - `usePetStore.ts` — `usePetStore`
 - `usePointStore.ts` — `usePointStore`
 - `useRewardStore.ts` — `useRewardStore`
+- `useSnapshotLifecycle.ts` — `useSnapshotLifecycle`
 - `useTaskHistoryStore.ts` — `useTaskHistoryStore`
 - `useTaskStore.ts` — `useTaskStore`
 
@@ -132,10 +160,13 @@
 ## Services
 
 - `BackupService.ts` — `exportData`, `importData`, `resetAllData`
-- `PetService.ts` — `getPet`, `getRaisingPet`, `getPetStatus`, `getRaisingStatus`, `getCollection`, `createPet`, `checkAdoption`, `adoptPet`, `feed`, `pet`, `rename`, `renamePet`, `setDisplayed`, `getAdoptionBlocker`, `persistDecay`, `toStatus`, `assertValidName`, `assertValidType`
+- `ColoringService.ts` — `ensureBuiltinTemplates`, `listTemplates`, `getTemplate`, `importImage`, `deleteImportedTemplate`, `listResumeTemplateIds`, `getResumeBlob`, `saveResume`, `deleteResume`, `listDrafts`, `getDraft`, `createDraft`, `copyDraft`, `updateDraft`, `deleteDraft`, `archiveResumeAsDraft`, `listFinished`, `getFinished`, `saveFinished`, `saveFinishedFromTemplate`, `deleteFinished`, `readLabelCache`, `writeLabelCache`, `deleteLabelCache`
+- `PetService.ts` — `getPet`, `getRaisingPet`, `getPetStatus`, `getRaisingStatus`, `getCollection`, `createPet`, `checkAdoption`, `adoptPet`, `feed`, `pet`, `rename`, `renamePet`, `setDisplayed`
 - `PointService.ts` — `getBalance`, `earn`, `deduct`, `spendOnPet`, `spendOnReward`, `refundReward`
 - `RewardService.ts` — `getAllRewards`, `getAllCategories`, `createReward`, `updateReward`, `addCustomCategory`, `deleteReward`, `redeem`, `getPendingCoupons`, `getAllLogs`, `markUsed`, `returnCoupon`, `initPresetRewards`
-- `TaskService.ts` — `ensureTodaySnapshot`, `updateTodaySnapshot`, `addNegativeTask`, `addTask`, `getMonthLogs`, `getAllTasks`, `createTask`, `updateTask`, `deleteTask`, `completeTask`, `uncompleteTask`, `findAllRelevantLogs`, `getTasksWithStatus`, `getTodayStats`
+- `TaskService.ts` — `ensureSnapshotsUpToToday`, `ensureTodaySnapshot`, `getMonthSnapshots`, `getMonthLogs`, `getAllTasks`, `createTask`, `updateTask`, `deleteTask`, `completeTask`, `uncompleteTask`, `getTasksWithStatus`, `getTodayStats`
+
+本应用没有 HTTP API。数据经 Dexie 写入 IndexedDB `kid-manage`。
 
 ---
 
@@ -144,23 +175,35 @@
 ### Pet type strategies
 - `IPetTypeStrategy` → `src/shared/petTypes/IPetTypeStrategy.ts`
 - `BasePetTypeStrategy` → `src/shared/petTypes/BasePetTypeStrategy.ts`
-- `DefaultPetTypeStrategy` → `src/shared/petTypes/DefaultPetTypeStrategy.ts` — 未知种类兜底
+- `DefaultPetTypeStrategy` → `src/shared/petTypes/DefaultPetTypeStrategy.ts`
 - `ChickenPetTypeStrategy` / `RabbitPetTypeStrategy` / `CatPetTypeStrategy` / `DogPetTypeStrategy`
 - `resolvePetTypeStrategy` / `getAdoptablePetStrategies` / `ADOPTABLE_PET_TYPES` → `src/shared/petTypes/petTypeRegistry.ts`
 
 ### Constants / DI / Toast
-- `src/shared/constants.ts` — `DEFAULT_CHILD_ID` / `REWARD_CATEGORIES` / `ROUTES`
-- `src/shared/container.ts` — 5 个 Service 单例
+- `src/shared/constants.ts` — `DEFAULT_CHILD_ID` / `REWARD_CATEGORIES` / `ROUTES` / `coloringPaintPath` / `coloringDraftPath` / `coloringFinishedPath`
+- `src/shared/container.ts` — `taskService` / `rewardService` / `pointService` / `petService` / `backupService` / `coloringService`
 - `src/shared/toast.ts` — `toast.success()` / `toast.error()`
+- `src/shared/preventIpadUndoGesture.ts` — `installIpadUndoGestureGuard`
 
 ### Components
 - `BaseModal` → `src/presentation/components/BaseModal.tsx`
 - `GlobalToast` → `src/presentation/components/GlobalToast.tsx`
 - `MonthCalendar` → `src/presentation/components/MonthCalendar.tsx`
+- `AppLayout` → `src/presentation/layouts/AppLayout.tsx`
+- `TabBar` → `src/presentation/layouts/TabBar.tsx`
 
 ---
 
 ## Domain
+
+### Coloring
+- `builtinTemplates` → `src/domain/coloring/builtinTemplates.ts`
+- `labelRegions` → `src/domain/coloring/labelRegions.ts`
+- `palette` → `src/domain/coloring/palette.ts`
+- `scaleImage` → `src/domain/coloring/scaleImage.ts`
+- `types` → `src/domain/coloring/types.ts`
+- `IColoringRepository` → `src/domain/repositories/IColoringRepository.ts`
+- `DexieColoringRepository` → `src/infrastructure/database/repositories/DexieColoringRepository.ts`
 
 ### Models
 - `Category` → `src/domain/models/Category.ts`
@@ -190,3 +233,4 @@
 - `public/pets/chicken/` — 五阶段主图 + `evo-shell-{left,right,top}.png`
 - `public/pets/dog/` — 五阶段主图 + `evo-shell-{left,right,top}.png`
 - `public/pets/rabbit/` — 五阶段主图 + `evo-shell-{left,right,top}.png`
+- `public/pets/draw-assets/` — 涂色内置线稿 SVG（`builtinTemplates.ts` 列出文件名）

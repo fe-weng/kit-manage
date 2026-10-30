@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — 代码结构
 
-> 最后更新：2026-09-16
+> 最后更新：2026-10-30
 > 维护方式：人工维护，架构变动时同步更新
 
 ## 技术栈
@@ -27,6 +27,12 @@
 ```
 src/
 ├── domain/                          # 领域层（纯 TS，零依赖）
+│   ├── coloring/                    # 涂色领域（类型、分块、色板、缩放、内置线稿）
+│   │   ├── types.ts                 # ColoringTemplate / Resume / Draft / Finished / LabelCache
+│   │   ├── labelRegions.ts          # 亮度分块，REGION_LABEL_VERSION
+│   │   ├── palette.ts               # 40 个固定色
+│   │   ├── scaleImage.ts            # 导入图长边不超过 1600
+│   │   └── builtinTemplates.ts      # public/pets/draw-assets 四张内置 SVG
 │   ├── models/                      # 领域模型（8 个 class）
 │   │   ├── Task.ts                  # 任务
 │   │   ├── TaskLog.ts               # 任务完成记录
@@ -39,13 +45,14 @@ src/
 │   ├── valueObjects/                # 值对象
 │   │   ├── TaskType.ts              # 任务类型枚举 + getTaskTypeLabel()
 │   │   └── PetStage.ts             # 宠物阶段枚举 + getStageConfig()
-│   ├── repositories/                # 仓储接口（6 个）
+│   ├── repositories/                # 仓储接口（7 个）
 │   │   ├── ITaskRepository.ts
 │   │   ├── IRewardRepository.ts     # 含分类 + 券 log 查询
 │   │   ├── IPointRepository.ts
 │   │   ├── IPetRepository.ts        # 展示/养成/全部/按 ID/按种类/原子切换展示
-│   │   ├── IBackupAdapter.ts       # 备份适配器接口 + BackupData（含 categories）
-│   │   └── ISnapshotRepository.ts   # 快照仓储接口
+│   │   ├── IBackupAdapter.ts       # 备份含涂色四类数据，不含分区缓存
+│   │   ├── ISnapshotRepository.ts   # 快照仓储接口
+│   │   └── IColoringRepository.ts   # 涂色线稿、颜色层、成品、分区缓存
 │   └── rules/                       # 业务规则（纯函数）
 │       ├── TaskResetRule.ts         # 完成判定 + 统计
 │       ├── PetGrowthRule.ts         # 进化 + 经验计算 + PET_ADOPTION_COST
@@ -54,56 +61,61 @@ src/
 │
 ├── infrastructure/                   # 基础设施层（Dexie 实现）
 │   ├── database/
-│   │   ├── DexieDatabase.ts         # DB schema（v7，8 张表）
-│   │   └── repositories/            # 5 个 Dexie 实现
+│   │   ├── DexieDatabase.ts         # DB schema（v8，13 张表）
+│   │   └── repositories/            # 6 个 Dexie 实现
 │   │       ├── DexieTaskRepository.ts
 │   │       ├── DexieRewardRepository.ts  # 含分类 CRUD + 券查询
 │   │       ├── DexiePointRepository.ts
 │   │       ├── DexiePetRepository.ts
-│   │       └── DexieSnapshotRepository.ts  # 快照持久化
+│   │       ├── DexieSnapshotRepository.ts  # 快照持久化
+│   │       └── DexieColoringRepository.ts  # 涂色五张表
 │   ├── storage/
-│   │   └── JsonBackupAdapter.ts     # JSON 文件备份/恢复（含 pets.isDisplayed 补齐）
+│   │   └── JsonBackupAdapter.ts     # JSON 备份/恢复；含涂色图片，不含 coloringLabelCaches
 │   └── pwa/                          # PWA 相关（如有）
 │
 ├── application/                      # 应用层（编排业务逻辑）
-│   ├── services/                     # 5 个 Service
+│   ├── services/                     # 6 个 Service
 │   │   ├── TaskService.ts           # 含快照生成/更新/月度查询
 │   │   ├── RewardService.ts         # 含分类管理 + 券核销/退还
 │   │   ├── PointService.ts          # 含 refundReward
 │   │   ├── PetService.ts            # 多宠物：展示/养成/图鉴/免费首养/付费续养
-│   │   └── BackupService.ts
+│   │   ├── BackupService.ts         # 含涂色四类数据；不含分区缓存
+│   │   └── ColoringService.ts       # 线稿、接着涂、半成品、成品、分区缓存
 │   └── dto/                          # 数据传输对象（如有）
 │
 ├── presentation/                     # 表现层（React）
-│   ├── hooks/                        # 5 个 Zustand store
+│   ├── hooks/                        # 5 个 Zustand store + 快照生命周期
 │   │   ├── useTaskStore.ts
 │   │   ├── useRewardStore.ts        # 含券核销/退还/pending 查询
 │   │   ├── usePointStore.ts
 │   │   ├── usePetStore.ts           # 展示宠 + 养成宠 + 图鉴 + 领养/改名/切换展示
-│   │   └── useTaskHistoryStore.ts   # 打卡历史数据管理
+│   │   ├── useTaskHistoryStore.ts   # 打卡历史数据管理
+│   │   └── useSnapshotLifecycle.ts  # App 级：冷启动与回前台补齐每日快照
 │   ├── layouts/
 │   │   ├── AppLayout.tsx            # 根布局
-│   │   └── TabBar.tsx               # 底部导航栏
+│   │   └── TabBar.tsx               # 底部导航栏（6 项，含涂色）
 │   ├── components/                   # 公共组件
 │   │   ├── BaseModal.tsx            # 统一弹窗基座（ESC/focus trap/aria）
 │   │   ├── GlobalToast.tsx          # 全局 Toast 渲染组件
 │   │   └── MonthCalendar.tsx        # 通用月历组件（react-day-picker v10）
-│   └── pages/                        # 10 个页面模块
+│   └── pages/                        # 11 个页面模块
 │       ├── Home/                     # 首页（PetMiniCard + TodayTaskList + CouponMiniCard）
 │       ├── TaskCheckin/              # 任务打卡（含 NegativeBalanceGuide 负分引导）
 │       ├── TaskManage/               # 任务管理（TaskEditModal）
 │       ├── TaskHistory/              # 打卡历史（DateView + TaskView + MonthPickerModal + MonthStats）
-│       ├── Pet/                      # 宠物展示（PetToolbar + EvolutionFx 分阶段进化 + 满级隐藏喂食）
+│       ├── Pet/                      # 宠物展示（PetToolbar + EvolutionFx + FeedingFx + 满级隐藏喂食）
 │       ├── PetCollection/            # 宠物图鉴（CollectionCard + PetNameModal）
 │       ├── Shop/                     # 商城（RewardCard + RewardEditModal + RedeemConfirm + RedeemSuccess）
 │       ├── MyCoupons/                # 我的券（券列表 + 核销/退还）
 │       ├── RedeemHistory/            # 兑换历史
-│       └── Settings/                 # 设置（SettingsSection + SettingsRow + ConfirmDialog；宠物管理进图鉴）
+│       ├── Settings/                 # 设置（SettingsSection + SettingsRow + ConfirmDialog；宠物管理进图鉴）
+│       └── Coloring/                 # 涂色（画册、涂色页、半成品、成品；无 index.tsx）
 │
 └── shared/                           # 跨层共享
-    ├── constants.ts                  # DEFAULT_CHILD_ID, REWARD_CATEGORIES, ROUTES（10 个路由）
-    ├── container.ts                  # DI 容器（实例化 Service 并注入 Repository，含 snapshotRepo）
+    ├── constants.ts                  # DEFAULT_CHILD_ID, REWARD_CATEGORIES, ROUTES（含涂色路径辅助函数）
+    ├── container.ts                  # DI 容器（6 个 Service 单例，含 coloringService）
     ├── toast.ts                      # 全局命令式 Toast API（toast.success/error）
+    ├── preventIpadUndoGesture.ts     # 三指及以上触摸 preventDefault，挡住 iPad 撤销手势
     ├── petTypes/                     # 宠物种类策略（一种类一策略 + Default 兜底）
     │   ├── IPetTypeStrategy.ts
     │   ├── BasePetTypeStrategy.ts
@@ -138,6 +150,12 @@ src/
 | `/shop/coupons` | `MyCouponsPage` | 我的券 |
 | `/shop/history` | `RedeemHistoryPage` | 兑换历史 |
 | `/settings` | `SettingsPage` | 设置 |
+| `/coloring` | `ColoringAlbumPage` | 涂色画册 |
+| `/coloring/paint/:templateId` | `ColoringPaintPage` | 从线稿涂色 |
+| `/coloring/drafts` | `ColoringDraftListPage` | 半成品列表 |
+| `/coloring/drafts/:draftId` | `ColoringPaintPage` | 继续涂半成品 |
+| `/coloring/finished` | `ColoringFinishedListPage` | 成品列表 |
+| `/coloring/finished/:finishedId` | `ColoringFinishedViewPage` | 只查看成品 |
 
 路由常量定义在 `src/shared/constants.ts` 的 `ROUTES` 对象中。
 全局 `GlobalToast` 组件挂载于 Router 内，固定在页面顶部展示。
@@ -146,7 +164,7 @@ src/
 
 ## 状态管理
 
-Zustand v5 store，5 个业务 store + 1 个基础设施 store：
+Zustand v5 store，5 个业务 store + 1 个基础设施 store。涂色页直接调用 `coloringService`，没有单独的 Zustand store。`useSnapshotLifecycle` 不是 store，由 `AppLayout` 调用。
 
 | Store | 职责 | 核心 State |
 |-------|------|-----------|
@@ -168,16 +186,17 @@ Store 内部调用 Application Service，Service 再操作 Repository。
 ```
 KidManageDB (Dexie 实例)
   ↓
-DexieXxxRepository (实现接口，共 5 个)
+DexieXxxRepository (实现接口，共 6 个)
   ↓
 XxxService (注入 Repository)
   ↓
-导出 5 个 Service 单例：taskService / rewardService / pointService / petService / backupService
+导出 6 个 Service 单例：taskService / rewardService / pointService / petService / backupService / coloringService
 ```
 
 关键注入关系：
 - `taskService = new TaskService(taskRepo, pointService, snapshotRepo)` — 注入快照仓储
 - `rewardService = new RewardService(rewardRepo, pointService)` — 含分类 + 券管理
+- `coloringService = new ColoringService(coloringRepo)` — 不依赖积分
 
 Zustand Store 内部通过 `import { xxxService } from '@/shared/container'` 获取 Service。
 
@@ -185,7 +204,7 @@ Zustand Store 内部通过 `import { xxxService } from '@/shared/container'` 获
 
 ## 数据持久化
 
-Dexie.js v4 操作 IndexedDB，数据库名 `kid-manage`（class 名 `KidManageDB`），当前 schema 版本 v7。
+Dexie.js v4 操作 IndexedDB，数据库名 `kid-manage`（class 名 `KidManageDB`），当前 schema 版本 v8。
 
 | 表名 | 主键 | 索引 | 版本 |
 |------|------|------|------|
@@ -195,10 +214,15 @@ Dexie.js v4 操作 IndexedDB，数据库名 `kid-manage`（class 名 `KidManageD
 | `rewards` | `id` | `isPreset`, `isActive`, `categoryId` | v1 (v5 加 categoryId) |
 | `rewardLogs` | `id` | `rewardId`, `childId`, `redeemedAt`, `status`, `[childId+status]`, `[rewardId+childId+status]` | v1 (v3 加 status) |
 | `pointBalances` | `childId` | — | v1 |
-| `categories` | `id` | `&name`（唯一） | **v4 新增** |
-| `dailySnapshots` | `id` | `[childId+date]` | **v6 新增** |
+| `categories` | `id` | `&name`（唯一）, `isPreset`, `createdAt` | **v4 新增** |
+| `dailySnapshots` | `id` | `childId`, `date`, `[childId+date]` | **v6 新增** |
+| `coloringTemplates` | `id` | `kind` | **v8 新增** |
+| `coloringResumes` | `templateId` | — | **v8 新增** |
+| `coloringDrafts` | `id` | `templateId`, `updatedAt` | **v8 新增** |
+| `coloringFinished` | `id` | `templateId`, `createdAt` | **v8 新增** |
+| `coloringLabelCaches` | `templateId` | — | **v8 新增**；不进备份 |
 
-Schema 版本迁移历史：v1(初始 6 表) → v2(复合索引) → v3(rewardLogs status) → v4(+categories) → v5(rewards categoryId) → v6(+dailySnapshots) → v7(pets.isDisplayed)
+Schema 版本迁移历史：v1(初始 6 表) → v2(复合索引) → v3(rewardLogs status) → v4(+categories) → v5(rewards categoryId) → v6(+dailySnapshots) → v7(pets.isDisplayed) → v8(+涂色 5 表)
 
 > 修改 schema 须在 `DexieDatabase.ts` 中升级版本号。v3/v5/v7 已配置 `.upgrade()` 迁移函数。旧备份导入时由 `JsonBackupAdapter.normalizePets()` 补齐 `isDisplayed`。
 
@@ -222,4 +246,4 @@ Schema 版本迁移历史：v1(初始 6 表) → v2(复合索引) → v3(rewardL
 | `GlobalToast` | `src/presentation/components/GlobalToast.tsx` | 全局命令式 Toast，固定页面顶部 |
 | `MonthCalendar` | `src/presentation/components/MonthCalendar.tsx` | 通用月历组件（react-day-picker v10） |
 | `AppLayout` | `src/presentation/layouts/AppLayout.tsx` | 根布局 |
-| `TabBar` | `src/presentation/layouts/TabBar.tsx` | 底部导航栏 |
+| `TabBar` | `src/presentation/layouts/TabBar.tsx` | 底部导航栏（首页、任务、宠物、商城、涂色、设置） |
