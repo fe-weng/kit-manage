@@ -181,6 +181,7 @@
 
 ### Constants / DI / Toast
 - `src/shared/constants.ts` — `DEFAULT_CHILD_ID` / `REWARD_CATEGORIES` / `ROUTES` / `coloringPaintPath` / `coloringDraftPath` / `coloringFinishedPath`
+- `src/shared/appVersion.ts` — `APP_VERSION`（package.json 的 version）
 - `src/shared/container.ts` — `taskService` / `rewardService` / `pointService` / `petService` / `backupService` / `coloringService`
 - `src/shared/toast.ts` — `toast.success()` / `toast.error()`
 - `src/shared/preventIpadUndoGesture.ts` — `installIpadUndoGestureGuard`
