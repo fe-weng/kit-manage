@@ -224,7 +224,6 @@ export default function PetPage() {
 
       <ActionButtons
         onFeed={handleFeed}
-        onPet={handlePet}
         feedCost={feedCost}
         canAfford={canAfford}
         feeding={feeding}
