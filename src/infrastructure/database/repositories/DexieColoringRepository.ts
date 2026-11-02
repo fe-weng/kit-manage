@@ -37,12 +37,34 @@ export class DexieColoringRepository implements IColoringRepository {
         if (!template || template.kind !== 'imported') {
           throw new Error('内置线稿不能删除')
         }
-        await this.db.coloringDrafts.where('templateId').equals(id).delete()
-        await this.db.coloringResumes.delete(id)
-        await this.db.coloringLabelCaches.delete(id)
+        await this.deleteTemplateLinkedRows(id)
         await this.db.coloringTemplates.delete(id)
       },
     )
+  }
+
+  async deleteRetiredBuiltinCascade(id: string): Promise<void> {
+    await this.db.transaction(
+      'rw',
+      [
+        this.db.coloringTemplates,
+        this.db.coloringResumes,
+        this.db.coloringDrafts,
+        this.db.coloringLabelCaches,
+      ],
+      async () => {
+        const template = await this.db.coloringTemplates.get(id)
+        if (!template || template.kind !== 'builtin') return
+        await this.deleteTemplateLinkedRows(id)
+        await this.db.coloringTemplates.delete(id)
+      },
+    )
+  }
+
+  private async deleteTemplateLinkedRows(templateId: string): Promise<void> {
+    await this.db.coloringDrafts.where('templateId').equals(templateId).delete()
+    await this.db.coloringResumes.delete(templateId)
+    await this.db.coloringLabelCaches.delete(templateId)
   }
 
   async getResume(templateId: string): Promise<ColoringResume | null> {

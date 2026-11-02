@@ -11,6 +11,7 @@ export interface IColoringRepository {
   listTemplates(): Promise<ColoringTemplate[]>
   putTemplate(template: ColoringTemplate): Promise<void>
   deleteImportedCascade(id: string): Promise<void>
+  deleteRetiredBuiltinCascade(id: string): Promise<void>
 
   getResume(templateId: string): Promise<ColoringResume | null>
   listResumes(): Promise<ColoringResume[]>

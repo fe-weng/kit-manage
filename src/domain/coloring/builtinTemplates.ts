@@ -3,6 +3,11 @@ export const BUILTIN_DRAW_ASSETS_DIR = 'pets/draw-assets'
 export const BUILTIN_IPAD_WIDTH = 1024
 export const BUILTIN_IPAD_HEIGHT = 1366
 
+/** 已下架的内置线稿 id，勿再分配给新线稿。 */
+export const RETIRED_BUILTIN_COLORING_TEMPLATE_IDS = [
+  'builtin-chicken-stage-3',
+] as const
+
 export interface BuiltinColoringTemplateDef {
   id: string
   fileName: string
@@ -13,8 +18,8 @@ export interface BuiltinColoringTemplateDef {
 /** 与 public/pets/draw-assets/ 下文件名一致；画册顺序即数组顺序。 */
 export const BUILTIN_COLORING_TEMPLATES: BuiltinColoringTemplateDef[] = [
   {
-    id: 'builtin-chicken-stage-3',
-    fileName: 'chicken-stage-3-ipad.svg',
+    id: 'builtin-chicken-stage-4',
+    fileName: 'chicken-stage-4-ipad.svg',
     width: BUILTIN_IPAD_WIDTH,
     height: BUILTIN_IPAD_HEIGHT,
   },
@@ -25,8 +30,14 @@ export const BUILTIN_COLORING_TEMPLATES: BuiltinColoringTemplateDef[] = [
     height: BUILTIN_IPAD_HEIGHT,
   },
   {
+    id: 'builtin-rabbit-stage-2',
+    fileName: 'rabbit-stage-2-ipad.svg',
+    width: BUILTIN_IPAD_WIDTH,
+    height: BUILTIN_IPAD_HEIGHT,
+  },
+  {
     id: 'builtin-rabbit-stage-3',
-    fileName: 'rabit-stage-3-ipad.svg',
+    fileName: 'rabbit-stage-3-ipad.svg',
     width: BUILTIN_IPAD_WIDTH,
     height: BUILTIN_IPAD_HEIGHT,
   },
@@ -45,4 +56,8 @@ export function builtinColoringPublicPath(fileName: string): string {
 export function builtinColoringSortIndex(templateId: string): number {
   const index = BUILTIN_COLORING_TEMPLATES.findIndex((def) => def.id === templateId)
   return index === -1 ? Number.MAX_SAFE_INTEGER : index
+}
+
+export function isActiveBuiltinColoringTemplateId(templateId: string): boolean {
+  return BUILTIN_COLORING_TEMPLATES.some((def) => def.id === templateId)
 }

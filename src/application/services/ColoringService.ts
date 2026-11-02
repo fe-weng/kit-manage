@@ -8,6 +8,7 @@ import {
   BUILTIN_COLORING_TEMPLATES,
   builtinColoringPublicPath,
   builtinColoringSortIndex,
+  isActiveBuiltinColoringTemplateId,
 } from '@/domain/coloring/builtinTemplates'
 import type {
   ColoringDraft,
@@ -19,6 +20,13 @@ export class ColoringService {
   constructor(private repo: IColoringRepository) {}
 
   async ensureBuiltinTemplates(): Promise<void> {
+    const templates = await this.repo.listTemplates()
+    for (const template of templates) {
+      if (template.kind === 'builtin' && !isActiveBuiltinColoringTemplateId(template.id)) {
+        await this.repo.deleteRetiredBuiltinCascade(template.id)
+      }
+    }
+
     for (const def of BUILTIN_COLORING_TEMPLATES) {
       const publicPath = builtinColoringPublicPath(def.fileName)
       const existing = await this.repo.getTemplate(def.id)
